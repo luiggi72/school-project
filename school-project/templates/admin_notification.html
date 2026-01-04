@@ -1,0 +1,190 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
+    <meta name="x-apple-disable-message-reformatting">
+    <title>Nueva Solicitud</title>
+    <style type="text/css">
+        :root {
+
+            button,
+            a {
+                color: inherit;
+                text-decoration: none;
+            }
+        }
+
+        /* Dark Mode Support */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #222222 !important;
+            }
+
+            .email-container {
+                background-color: #ffffff !important;
+                color: #555555 !important;
+            }
+
+            h1,
+            h2,
+            h3,
+            h4,
+            strong,
+            span {
+                color: #000000 !important;
+            }
+
+            p {
+                color: #555555 !important;
+            }
+        }
+
+        body {
+            background-color: #ffffff !important;
+            color: #555555 !important;
+            margin: 0;
+            padding: 0;
+            width: 100% !important;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+
+        img {
+            border: 0;
+            height: auto;
+            line-height: 100%;
+            outline: none;
+            text-decoration: none;
+        }
+
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        @media only screen and (max-width: 600px) {
+            .email-container {
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 10px !important;
+            }
+        }
+    </style>
+</head>
+
+<body style="margin: 0; padding: 0; background-color: #f6f6f6; font-family: Arial, sans-serif;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f6f6f6;">
+        <tr>
+            <td align="center" style="padding: 20px 0;">
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" class="email-container"
+                    style="border-collapse: collapse; background-color: #ffffff; border-radius: 8px; overflow: hidden; max-width: 600px;">
+                    <!-- Header -->
+                    <tr>
+                        <td align="center" bgcolor="#ffffff"
+                            style="padding: 30px 20px; border-bottom: 3px solid #c0392b;">
+
+                            <img src="cid:school_logo" alt="Logo Colegio"
+                                style="display: block; margin-bottom: 10px; max-height: 150px;" />
+                        </td>
+                    </tr>
+                    <!-- Content -->
+                    <tr>
+                        <td bgcolor="#ffffff" style="padding: 30px;">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%"
+                                style="border-collapse: separate; border-spacing: 0 10px;">
+                                <tr>
+                                    <td valign="top"
+                                        style="padding: 12px; border-bottom: 1px solid #eee; font-weight: bold; width: 35%; color: #9C9E9D; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; font-family: Arial, sans-serif;">
+                                        Alumno</td>
+                                    <td valign="top"
+                                        style="padding: 12px; border-bottom: 1px solid #eee; color: #9C9E9D; font-size: 15px; font-family: Arial, sans-serif;">
+                                        <strong>{{child_name}}</strong>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td valign="top"
+                                        style="padding: 12px; border-bottom: 1px solid #eee; font-weight: bold; width: 35%; color: #9C9E9D; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; font-family: Arial, sans-serif;">
+                                        Grado Solicitado</td>
+                                    <td valign="top"
+                                        style="padding: 12px; border-bottom: 1px solid #eee; color: #9C9E9D; font-size: 15px; font-family: Arial, sans-serif;">
+                                        {{requested_grade}}</td>
+                                </tr>
+                                <tr>
+                                    <td valign="top"
+                                        style="padding: 12px; border-bottom: 1px solid #eee; font-weight: bold; width: 35%; color: #9C9E9D; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; font-family: Arial, sans-serif;">
+                                        Padre / Tutor</td>
+                                    <td valign="top"
+                                        style="padding: 12px; border-bottom: 1px solid #eee; color: #9C9E9D; font-size: 15px; font-family: Arial, sans-serif;">
+                                        {{parent_name}}</td>
+                                </tr>
+                                <tr>
+                                    <td valign="top"
+                                        style="padding: 12px; border-bottom: 1px solid #eee; font-weight: bold; width: 35%; color: #9C9E9D; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; font-family: Arial, sans-serif;">
+                                        Email</td>
+                                    <td valign="top"
+                                        style="padding: 12px; border-bottom: 1px solid #eee; color: #9C9E9D; font-size: 15px; font-family: Arial, sans-serif;">
+                                        <a href="mailto:{{email}}"
+                                            style="color: #c0392b; text-decoration: none;">{{email}}</a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td valign="top"
+                                        style="padding: 12px; border-bottom: 1px solid #eee; font-weight: bold; width: 35%; color: #555555; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; font-family: Arial, sans-serif;">
+                                        Teléfono</td>
+                                    <td valign="top"
+                                        style="padding: 12px; border-bottom: 1px solid #eee; color: #555555; font-size: 15px; font-family: Arial, sans-serif;">
+                                        {{phone}}</td>
+                                </tr>
+                                <tr>
+                                    <td valign="top"
+                                        style="padding: 12px; border-bottom: 1px solid #eee; font-weight: bold; width: 35%; color: #555555; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; font-family: Arial, sans-serif;">
+                                        Fecha Nacimiento</td>
+                                    <td valign="top"
+                                        style="padding: 12px; border-bottom: 1px solid #eee; color: #555555; font-size: 15px; font-family: Arial, sans-serif;">
+                                        {{birth_date}}</td>
+                                </tr>
+                                <tr>
+                                    <td valign="top"
+                                        style="padding: 12px; border-bottom: 1px solid #eee; font-weight: bold; width: 35%; color: #555555; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; font-family: Arial, sans-serif;">
+                                        Escuela Procedencia</td>
+                                    <td valign="top"
+                                        style="padding: 12px; border-bottom: 1px solid #eee; color: #555555; font-size: 15px; font-family: Arial, sans-serif;">
+                                        {{previous_school}}</td>
+                                </tr>
+                                <tr>
+                                    <td valign="top"
+                                        style="padding: 12px; border-bottom: 1px solid #eee; font-weight: bold; width: 35%; color: #555555; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; font-family: Arial, sans-serif;">
+                                        Fuente</td>
+                                    <td valign="top"
+                                        style="padding: 12px; border-bottom: 1px solid #eee; color: #555555; font-size: 15px; font-family: Arial, sans-serif;">
+                                        {{marketing_source}} {{marketing_source_other}}</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td bgcolor="#ffffff"
+                            style="padding: 15px; text-align: center; color: #555555; border-top: 1px solid #eeeeee;">
+                            <p
+                                style="margin: 0 0 5px 0; font-size: 10px; color: #9C9E9D; text-transform: uppercase; letter-spacing: 1px; font-family: Arial, sans-serif;">
+                                Este correo fue generado automáticamente por el sistema de admisiones.
+                            </p>
+                            <p
+                                style="margin: 5px 0 15px 0; font-size: 11px; color: #9C9E9D; font-style: italic; font-family: Arial, sans-serif;">
+                                Nota: Por favor no responda a este correo, es solo para fines informativos.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>

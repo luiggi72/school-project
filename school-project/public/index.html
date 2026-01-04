@@ -1,0 +1,2788 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Escolar</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Login View -->
+    <!-- Login View -->
+    <div id="login-view" class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="login-logo-container">
+                    <img src="logo.png" alt="Logo Institucional" class="login-logo-img">
+                </div>
+                <!-- Title and Subtitle removed -->
+            </div>
+            <form id="login-form">
+                <div class="login-input-group">
+                    <label for="login-email">Correo Electrónico</label>
+                    <input type="email" id="login-email" placeholder="correo@ejemplo.com" required>
+                </div>
+                <div class="login-input-group">
+                    <label for="login-password">Contraseña</label>
+                    <input type="password" id="login-password" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="login-btn">Iniciar Sesión</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Dashboard View -->
+    <div id="dashboard-view" class="dashboard-container hidden" style="display: flex; height: 100vh; width: 100%;">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                </svg>
+                <span>AdminEscolar</span>
+            </div>
+            <nav class="sidebar-nav">
+                <!-- 1. Alumnos -->
+                <div class="nav-group" data-group="alumnos">
+                    <div class="nav-group-header">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                            <span>Alumnos</span>
+                        </div>
+                        <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                    </div>
+                    <div class="nav-group-content">
+                        <a class="submenu-item active" data-target="students-section">Lista General</a>
+                        <a class="submenu-item" data-target="general-info-section">Información General</a>
+                        <a class="submenu-item" data-target="medical-data-section">Datos Médicos</a>
+                    </div>
+                </div>
+
+                <!-- 2. Caja (New) -->
+                <div class="nav-group" data-group="caja">
+                    <div class="nav-group-header">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <rect x="2" y="6" width="20" height="12" rx="2" />
+                                <circle cx="12" cy="12" r="2" />
+                                <path d="M6 12h.01M18 12h.01" />
+                            </svg>
+                            <span>Caja</span>
+                        </div>
+                        <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                    </div>
+                    <div class="nav-group-content">
+                        <a class="submenu-item" data-target="caja-section">Pagos y Cobros</a>
+                        <a class="submenu-item" data-target="concepts-section">Conceptos</a>
+                    </div>
+                </div>
+
+                <!-- 3. Configuración -->
+                <div class="nav-group" data-group="config">
+                    <div class="nav-group-header">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="3" />
+                                <path
+                                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                            </svg>
+                            <span>Configuración</span>
+                        </div>
+                        <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                    </div>
+                    <div class="nav-group-content">
+                        <a class="submenu-item" data-target="roles-users-section">Roles y Perfiles</a>
+                        <a class="submenu-item" data-target="email-templates-section">Formato Correos</a>
+                        <a class="submenu-item" data-target="chatbot-section">Asistente Virtual</a>
+                    </div>
+                </div>
+
+                <!-- 4. Información Escolar -->
+                <div class="nav-group" data-group="school">
+                    <div class="nav-group-header">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                <polyline points="9 22 9 12 15 12 15 22" />
+                            </svg>
+                            <span>Información Escolar</span>
+                        </div>
+                        <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                    </div>
+                    <div class="nav-group-content">
+                        <a class="submenu-item" data-target="school-info-section">Datos Institución</a>
+
+                        <!-- Nested Submenu: Estructura -->
+                        <div class="nested-submenu">
+                            <div class="nested-submenu-header submenu-item" style="justify-content: space-between;">
+                                <span>Estructura</span>
+                                <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="6 9 12 15 18 9" />
+                                </svg>
+                            </div>
+                            <div class="nested-submenu-content hidden" style="padding-left: 1rem;">
+                                <a class="submenu-item" data-target="academic-structure-section">Académica</a>
+                                <a class="submenu-item"
+                                    data-target="administrative-structure-section">Administrativa</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. Recursos Humanos (New) -->
+                <div class="nav-group" data-group="hr">
+                    <div class="nav-group-header">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                            </svg>
+                            <span>Recursos Humanos</span>
+                        </div>
+                        <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                    </div>
+                    <div class="nav-group-content">
+                        <a class="submenu-item" data-target="hr-personal-section">Personal</a>
+                    </div>
+                </div>
+
+                <!-- 5. Reportes (New) -->
+                <div class="nav-group" data-group="reports">
+                    <div class="nav-group-header">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                                <line x1="16" y1="13" x2="8" y2="13" />
+                                <line x1="16" y1="17" x2="8" y2="17" />
+                                <polyline points="10 9 9 9 8 9" />
+                            </svg>
+                            <span>Reportes</span>
+                        </div>
+                        <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                    </div>
+                    <div class="nav-group-content">
+                        <a class="submenu-item" data-target="reports-section">Reporte de Ingresos</a>
+                    </div>
+                </div>
+
+                <!-- 6. Informes (New) -->
+                <div class="nav-group" data-group="inquiries">
+                    <div class="nav-group-header">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                                <line x1="16" y1="13" x2="8" y2="13" />
+                                <line x1="16" y1="17" x2="8" y2="17" />
+                                <polyline points="10 9 9 9 8 9" />
+                            </svg>
+                            <span>Informes</span>
+                        </div>
+                        <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                    </div>
+                    <div class="nav-group-content">
+                        <a href="#" class="submenu-item" data-section="informes-section">
+                            Solicitud de Informes
+                        </a>
+                        <a href="#" class="submenu-item" data-section="inquiries-list-section">
+                            Lista Informes
+                        </a>
+                        <a href="#" class="submenu-item" data-section="agenda-section">
+                            Agenda
+                        </a>
+                    </div>
+                </div>
+            </nav>
+            <div class="user-profile">
+                <div
+                    style="width: 32px; height: 32px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                    <span id="user-initial">A</span>
+                </div>
+                <div style="flex: 1;">
+                    <div id="user-display-name" style="font-size: 0.875rem; font-weight: 500;">Admin</div>
+                    <div id="user-display-role" style="font-size: 0.75rem; color: #94a3b8;">Administrador</div>
+                </div>
+                <button id="logout-btn-sidebar"
+                    style="background: none; border: none; color: #94a3b8; cursor: pointer;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                        <polyline points="16 17 21 12 16 7" />
+                        <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <header class="top-bar">
+                <h2 id="page-title">Alumnos</h2>
+                <button id="logout-btn-top" class="btn-primary"
+                    style="background-color: white; color: var(--text-dark); border: 1px solid var(--border);">
+                    Cerrar Sesión
+                </button>
+            </header>
+
+            <main class="page-content">
+                <!-- Students Section -->
+                <div id="students-section" class="section">
+                    <div class="section-header">
+                        <div class="search-bar">
+                            <div class="search-input-wrapper">
+                                <input type="text" id="student-search"
+                                    placeholder="Buscar por nombre, matrícula o ID...">
+                                <button id="clear-search-btn" class="clear-search" title="Limpiar búsqueda">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <line x1="18" y1="6" x2="6" y2="18" />
+                                        <line x1="6" y1="6" x2="18" y2="18" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <select id="filter-grade"
+                                style="padding: 0.75rem; border: 1px solid var(--border); border-radius: 0.5rem; font-size: 0.875rem; min-width: 120px;">
+                                <option value="">Todos los Niveles</option>
+                                <option value="MATERNAL">MATERNAL</option>
+                                <option value="PREESCOLAR">PREESCOLAR</option>
+                                <option value="PRIMARIA">PRIMARIA</option>
+                                <option value="SECUNDARIA">SECUNDARIA</option>
+                            </select>
+                            <select id="filter-subgrade"
+                                style="padding: 0.75rem; border: 1px solid var(--border); border-radius: 0.5rem; font-size: 0.875rem; min-width: 100px;"
+                                disabled>
+                                <option value="">Grado</option>
+                            </select>
+                            <select id="filter-group"
+                                style="padding: 0.75rem; border: 1px solid var(--border); border-radius: 0.5rem; font-size: 0.875rem; min-width: 100px;"
+                                disabled>
+                                <option value="">Salón</option>
+                            </select>
+                        </div>
+
+                    </div>
+                    <div class="card">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 60px; text-align: center;">ID</th>
+                                    <th>Nombre</th>
+                                    <th>Apellido Paterno</th>
+                                    <th>Apellido Materno</th>
+                                    <th>Nivel Educativo</th>
+                                    <th>Grado</th>
+                                    <th>Grupo</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="students-table-body" style="font-size: 0.85rem;">
+                                <!-- Rows will be populated by JS -->
+                            </tbody>
+                        </table>
+                        <div id="empty-state" class="empty-state hidden">
+                            <p>No hay alumnos registrados.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- General Info Section (NEW) -->
+                <div id="general-info-section" class="section hidden">
+                    <!-- Header removed as requested -->
+                    <div class="info-card"
+                        style="background: white; padding: 2rem; border-radius: 0.5rem; box-shadow: var(--shadow);">
+
+                        <form id="general-student-form">
+                            <div id="students-list">
+                                <div class="student-entry border-b border-gray-200 pb-4 mb-4">
+                                    <input type="hidden" class="student-id" id="general-db-id">
+                                    <!-- Keep ID for first one for compat, but add class -->
+                                    <!-- Section 1: Student Info -->
+                                    <div class="form-section-divider"
+                                        style="display: flex; justify-content: space-between; align-items: center;">
+                                        <h4 class="form-section-title">Información del Alumno</h4>
+                                        <button type="button" class="btn-secondary btn-remove-student hidden"
+                                            style="font-size: 0.8rem; padding: 0.2rem 0.6rem; background-color: #ef4444; color: white;">Eliminar
+                                            Ficha</button>
+                                        <button type="button" id="general-clear-btn" class="btn-secondary"
+                                            style="font-size: 0.8rem; padding: 0.2rem 0.6rem;">Nueva Ficha
+                                            (Limpiar)</button>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group" style="display: none;">
+                                            <label>ID Familiar</label>
+                                            <input type="text" class="student-family-id" id="general-family-id"
+                                                placeholder="Generado automáticamente" readonly
+                                                style="background-color: #f3f4f6;">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>ID Único (Sistema)</label>
+                                            <input type="text" class="student-unique-id" id="general-unique-id"
+                                                placeholder="ID generado" readonly style="background-color: #f3f4f6;">
+                                        </div>
+                                        <div class="form-group" style="flex: 2;">
+                                            <label>Nombre(s)</label>
+                                            <input type="text" class="student-name" id="general-name"
+                                                placeholder="Nombre del alumno">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Apellido Paterno</label>
+                                            <input type="text" class="student-lastname-p" id="general-lastname-p"
+                                                placeholder="Apellido Paterno">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Apellido Materno</label>
+                                            <input type="text" class="student-lastname-m" id="general-lastname-m"
+                                                placeholder="Apellido Materno">
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>Fecha de Nacimiento</label>
+                                            <input type="date" class="student-birthdate" id="general-birthdate">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>CURP</label>
+                                            <input type="text" class="student-curp" id="general-curp"
+                                                placeholder="CURP">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Género</label>
+                                            <select class="student-gender" id="general-gender">
+                                                <option value="">Seleccionar</option>
+                                                <option value="M">Masculino</option>
+                                                <option value="F">Femenino</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="margin-bottom: 2rem; text-align: right;">
+                                <button type="button" id="add-sibling-btn" class="btn-secondary"
+                                    style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="8" x2="12" y2="16"></line>
+                                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                                    </svg>
+                                    Agregar otro alumno
+                                </button>
+                            </div>
+
+                            <!-- Section 2: Parents Info -->
+
+                            <!-- Mother -->
+                            <div class="form-section-divider">
+                                <h4 class="form-section-title">Información Familiar</h4>
+                            </div>
+
+                            <!-- Mother -->
+                            <div class="parent-container parent-section" data-type="MOTHER">
+                                <div class="parent-header">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" style="color: #ec4899;">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                    </svg>
+                                    Datos de la Madre
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Nombre(s)</label>
+                                        <input type="text" name="mother-name" placeholder="Nombre">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Apellido Paterno</label>
+                                        <input type="text" name="mother-lastnameP" placeholder="Apellido Paterno">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Apellido Materno</label>
+                                        <input type="text" name="mother-lastnameM" placeholder="Apellido Materno">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Fecha Nacimiento</label>
+                                        <input type="date" name="mother-birthdate">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Teléfono Móvil</label>
+                                        <input type="tel" name="mother-phone" placeholder="55 1234 5678">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Email</label>
+                                        <input type="email" name="mother-email" placeholder="madre@ejemplo.com">
+                                    </div>
+                                </div>
+                                <!-- Address Mother -->
+                                <div class="address-label">Dirección</div>
+                                <div class="form-row">
+                                    <div class="form-group" style="flex: 2;">
+                                        <label>Calle</label>
+                                        <input type="text" name="mother-street" placeholder="Calle">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Número</label>
+                                        <input type="text" name="mother-exterior_number" placeholder="Num.">
+                                    </div>
+                                    <div class="form-group" style="flex: 2;">
+                                        <label>Colonia</label>
+                                        <input type="text" name="mother-neighborhood" placeholder="Colonia">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>C.P.</label>
+                                        <input type="text" name="mother-zip_code" placeholder="C.P.">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Ciudad</label>
+                                        <input type="text" name="mother-city" placeholder="Ciudad">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Estado</label>
+                                        <input type="text" name="mother-state" placeholder="Estado">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>País</label>
+                                        <input type="text" name="mother-country" placeholder="País" value="México">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Father -->
+                            <div class="parent-container parent-section" data-type="FATHER">
+                                <div class="parent-header">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" style="color: #3b82f6;">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                    </svg>
+                                    Datos del Padre
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Nombre(s)</label>
+                                        <input type="text" name="father-name" placeholder="Nombre">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Apellido Paterno</label>
+                                        <input type="text" name="father-lastnameP" placeholder="Apellido Paterno">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Apellido Materno</label>
+                                        <input type="text" name="father-lastnameM" placeholder="Apellido Materno">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Fecha Nacimiento</label>
+                                        <input type="date" name="father-birthdate">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Teléfono Móvil</label>
+                                        <input type="tel" name="father-phone" placeholder="55 1234 5678">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Email</label>
+                                        <input type="email" name="father-email" placeholder="padre@ejemplo.com">
+                                    </div>
+                                </div>
+                                <!-- Address Father -->
+                                <div class="address-label">Dirección</div>
+                                <div class="form-row">
+                                    <div class="form-group" style="flex: 2;">
+                                        <label>Calle</label>
+                                        <input type="text" name="father-street" placeholder="Calle">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Número</label>
+                                        <input type="text" name="father-exterior_number" placeholder="Num.">
+                                    </div>
+                                    <div class="form-group" style="flex: 2;">
+                                        <label>Colonia</label>
+                                        <input type="text" name="father-neighborhood" placeholder="Colonia">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>C.P.</label>
+                                        <input type="text" name="father-zip_code" placeholder="C.P.">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Ciudad</label>
+                                        <input type="text" name="father-city" placeholder="Ciudad">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Estado</label>
+                                        <input type="text" name="father-state" placeholder="Estado">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>País</label>
+                                        <input type="text" name="father-country" placeholder="País" value="México">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="text-align: right; margin-top: 2rem;">
+                                <button type="submit" class="btn-primary">Guardar Información Completa</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Medical Data Section (New) -->
+                <div id="medical-data-section" class="section hidden">
+                    <!-- ... existing content ... -->
+                    <div class="info-card"
+                        style="background: white; padding: 2rem; border-radius: 0.5rem; box-shadow: var(--shadow);">
+                        <form id="medical-data-form">
+                            <!-- Hidden Student ID -->
+                            <input type="hidden" id="medical-student-id" name="student_id">
+
+                            <div class="section-header"
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                                <h3 id="medical-section-title">Ficha Médica del Alumno</h3>
+                                <button type="submit" class="btn-primary">Guardar Ficha Médica</button>
+                            </div>
+
+                            <!-- ... rest of medical form ... -->
+                            <!-- 1. Datos Generales -->
+                            <div class="form-section-container">
+                                <div class="form-section-divider">
+                                    <h4 class="form-section-title">Datos Generales</h4>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="medical-blood-type">Tipo de Sangre</label>
+                                        <select id="medical-blood-type" name="blood_type">
+                                            <option value="">Seleccionar</option>
+                                            <option value="A+">A+</option>
+                                            <option value="A-">A-</option>
+                                            <option value="B+">B+</option>
+                                            <option value="B-">B-</option>
+                                            <option value="AB+">AB+</option>
+                                            <option value="AB-">AB-</option>
+                                            <option value="O+">O+</option>
+                                            <option value="O-">O-</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Edad</label>
+                                        <input type="text" id="medical-age" readonly style="background-color: #f3f4f6;">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="medical-height">Altura (cm)</label>
+                                        <input type="number" id="medical-height" name="height" placeholder="cm">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="medical-weight">Peso (kg)</label>
+                                        <input type="number" id="medical-weight" name="weight" step="0.1"
+                                            placeholder="kg">
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group" style="flex: 1;">
+                                        <label for="medical-allergies">Alergias</label>
+                                        <textarea id="medical-allergies" name="allergies" rows="2"
+                                            placeholder="Describa alergias conocidas..."></textarea>
+                                    </div>
+                                    <div class="form-group" style="flex: 1;">
+                                        <label for="medical-conditions">Condiciones Médicas Crónicas</label>
+                                        <textarea id="medical-conditions" name="medical_conditions" rows="2"
+                                            placeholder="Diabetes, Asma, etc..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 2. Antecedentes -->
+                            <div class="form-section-container">
+                                <div class="form-section-divider">
+                                    <h4 class="form-section-title">Antecedentes Médicos</h4>
+                                </div>
+
+                                <!-- Cirugías -->
+                                <div class="form-row" style="align-items: center; margin-bottom: 1rem;">
+                                    <div style="width: 200px; font-weight: 500;">¿Ha tenido cirugías?</div>
+                                    <div style="display: flex; gap: 1rem;">
+                                        <label
+                                            style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                            <input type="radio" name="has_surgeries" value="1"
+                                                onchange="document.getElementById('surgeries-details').classList.remove('hidden')">
+                                            Sí
+                                        </label>
+                                        <label
+                                            style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                            <input type="radio" name="has_surgeries" value="0"
+                                                onchange="document.getElementById('surgeries-details').classList.add('hidden')">
+                                            No
+                                        </label>
+                                    </div>
+                                </div>
+                                <div id="surgeries-details" class="form-group hidden" style="margin-bottom: 1.5rem;">
+                                    <label for="medical-surgeries-comments">Detalles de Cirugías</label>
+                                    <textarea id="medical-surgeries-comments" name="surgeries_comments"
+                                        rows="2"></textarea>
+                                </div>
+
+                                <!-- Medicamentos -->
+                                <div class="form-row" style="align-items: center; margin-bottom: 1rem;">
+                                    <div style="width: 200px; font-weight: 500;">¿Toma medicamentos?</div>
+                                    <div style="display: flex; gap: 1rem;">
+                                        <label
+                                            style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                            <input type="radio" name="has_medications" value="1"
+                                                onchange="document.getElementById('medications-details').classList.remove('hidden')">
+                                            Sí
+                                        </label>
+                                        <label
+                                            style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                            <input type="radio" name="has_medications" value="0"
+                                                onchange="document.getElementById('medications-details').classList.add('hidden')">
+                                            No
+                                        </label>
+                                    </div>
+                                </div>
+                                <div id="medications-details" class="form-group hidden" style="margin-bottom: 1.5rem;">
+                                    <label for="medical-medications">Medicamentos y Dosis</label>
+                                    <textarea id="medical-medications" name="medications" rows="2"></textarea>
+                                </div>
+
+                                <!-- Terapia -->
+                                <div class="form-row" style="align-items: center; margin-bottom: 1rem;">
+                                    <div style="width: 200px; font-weight: 500;">¿Acude a terapia?</div>
+                                    <div style="display: flex; gap: 1rem;">
+                                        <label
+                                            style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                            <input type="radio" name="has_therapy" value="1"
+                                                onchange="document.getElementById('therapy-details').classList.remove('hidden')">
+                                            Sí
+                                        </label>
+                                        <label
+                                            style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                            <input type="radio" name="has_therapy" value="0"
+                                                onchange="document.getElementById('therapy-details').classList.add('hidden')">
+                                            No
+                                        </label>
+                                    </div>
+                                </div>
+                                <div id="therapy-details" class="form-group hidden">
+                                    <label for="medical-therapy-comments">Detalles de Terapia (Psicológica, Lenguaje,
+                                        etc.)</label>
+                                    <textarea id="medical-therapy-comments" name="therapy_comments" rows="2"></textarea>
+                                </div>
+                            </div>
+
+                            <!-- 3. Contactos y Seguro -->
+                            <div class="form-section-container">
+                                <div class="form-section-divider">
+                                    <h4 class="form-section-title">Contactos de Emergencia y Seguro</h4>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="medical-emergency-name">Contacto Emergencia (Nombre)</label>
+                                        <input type="text" id="medical-emergency-name" name="emergency_contact_name">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="medical-emergency-phone">Teléfono Emergencia</label>
+                                        <input type="tel" id="medical-emergency-phone" name="emergency_contact_phone">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="medical-doctor-name">Nombre del Doctor</label>
+                                        <input type="text" id="medical-doctor-name" name="doctor_name">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="medical-doctor-phone">Teléfono Doctor</label>
+                                        <input type="tel" id="medical-doctor-phone" name="doctor_phone">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="medical-doctor-email">Email Doctor</label>
+                                        <input type="email" id="medical-doctor-email" name="doctor_email">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="medical-doctor-office">Consultorio / Hospital</label>
+                                        <input type="text" id="medical-doctor-office" name="doctor_office">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="medical-insurance-company">Aseguradora</label>
+                                        <input type="text" id="medical-insurance-company" name="insurance_company">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="medical-insurance-policy">No. Póliza</label>
+                                        <input type="text" id="medical-insurance-policy" name="insurance_policy">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="medical-notes">Notas Adicionales</label>
+                                    <textarea id="medical-notes" name="additional_notes" rows="3"></textarea>
+                                </div>
+                            </div>
+                            <div style="text-align: right; margin-top: 1rem;">
+                                <button type="submit" class="btn-primary">Guardar Ficha Médica</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Chatbot Section (New) -->
+                <div id="chatbot-section" class="section hidden">
+                    <div class="section-header">
+                        <h3>Configuración del Asistente Virtual (IA)</h3>
+                    </div>
+                    <div class="card" style="max-width: 800px; margin: 0 auto; padding: 2rem;">
+                        <p style="color: #64748b; margin-bottom: 1.5rem;">Configure el comportamiento del asistente
+                            virtual. La información que coloque aquí será utilizada por la IA para responder las
+                            preguntas de los padres.</p>
+
+                        <form id="chatbot-form">
+                            <div class="form-group" style="margin-bottom: 1.5rem;">
+                                <label for="chatbot-api-key"
+                                    style="font-weight: 500; display: block; margin-bottom: 0.5rem;">API Key
+                                    (OpenAI)</label>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <input type="password" id="chatbot-api-key" placeholder="sk-..."
+                                        style="flex: 1; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.5rem;">
+                                    <button type="button" id="toggle-api-key" class="btn-secondary">Mostrar</button>
+                                </div>
+                                <p style="font-size: 0.8rem; color: #94a3b8; margin-top: 0.25rem;">Su llave de API se
+                                    almacena de forma segura en el servidor.</p>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 1.5rem;">
+                                <label for="chatbot-context"
+                                    style="font-weight: 500; display: block; margin-bottom: 0.5rem;">Contexto /
+                                    Conocimiento del Sistema</label>
+                                <textarea id="chatbot-context" rows="15"
+                                    placeholder="Escriba aquí la información del colegio..."
+                                    style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.5rem; font-family: monospace; line-height: 1.5;"></textarea>
+                                <p style="font-size: 0.8rem; color: #94a3b8; margin-top: 0.25rem;">
+                                    Tip: Incluya horarios, reglas de vestimenta, fechas de exámenes, costos, y datos de
+                                    contacto.
+                                </p>
+                            </div>
+
+                            <div style="text-align: right;">
+                                <button type="submit" class="btn-primary" style="padding: 0.75rem 2rem;">Guardar
+                                    Configuración</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Account Statement Section (NEW) -->
+                <div id="account-statement-section" class="section hidden">
+                    <div class="section-header">
+                        <h3>Estado de Cuenta del Alumno</h3>
+                        <button class="btn-secondary"
+                            onclick="document.getElementById('account-statement-section').classList.add('hidden'); document.getElementById('students-section').classList.remove('hidden');">
+                            Volver a Lista
+                        </button>
+                    </div>
+
+                    <!-- Student Summary Header -->
+                    <div class="card"
+                        style="padding: 1.5rem; margin-bottom: 1.5rem; background-color: #f8fafc; border-left: 4px solid #3b82f6;">
+                        <h4 id="statement-student-name"
+                            style="font-size: 1.1rem; color: #1e293b; margin-bottom: 0.5rem;">Cargando alumno...</h4>
+                        <div style="display: flex; gap: 2rem; font-size: 0.9rem; color: #64748b;">
+                            <span id="statement-student-id">ID: -</span>
+                            <span id="statement-student-group">Grupo: -</span>
+                        </div>
+                    </div>
+
+                    <!-- Financial Summary Cards -->
+                    <div
+                        style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 1.5rem;">
+
+                        <div class="card" style="padding: 1.5rem; text-align: center;">
+                            <div
+                                style="font-size: 0.85rem; color: #64748b; font-weight: 600; text-transform: uppercase;">
+                                Saldo Pendiente</div>
+                            <div id="statement-pending-balance"
+                                style="font-size: 1.5rem; font-weight: 700; color: #ef4444; margin-top: 0.5rem;">$0.00
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transactions Grid -->
+                    <div class="card">
+                        <div class="card-header"
+                            style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); font-weight: 600; background-color: #f1f5f9;">
+                            Detalle de Movimientos
+                        </div>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Concepto</th>
+                                    <th>Monto</th>
+                                    <th>Estatus</th>
+                                    <th style="width: 120px;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="account-statement-body">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                        <div id="statement-empty-state" class="empty-state hidden">
+                            <p>No hay movimientos registrados.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- School Info Section -->
+                <div id="school-info-section" class="section hidden">
+
+                    <div class="info-card"
+                        style="background: white; padding: 2rem; border-radius: 0.5rem; box-shadow: var(--shadow);">
+                        <form id="school-info-form">
+                            <div class="form-section-divider">
+                                <h4 class="form-section-title">Datos Generales de la Institución</h4>
+                            </div>
+
+                            <!-- Nombre Comercial -->
+                            <div class="form-row">
+                                <div class="form-group" style="flex: 2;">
+                                    <label for="school-commercial-name">Nombre Comercial</label>
+                                    <input type="text" id="school-commercial-name"
+                                        placeholder="Ej. Instituto Cultural Terranova" required>
+                                </div>
+                            </div>
+
+                            <!-- Dirección -->
+                            <div class="form-row">
+                                <div class="form-group" style="flex: 2;">
+                                    <label for="school-street">Calle</label>
+                                    <input type="text" id="school-street" placeholder="Calle">
+                                </div>
+                                <div class="form-group">
+                                    <label for="school-ext-number">Número</label>
+                                    <input type="text" id="school-ext-number" placeholder="No. Ext/Int">
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="school-neighborhood">Colonia</label>
+                                    <input type="text" id="school-neighborhood" placeholder="Colonia">
+                                </div>
+                                <div class="form-group">
+                                    <label for="school-zip">C.P.</label>
+                                    <input type="text" id="school-zip" placeholder="12345">
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="school-state">Estado</label>
+                                    <select id="school-state">
+                                        <option value="">Seleccionar Estado</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="school-city">Ciudad o Municipio</label>
+                                    <select id="school-city">
+                                        <option value="">Seleccionar Ciudad</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Teléfonos -->
+                            <div class="form-group">
+                                <label>Teléfonos</label>
+                                <div id="school-phones-container">
+                                    <!-- Dynamic Inputs -->
+                                </div>
+                                <button type="button" id="btn-add-phone" class="btn-secondary"
+                                    style="margin-top: 0.5rem; font-size: 0.8rem;">
+                                    + Agregar Teléfono
+                                </button>
+                            </div>
+                            <div class="form-group">
+                                <label for="school-director">Director</label>
+                                <input type="text" id="school-director" placeholder="Ej. Prof. Juan Pérez" required>
+                            </div>
+
+                            <div style="text-align: right; margin-top: 2rem;">
+                                <button type="submit" class="btn-primary">Guardar Información</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Academic Structure Section -->
+                <div id="academic-structure-section" class="section hidden">
+                    <div class="section-header">
+                        <h3>Estructura Académica</h3>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem;">
+                        <!-- Levels -->
+                        <div class="card" style="padding: 1rem;">
+                            <h4
+                                style="margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+                                Nivel Educativo</h4>
+                            <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                                <input type="text" id="new-level-name" placeholder="Ej. Primaria" style="flex: 1;">
+                                <button id="btn-add-level" class="btn-primary" style="padding: 0.5rem 1rem;">+</button>
+                            </div>
+                            <ul id="levels-list" class="item-list"
+                                style="margin-top: 1rem; max-height: 400px; overflow-y: auto; list-style: none; padding: 0;">
+                                <!-- JS Populated -->
+                            </ul>
+                        </div>
+
+                        <!-- Grades -->
+                        <div class="card" style="padding: 1rem;">
+                            <h4
+                                style="margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+                                Grados</h4>
+                            <div style="margin-top: 1rem;">
+                                <select id="select-level-for-grade"
+                                    style="width: 100%; margin-bottom: 0.5rem; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem;">
+                                    <option value="">Seleccionar Nivel</option>
+                                </select>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <input type="text" id="new-grade-name" placeholder="Ej. 1ro" style="flex: 1;">
+                                    <button id="btn-add-grade" class="btn-primary"
+                                        style="padding: 0.5rem 1rem;">+</button>
+                                </div>
+                            </div>
+                            <ul id="grades-list" class="item-list"
+                                style="margin-top: 1rem; max-height: 400px; overflow-y: auto; list-style: none; padding: 0;">
+                                <!-- JS Populated -->
+                            </ul>
+                        </div>
+
+                        <!-- Groups -->
+                        <div class="card" style="padding: 1rem;">
+                            <h4
+                                style="margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+                                Grupos</h4>
+                            <div style="margin-top: 1rem;">
+                                <select id="select-grade-for-group"
+                                    style="width: 100%; margin-bottom: 0.5rem; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem;">
+                                    <option value="">Seleccionar Grado</option>
+                                </select>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <input type="text" id="new-group-name" placeholder="Ej. A" style="flex: 1;">
+                                    <button id="btn-add-group" class="btn-primary"
+                                        style="padding: 0.5rem 1rem;">+</button>
+                                </div>
+                            </div>
+                            <ul id="groups-list" class="item-list"
+                                style="margin-top: 1rem; max-height: 400px; overflow-y: auto; list-style: none; padding: 0;">
+                                <!-- JS Populated -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Administrative Structure Section -->
+                <div id="administrative-structure-section" class="section hidden">
+                    <div class="section-header">
+                        <h3>Estructura Administrativa</h3>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem;">
+                        <!-- Areas -->
+                        <div class="card" style="padding: 1rem;">
+                            <h4
+                                style="margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+                                Área</h4>
+                            <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                                <input type="text" id="new-area-name" placeholder="Ej. Dirección General"
+                                    style="flex: 1;">
+                                <button id="btn-add-area" class="btn-primary" style="padding: 0.5rem 1rem;">+</button>
+                            </div>
+                            <ul id="areas-list" class="item-list"
+                                style="margin-top: 1rem; max-height: 400px; overflow-y: auto; list-style: none; padding: 0;">
+                                <!-- JS Populated -->
+                            </ul>
+                        </div>
+
+                        <!-- Subareas -->
+                        <div class="card" style="padding: 1rem;">
+                            <h4
+                                style="margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+                                Subárea</h4>
+                            <div style="margin-top: 1rem;">
+                                <select id="select-area-for-subarea"
+                                    style="width: 100%; margin-bottom: 0.5rem; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem;">
+                                    <option value="">Seleccionar Área</option>
+                                </select>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <input type="text" id="new-subarea-name" placeholder="Ej. Finanzas"
+                                        style="flex: 1;">
+                                    <button id="btn-add-subarea" class="btn-primary"
+                                        style="padding: 0.5rem 1rem;">+</button>
+                                </div>
+                            </div>
+                            <ul id="subareas-list" class="item-list"
+                                style="margin-top: 1rem; max-height: 400px; overflow-y: auto; list-style: none; padding: 0;">
+                                <!-- JS Populated -->
+                            </ul>
+                        </div>
+
+                        <!-- Positions -->
+                        <div class="card" style="padding: 1rem;">
+                            <h4
+                                style="margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+                                Puesto</h4>
+
+                            <div style="margin-top: 1rem;">
+                                <!-- Removed Subarea Select -->
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <input type="text" id="new-position-name" placeholder="Ej. Gerente"
+                                        style="flex: 1;">
+                                    <button id="btn-add-position" class="btn-primary"
+                                        style="padding: 0.5rem 1rem;">+</button>
+                                </div>
+                            </div>
+                            <ul id="positions-list" class="item-list"
+                                style="margin-top: 1rem; max-height: 400px; overflow-y: auto; list-style: none; padding: 0;">
+                                <!-- JS Populated -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Email Templates Section -->
+                <div id="email-templates-section" class="section hidden">
+                    <div class="section-header">
+                        <h3>Formatos de Correo</h3>
+                    </div>
+
+                    <div class="card"
+                        style="padding: 1.5rem; height: calc(100vh - 180px); display: flex; flex-direction: column;">
+
+                        <div
+                            style="margin-bottom: 1rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+                            <div style="flex: 1; min-width: 250px;">
+                                <label
+                                    style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Plantilla:</label>
+                                <select id="template-select"
+                                    style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem;">
+                                    <option value="">-- Seleccionar --</option>
+                                    <!-- Populated by JS -->
+                                </select>
+                            </div>
+
+                            <!-- Test Email Controls -->
+                            <div style="flex: 1; min-width: 250px; display: flex; align-items: flex-end; gap: 0.5rem;">
+                                <div style="flex: 1;">
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Correo de
+                                        Prueba:</label>
+                                    <input type="email" id="test-email-input" placeholder="tu.correo@ejemplo.com"
+                                        style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem;">
+                                </div>
+                                <button id="btn-send-test-email" class="btn-primary"
+                                    style="padding: 0.6rem 1rem; height: 38px;">
+                                    <span class="material-icons-outlined" style="font-size: 18px;">send</span>
+                                    <span>Enviar Prueba</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div
+                            style="flex: 1; border: 1px solid var(--border); border-radius: 0.5rem; overflow: hidden; background-color: #f9fafb;">
+                            <iframe id="template-preview-frame"
+                                style="width: 100%; height: 100%; border: none;"></iframe>
+                        </div>
+
+                    </div>
+                </div>
+
+
+
+
+                <!-- Roles and Profiles Section -->
+                <div id="roles-users-section" class="section hidden">
+                    <div class="section-header">
+                        <h3>Roles y Perfiles</h3>
+                        <button id="add-user-btn" class="btn-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19" />
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                            </svg>
+                            Agregar Usuario
+                        </button>
+                        <button id="config-permissions-btn" class="btn-secondary" style="margin-left: 0.5rem;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path
+                                    d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z">
+                                </path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            Configurar Permisos
+                        </button>
+                        <button id="btn-manage-roles" class="btn-secondary" style="margin-left: 0.5rem;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M12 20h9"></path>
+                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                            </svg>
+                            Gestionar Roles
+                        </button>
+                    </div>
+                    <div class="card">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Email</th>
+                                    <th>Perfil</th>
+                                    <th>Rol</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body">
+                                <!-- Rows will be populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Caja Section (Placeholder) -->
+                <div id="caja-section" class="section hidden">
+                    <div class="section-header">
+                        <h3>Caja</h3>
+                    </div>
+                    <div class="card" style="padding: 2rem;">
+                        <!-- Step 1: Search Student (part of Caja) -->
+                        <div class="search-container" style="margin-bottom: 2rem;">
+                            <h4>Buscar Alumno</h4>
+                            <div class="search-bar" style="margin-top: 0.5rem;">
+                                <div class="search-input-wrapper">
+                                    <input type="text" id="caja-student-search" placeholder="Buscar por nombre o ID..."
+                                        autocomplete="off">
+                                    <ul id="caja-search-suggestions" class="hidden"
+                                        style="position: absolute; top: 100%; left: 0; width: 100%; background: white; border: 1px solid var(--border); border-radius: 0.5rem; max-height: 200px; overflow-y: auto; list-style: none; padding: 0; margin-top: 0.25rem; z-index: 10; box-shadow: var(--shadow);">
+                                        <!-- Suggestions will populate here -->
+                                    </ul>
+                                </div>
+                                <button id="caja-search-btn" class="btn-primary">Buscar</button>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Student Details & Payment Form (Hidden initially) -->
+                        <div id="caja-payment-interface" class="hidden">
+                            <div
+                                style="background: #f8fafc; padding: 1.5rem; border-radius: 0.5rem; border: 1px solid var(--border); margin-bottom: 2rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: start;">
+                                    <div>
+                                        <h4 style="margin-bottom: 0.5rem;">Alumno Seleccionado</h4>
+                                        <p><strong>Nombre:</strong> <span id="caja-student-name">-</span></p>
+                                        <p><strong>ID:</strong> <span id="caja-student-id">-</span></p>
+                                        <p><strong>Grupo:</strong> <span id="caja-student-group">-</span></p>
+                                    </div>
+                                    <button type="button"
+                                        onclick="event.preventDefault(); openAccountStatement(document.getElementById('payment-student-db-id').value)"
+                                        class="btn-secondary"
+                                        style="font-size: 0.8rem; margin-right: 0.5rem; background-color: #3b82f6; color: white; border: none;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round"
+                                            style="vertical-align: middle; margin-right: 4px;">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                                            <polyline points="10 9 9 9 8 9"></polyline>
+                                        </svg>
+                                        Ver Estado de Cuenta
+                                    </button>
+                                    <button
+                                        onclick="document.getElementById('caja-payment-interface').classList.add('hidden'); document.getElementById('caja-student-search').value='';"
+                                        class="btn-secondary" style="font-size: 0.8rem;">Cambiar Alumno</button>
+                                </div>
+                            </div>
+
+                            <!-- Sibling Selection -->
+                            <!-- Tabs Removed per user request, replaced by Dropdown -->
+
+                            <form id="payment-form">
+                                <input type="hidden" id="payment-student-db-id">
+                                <h4 style="margin-bottom: 1rem;">Registrar Nuevo Pago</h4>
+                                <div class="form-row">
+                                    <div class="form-group" style="flex: 1;">
+                                        <label>Alumno</label>
+                                        <select id="item-student-select" style="width: 100%;">
+                                            <!-- Populated by JS -->
+                                        </select>
+                                    </div>
+                                    <div class="form-group" style="flex: 1;">
+                                        <label>Nivel Académico</label>
+                                        <select id="payment-level" style="width: 100%;">
+                                            <option value="" disabled selected>Nivel</option>
+                                            <!-- Populated by JS -->
+                                        </select>
+                                    </div>
+                                    <div class="form-group" style="flex: 2;">
+                                        <label>Concepto</label>
+                                        <div style="display: flex; gap: 0.5rem;">
+                                            <select id="payment-concept" style="flex: 1;">
+                                                <option value="" disabled selected>Seleccionar concepto</option>
+                                                <!-- Populated by JS -->
+                                            </select>
+                                            <select id="payment-month" style="width: 120px; display: none;">
+                                                <option value="" selected>Mes</option>
+                                                <option value="Enero">Enero</option>
+                                                <option value="Febrero">Febrero</option>
+                                                <option value="Marzo">Marzo</option>
+                                                <option value="Abril">Abril</option>
+                                                <option value="Mayo">Mayo</option>
+                                                <option value="Junio">Junio</option>
+                                                <option value="Julio">Julio</option>
+                                                <option value="Agosto">Agosto</option>
+                                                <option value="Septiembre">Septiembre</option>
+                                                <option value="Octubre">Octubre</option>
+                                                <option value="Noviembre">Noviembre</option>
+                                                <option value="Diciembre">Diciembre</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Monto</label>
+                                        <div style="display: flex; gap: 0.5rem;">
+                                            <input type="text" id="payment-amount" placeholder="0.00" style="flex: 1;">
+                                            <button type="button" id="btn-add-item" class="btn-secondary"
+                                                style="padding: 0.5rem 1rem;">Agregar</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Payment Items List -->
+                                <div id="payment-items-container" class="hidden"
+                                    style="margin-bottom: 1.5rem; border: 1px solid var(--border); border-radius: 0.5rem; overflow: hidden;">
+                                    <table class="data-table" style="margin: 0;">
+                                        <thead>
+                                            <tr style="background-color: #f8fafc;">
+                                                <th style="padding: 0.5rem 1rem;">Alumno</th>
+                                                <th style="padding: 0.5rem 1rem;">Concepto</th>
+                                                <th style="padding: 0.5rem 1rem; text-align: right;">Monto</th>
+                                                <th style="width: 40px;"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="payment-items-list">
+                                            <!-- Items will be added here -->
+                                        </tbody>
+                                        <tfoot>
+                                            <tr style="background-color: #f8fafc; font-weight: bold;">
+                                                <td colspan="2" style="padding: 0.5rem 1rem; text-align: right;">Total
+                                                </td>
+                                                <td id="payment-total-display"
+                                                    style="padding: 0.5rem 1rem; text-align: right;">
+                                                    $0.00</td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Método de Pago</label>
+                                        <select id="payment-method" required>
+                                            <option value="Efectivo">Efectivo</option>
+                                            <option value="Tarjeta">Tarjeta</option>
+                                            <option value="Transferencia">Transferencia</option>
+                                            <option value="CoDi">CoDi (QR)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Fecha de Pago</label>
+                                        <input type="date" id="payment-date" required readonly>
+                                    </div>
+                                </div>
+                                <div style="text-align: right; margin-top: 1rem;">
+                                    <button type="button" id="btn-submit-payment" class="btn-primary">Registrar
+                                        Pago</button>
+                                </div>
+                            </form>
+
+                            <!-- Step 3: Payment History (Removed per user request) -->
+                            <!-- <div style="margin-top: 3rem;"> ... </div> -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CoDi Admin Push Modal -->
+                <div id="codi-modal" class="modal hidden">
+                    <div class="modal-content" style="max-width: 450px; text-align: center; padding: 2rem;">
+                        <span class="close-modal close-modal-codi">&times;</span>
+
+                        <div id="codi-admin-step-input">
+                            <h3 style="margin-bottom: 0.5rem; color: #1e293b;">Solicitud de Cobro CoDi</h3>
+                            <p style="color: #64748b; margin-bottom: 1.5rem;">Ingresa el número celular del cliente para
+                                enviar
+                                el cobro.</p>
+
+                            <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                                <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 0.25rem;">Monto a Cobrar
+                                </div>
+                                <div id="codi-admin-amount-display"
+                                    style="font-size: 1.75rem; font-weight: 700; color: #15803d;">$0.00</div>
+                            </div>
+
+                            <div style="margin-bottom: 1.5rem; text-align: left;">
+                                <label
+                                    style="display: block; font-size: 0.9rem; color: #1e293b; margin-bottom: 0.5rem; font-weight: 500;">Número
+                                    Celular</label>
+                                <div style="position: relative;">
+                                    <span class="material-icons-outlined"
+                                        style="position: absolute; left: 12px; top: 12px; color: #94a3b8;">smartphone</span>
+                                    <input type="tel" id="codi-admin-phone" placeholder="10 dígitos" maxlength="10"
+                                        style="width: 100%; padding: 0.75rem 0.75rem 0.75rem 2.5rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem;"
+                                        oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+                                </div>
+                            </div>
+
+                            <button id="btn-send-codi-admin" class="btn-primary"
+                                style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem;">
+                                <span class="material-icons-outlined">send_to_mobile</span>
+                                Enviar Solicitud
+                            </button>
+                        </div>
+
+                        <!-- Success View -->
+                        <div id="codi-admin-step-success" class="hidden">
+                            <div
+                                style="width: 70px; height: 70px; background: #dcfce7; color: #15803d; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                                <span class="material-icons-outlined" style="font-size: 2.5rem;">check_circle</span>
+                            </div>
+                            <h3 style="color: #1e293b; margin-bottom: 1rem;">¡Solicitud Enviada!</h3>
+                            <p style="color: #64748b; line-height: 1.6; margin-bottom: 2rem;">
+                                Se ha enviado la solicitud de cobro al número indicando.<br>
+                                El pago aparecerá como <strong>PENDIENTE</strong> hasta que el usuario lo autorice.
+                            </p>
+                            <button class="btn-secondary close-modal-codi" style="width: 100%;">Cerrar</button>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Concepts Section (NEW) -->
+                <div id="concepts-section" class="section hidden">
+                    <div class="section-header">
+                        <h3>Gestión de Conceptos</h3>
+                    </div>
+                    <div class="card" style="background: transparent; box-shadow: none; border: none; padding: 0;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+
+                            <!-- Col 1: Master (Level + List) -->
+                            <div class="card"
+                                style="padding: 1rem; height: 500px; display: flex; flex-direction: column;">
+                                <h4
+                                    style="margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+                                    Nivel Educativo y Conceptos</h4>
+
+                                <div style="margin-bottom: 1rem;">
+                                    <select id="concept-levels-select"
+                                        style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem; margin-bottom: 0.5rem;">
+                                        <option value="">Seleccionar Nivel</option>
+                                        <!-- Populated by JS -->
+                                    </select>
+
+                                    <div id="concept-add-container" class="hidden" style="display: flex; gap: 0.5rem;">
+                                        <input type="text" id="new-concept-name-hierarchical"
+                                            placeholder="Agregar concepto (Enter)" style="flex: 1;">
+                                        <button id="btn-add-concept-hierarchical" class="btn-primary"
+                                            style="padding: 0.5rem 1rem;">+</button>
+                                    </div>
+                                </div>
+
+                                <div
+                                    style="flex: 1; overflow-y: auto; border: 1px solid #f3f4f6; border-radius: 0.25rem;">
+                                    <ul id="concepts-list-hierarchical" class="item-list"
+                                        style="list-style: none; padding: 0; margin: 0;">
+                                        <li style="color: #666; font-style: italic; padding: 1rem; text-align: center;">
+                                            Selecciona un nivel</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Col 2: Detail (Price) -->
+                            <div class="card"
+                                style="padding: 1rem; height: 500px; display: flex; flex-direction: column;">
+                                <h4
+                                    style="margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+                                    Asignar Precio</h4>
+
+                                <div id="concept-price-editor" class="hidden"
+                                    style="display: flex; flex-direction: column; justify-content: center; height: 100%;">
+                                    <div style="text-align: center; margin-bottom: 2rem;">
+                                        <input type="text" id="selected-concept-name-input"
+                                            placeholder="Nombre del Concepto"
+                                            style="font-size: 1.5rem; color: #2563eb; border: 1px solid transparent; border-bottom: 1px solid #d1d5db; text-align: center; width: 100%; padding: 0.5rem; background: transparent; transition: border-color 0.2s;">
+                                        <p style="color: #6b7280; margin-top: 0.5rem;">Edita el nombre y precio</p>
+                                    </div>
+
+                                    <div style="max-width: 300px; margin: 0 auto; width: 100%;">
+                                        <div class="form-group">
+                                            <label style="font-size: 1.1rem; font-weight: 500;">Precio</label>
+                                            <div style="display: flex; align-items: center;">
+                                                <span
+                                                    style="padding: 1rem; background: #eee; border: 1px solid var(--border); border-right: none; border-radius: 0.5rem 0 0 0.5rem; font-size: 1.5rem;">$</span>
+                                                <input type="text" id="selected-concept-price" placeholder="0.00"
+                                                    style="border-radius: 0 0.5rem 0.5rem 0; font-size: 1.5rem; padding: 0.8rem;">
+                                            </div>
+                                        </div>
+                                        <button id="btn-save-concept" class="btn-primary"
+                                            style="width: 100%; margin-top: 1rem; padding: 1rem; font-size: 1.1rem;">
+                                            Guardar Cambios
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div id="concept-price-placeholder"
+                                    style="color: #666; font-style: italic; display: flex; align-items: center; justify-content: center; height: 100%;">
+                                    <div>
+                                        <span class="material-icons-outlined"
+                                            style="font-size: 48px; display: block; margin: 0 auto 1rem; color: #d1d5db;">monetization_on</span>
+                                        Selecciona un concepto de la lista para asignarle precio
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div> <!-- End concepts-section -->
+
+                <!-- Reports Section (Placeholder) -->
+                <div id="reports-section" class="section hidden">
+                    <div class="section-header">
+                        <h3>Reportes</h3>
+                    </div>
+                    <div class="card">
+                        <div class="form-row" style="margin-bottom: 1.5rem; align-items: flex-end;">
+                            <div class="form-group">
+                                <label>Fecha Inicio</label>
+                                <input type="date" id="report-date-start">
+                            </div>
+                            <div class="form-group">
+                                <label>Fecha Fin</label>
+                                <input type="date" id="report-date-end">
+                            </div>
+                            <div class="form-group" style="padding-bottom: 0;">
+                                <button id="btn-generate-report" class="btn-primary" style="height: 42px;">Generar
+                                    Reporte Ingresos</button>
+                            </div>
+                        </div>
+
+                        <!-- Summary Cards -->
+                        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+                            <div class="card"
+                                style="flex: 1; text-align: center; border: 1px solid var(--border); padding: 1.5rem;">
+                                <h4 style="color: var(--text-light); margin-bottom: 0.5rem;">Total Ingresos</h4>
+                                <div id="report-total-income"
+                                    style="font-size: 2rem; font-weight: bold; color: #2563eb;">
+                                    $0.00</div>
+                            </div>
+                            <div class="card"
+                                style="flex: 1; text-align: center; border: 1px solid var(--border); padding: 1.5rem;">
+                                <h4 style="color: var(--text-light); margin-bottom: 0.5rem;">Movimientos</h4>
+                                <div id="report-count" style="font-size: 2rem; font-weight: bold;">0</div>
+                            </div>
+                        </div>
+
+                        <!-- Report Table -->
+                        <div class="card">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Alumno</th>
+                                        <th>Concepto</th>
+                                        <th>Método</th>
+                                        <th style="text-align: right;">Monto</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="report-table-body">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Informes Section (Information Request) -->
+                <div id="informes-section" class="section hidden">
+
+                    <div class="card" style="margin: 0 auto; padding: 2rem;">
+                        <form id="inquiry-form">
+                            <div class="form-group">
+                                <label>Nombre del Padre, Madre o Tutor</label>
+                                <input type="text" id="inquiry-parent-name" placeholder="Nombre completo" required>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Correo Electrónico</label>
+                                    <input type="email" id="inquiry-email" placeholder="correo@ejemplo.com" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Teléfono de Contacto</label>
+                                    <div style="display: flex; gap: 0.5rem;">
+                                        <select id="inquiry-phone-code"
+                                            style="width: 100px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem;">
+                                            <option value="+52">🇲🇽 +52</option>
+                                            <option value="+1">🇺🇸 +1</option>
+                                            <option value="+34">🇪🇸 +34</option>
+                                            <option value="+54">🇦🇷 +54</option>
+                                            <option value="+57">🇨🇴 +57</option>
+                                            <option value="">🏳️ Otro</option>
+                                        </select>
+                                        <input type="tel" id="inquiry-phone" placeholder="10 dígitos" required
+                                            maxlength="10" pattern="\d{10}" title="Ingresa 10 dígitos numéricos"
+                                            style="flex: 1;"
+                                            oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group" style="margin-top: 1.5rem;">
+                                <label>Nombre Completo del Hijo(a)</label>
+                                <input type="text" id="inquiry-child-name" placeholder="Nombre del alumno" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Fecha de Nacimiento</label>
+                                <input type="date" id="inquiry-birth-date" required>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Nivel Académico</label>
+                                    <select id="inquiry-level" required>
+                                        <option value="" disabled selected>Selecciona nivel</option>
+                                        <option value="Maternal">Maternal</option>
+                                        <option value="Preescolar">Preescolar</option>
+                                        <option value="Primaria">Primaria</option>
+                                        <option value="Secundaria">Secundaria</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Grado Solicitado</label>
+                                    <select id="inquiry-grade" required disabled>
+                                        <option value="" disabled selected>Selecciona nivel primero</option>
+                                        <!-- Populated by JS -->
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Escuela de Procedencia</label>
+                                <div class="search-input-wrapper" style="position: relative;">
+                                    <input type="text" id="inquiry-previous-school"
+                                        placeholder="Nombre de escuela anterior" autocomplete="off">
+                                    <ul id="school-suggestions-list" class="hidden"
+                                        style="position: absolute; top: 100%; left: 0; width: 100%; background: white; border: 1px solid var(--border); border-radius: 0.5rem; max-height: 200px; overflow-y: auto; list-style: none; padding: 0; margin-top: 0.25rem; z-index: 10; box-shadow: var(--shadow);">
+                                        <!-- Populated by JS -->
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="form-group" style="margin-top: 1.5rem;">
+                                <label>¿Por cuál medio se enteró de nosotros?</label>
+                                <select id="inquiry-marketing-source" required>
+                                    <option value="" disabled selected>Seleccionar opción</option>
+                                    <option value="Recomendación">Recomendación</option>
+                                    <option value="Redes Sociales">Redes Sociales (Facebook, Instagram)</option>
+                                    <option value="Google">Google</option>
+                                    <option value="Ubicación">Ubicación</option>
+                                    <option value="Otros">Otros</option>
+                                </select>
+                            </div>
+                            <!-- Hidden input for 'Otros' -->
+                            <div class="form-group hidden" id="inquiry-marketing-other-container">
+                                <label>Especifique el medio</label>
+                                <input type="text" id="inquiry-marketing-other">
+                            </div>
+
+
+                            <div style="text-align: right; margin-top: 2rem;">
+                                <button type="submit" class="btn-primary">Guardar Solicitud</button>
+                            </div>
+                        </form>
+                    </div> <!-- End card -->
+                </div> <!-- End informes-section -->
+
+                <!-- Inquiries List Section (Correctly Placed) -->
+                <div id="inquiries-list-section" class="section hidden">
+                    <div class="section-header">
+                        <h3>Lista de Informes (Solicitudes)</h3>
+                        <button id="btn-delete-selected-inquiries" class="btn-primary"
+                            style="background-color: #ef4444; border-color: #ef4444;">
+                            Eliminar Seleccionados
+                        </button>
+                    </div>
+                    <div id="inquiries-container"
+                        style="display: flex; flex-direction: column; gap: 1rem; padding: 1.5rem;">
+                        <!-- Cards populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Agenda Section (NEW) - Enhanced with FullCalendar -->
+                <div id="agenda-section" class="section hidden">
+                    <div class="section-header">
+                        <h3>Agenda de Citas/Eventos</h3>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <!-- Connect Google Button -->
+                            <a href="/api/calendar/auth/google" class="btn-primary"
+                                style="background-color: white; color: #4285F4; border: 1px solid #d2e3fc; display: flex; align-items: center; gap: 0.5rem; text-decoration: none;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 48 48">
+                                    <path fill="#FFC107"
+                                        d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z">
+                                    </path>
+                                    <path fill="#FF3D00"
+                                        d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z">
+                                    </path>
+                                    <path fill="#4CAF50"
+                                        d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z">
+                                    </path>
+                                    <path fill="#1976D2"
+                                        d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z">
+                                    </path>
+                                </svg>
+                                Conectar Google
+                            </a>
+                            <button id="btn-add-appointment" class="btn-primary">+ Nueva Cita</button>
+                        </div>
+                    </div>
+                    <div class="card" style="padding: 1rem;">
+                        <div id="calendar"></div>
+                    </div>
+                </div>
+
+
+
+                <!-- Scripts -->
+                <!-- FullCalendar JS -->
+                <!-- FullCalendar JS -->
+                <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
+
+                <!-- Permissions Section (NEW) -->
+                <div id="permissions-section" class="section hidden" style="clear: both;">
+                    <div class="section-header">
+                        <h3>Gestión de Permisos</h3>
+                        <button id="btn-save-permissions" class="btn-primary">
+                            Guardar Cambios
+                        </button>
+                    </div>
+                    <div class="card">
+                        <div style="overflow-x: auto;">
+                            <table class="data-table" id="permissions-matrix">
+                                <thead>
+                                    <!-- Populated JS -->
+                                </thead>
+                                <tbody>
+                                    <!-- Populated JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+
+
+
+    <!-- Parents View (Mobile First) -->
+    <div id="parents-view" class="dashboard-container hidden"
+        style="background-color: #f8fafc; min-height: 100vh; width: 100%;">
+        <!-- Mobile Header -->
+        <header
+            style="background: white; padding: 1rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div
+                    style="width: 32px; height: 32px; background: var(--primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                        <polyline points="9 22 9 12 15 12 15 22" />
+                    </svg>
+                </div>
+                <h2 style="font-size: 1.1rem; margin: 0; color: var(--text);">Portal Padres</h2>
+            </div>
+            <div id="parents-header-greeting"
+                style="font-size: 1.1rem; font-weight: 700; color: #475569; margin-right: 3rem;"></div>
+
+
+
+        </header>
+
+        <!-- Main Content -->
+        <main style="padding: 1rem; max-width: 100%; margin: 0 auto; height: calc(100vh - 65px);">
+
+            <!-- Parents Dashboard (Master-Detail Layout) -->
+            <div id="parents-dashboard-container" style="
+                display: flex; 
+                flex-direction: column;
+                gap: 1.5rem; 
+                height: 100%; 
+                padding: 0;
+                width: 100%;
+            ">
+                <!-- Top Bar: Students List -->
+                <div class="parents-sidebar" style="
+                    background: white; 
+                    border-radius: 16px; 
+                    border: 1px solid #e2e8f0; 
+                    display: flex; 
+                    flex-direction: row; /* Horizontal layout */
+                    align-items: center;
+                    overflow: hidden;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+                    width: 100%; /* Full width */
+                    flex-shrink: 0; /* Don't shrink */
+                ">
+                    <div
+                        style="padding: 1rem 1.5rem; border-right: 1px solid #f1f5f9; background: #f8fafc; min-width: 200px; display: flex; flex-direction: column; justify-content: center;">
+                        <h3 style="margin: 0; color: #334155; font-size: 1.25rem;">Mis Hijos</h3>
+                        <p style="margin: 0.25rem 0 0; color: #64748b; font-size: 0.85rem;">Selecciona un alumno</p>
+                        <div id="parents-family-id-display"
+                            style="margin-top: 0.25rem; font-weight: 500; color: var(--primary); font-size: 0.75rem; background: #eff6ff; padding: 2px 8px; border-radius: 4px; display: inline-block;">
+                        </div>
+                    </div>
+
+                    <div id="parents-children-list" style="
+                        flex: 1; 
+                        overflow-x: auto; /* Horizontal scroll */
+                        padding: 1rem;
+                        display: flex; 
+                        flex-direction: row; /* Horizontal cards */
+                        gap: 0.75rem;
+                        align-items: center;
+                    ">
+                        <!-- Cards populated by JS -->
+                        <div style="text-align: center; padding: 1rem; color: #94a3b8; width: 100%;">Cargando
+                            información...</div>
+                    </div>
+
+                    <!-- Account Summary (Mini) moved to right end or keep it? 
+                         Let's keep it on the far right as a summary widget. -->
+                    <div id="parents-account-summary" style="
+                        padding: 1rem 1.5rem; 
+                        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); 
+                        color: white;
+                        min-width: 180px;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        height: 100%;
+                    ">
+                        <div
+                            style="font-size: 0.75rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.05em;">
+                            Saldo Pendiente</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; margin: 0.1rem 0;">$0.00</div>
+                        <div style="font-size: 0.7rem; opacity: 0.8; cursor: pointer;">Ver historial</div>
+                    </div>
+                </div>
+
+                <!-- Bottom Content: Detail View -->
+                <div class="parents-detail-view" style="
+                    background: white; 
+                    border-radius: 16px; 
+                    border: 1px solid #e2e8f0; 
+                    overflow-y: hidden; /* Changed to hidden to manage scroll in sub-containers */
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+                    position: relative;
+                    flex: 1; /* Take remaining space */
+                    display: flex;
+                    flex-direction: column;
+                ">
+                    <!-- Tab Navigation -->
+                    <nav id="parents-detail-nav" style="
+                        display: flex; 
+                        border-bottom: 1px solid #e2e8f0; 
+                        padding: 0 1.5rem;
+                        background: #fff;
+                        flex-shrink: 0;
+                        overflow-x: auto;
+                    ">
+                        <button class="parent-tab-btn active" data-tab="general" style="
+                            padding: 1rem; 
+                            background: none; 
+                            border: none; 
+                            border-bottom: 2px solid var(--primary); 
+                            color: var(--primary); 
+                            font-weight: 600; 
+                            cursor: pointer;
+                            white-space: nowrap;
+                        ">Información General</button>
+                        <button class="parent-tab-btn" data-tab="clinical" style="
+                            padding: 1rem; 
+                            background: none; 
+                            border: none; 
+                            border-bottom: 2px solid transparent; 
+                            color: #64748b; 
+                            font-weight: 500; 
+                            cursor: pointer;
+                            white-space: nowrap;
+                        ">Información Clínica</button>
+                        <button class="parent-tab-btn" data-tab="financial" style="
+                            padding: 1rem; 
+                            background: none; 
+                            border: none; 
+                            border-bottom: 2px solid transparent; 
+                            color: #64748b; 
+                            font-weight: 500; 
+                            cursor: pointer;
+                            white-space: nowrap;
+                        ">Información Financiera</button>
+                        <button class="parent-tab-btn" data-tab="evaluations" style="
+                            padding: 1rem; 
+                            background: none; 
+                            border: none; 
+                            border-bottom: 2px solid transparent; 
+                            color: #64748b; 
+                            font-weight: 500; 
+                            cursor: pointer;
+                            white-space: nowrap;
+                        ">Evaluaciones</button>
+                        <button class="parent-tab-btn" data-tab="tasks" style="
+                            padding: 1rem; 
+                            background: none; 
+                            border: none; 
+                            border-bottom: 2px solid transparent; 
+                            color: #64748b; 
+                            font-weight: 500; 
+                            cursor: pointer;
+                            white-space: nowrap;
+                        ">Tareas</button>
+                        <button class="parent-tab-btn" data-tab="notifications" style="
+                            padding: 1rem; 
+                            background: none; 
+                            border: none; 
+                            border-bottom: 2px solid transparent; 
+                            color: #64748b; 
+                            font-weight: 500; 
+                            cursor: pointer;
+                            white-space: nowrap;
+                        ">Notificaciones</button>
+                        <button class="parent-tab-btn" data-tab="config" style="
+                            padding: 1rem; 
+                            background: none; 
+                            border: none; 
+                            border-bottom: 2px solid transparent; 
+                            color: #64748b; 
+                            font-weight: 500; 
+                            cursor: pointer;
+                            white-space: nowrap;
+                        ">Configuración</button>
+
+                        <!-- Logout Button (End of Menu) -->
+                        <button id="btn-parents-logout" style="
+                            padding: 1rem; 
+                            background: none; 
+                            border: none; 
+                            border-bottom: 2px solid transparent; 
+                            color: #ef4444; 
+                            font-weight: 600; 
+                            cursor: pointer;
+                            white-space: nowrap;
+                            margin-left: auto; /* Push to right if desired, or just inline */
+                            display: flex;
+                            align-items: center;
+                            gap: 0.5rem;
+                            opacity: 0.8;
+                        ">
+                            <span class="material-icons-outlined" style="font-size: 1.1rem;">logout</span>
+                            Cerrar Sesión
+                        </button>
+                    </nav>
+
+                    <!-- Content Containers -->
+                    <div id="parents-tab-content-container"
+                        style="flex: 1; overflow-y: auto; overflow-x: hidden; position: relative;">
+
+                        <!-- General Info (Default) -->
+                        <div id="tab-general" class="parent-tab-pane">
+                            <div id="parents-detail-content" style="min-height: 200px;">
+                                <!-- Default State -->
+                                <div style="
+                                    height: 100%; 
+                                    display: flex; 
+                                    align-items: center; 
+                                    justify-content: center; 
+                                    flex-direction: column; 
+                                    color: #94a3b8;
+                                ">
+                                    <span class="material-icons-outlined"
+                                        style="font-size: 4rem; opacity: 0.5;">school</span>
+                                    <p style="margin-top: 1rem; font-size: 1.1rem;">Selecciona un alumno arriba para ver
+                                        su información.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="tab-clinical" class="parent-tab-pane hidden" style="padding: 1rem;">
+                            <div id="parents-clinical-loading" class="hidden"
+                                style="text-align: center; padding: 2rem; color: #64748b;">
+                                <span class="material-icons-outlined spin">sync</span>
+                                <p>Cargando información médica...</p>
+                            </div>
+
+                            <div id="parents-clinical-empty" class="hidden"
+                                style="text-align: center; padding: 3rem; color: #94a3b8; background: #f8fafc; border-radius: 0.5rem;">
+                                <span class="material-icons-outlined"
+                                    style="font-size: 3rem; opacity: 0.5;">note_off</span>
+                                <p style="margin-top: 1rem;">No se ha capturado información médica para este alumno.</p>
+                            </div>
+
+                            <div id="parents-clinical-content" class="hidden" style="max-width: 800px; margin: 0 auto;">
+                                <!-- 1. General Data -->
+                                <div class="form-section-container">
+                                    <div class="form-section-divider">
+                                        <h4 class="form-section-title">Datos Generales</h4>
+                                    </div>
+                                    <div
+                                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+                                        <div>
+                                            <label class="info-label-sm">Tipo de Sangre</label>
+                                            <div class="info-value-lg" id="view-blood-type">-</div>
+                                        </div>
+                                        <div>
+                                            <label class="info-label-sm">Edad</label>
+                                            <div class="info-value-lg" id="view-age">-</div>
+                                        </div>
+                                        <div>
+                                            <label class="info-label-sm">Altura (cm)</label>
+                                            <div class="info-value-lg" id="view-height">-</div>
+                                        </div>
+                                        <div>
+                                            <label class="info-label-sm">Peso (kg)</label>
+                                            <div class="info-value-lg" id="view-weight">-</div>
+                                        </div>
+                                    </div>
+
+                                    <div style="margin-bottom: 1rem;">
+                                        <label class="info-label-sm">Alergias</label>
+                                        <div class="info-value-box" id="view-allergies">-</div>
+                                    </div>
+                                    <div>
+                                        <label class="info-label-sm">Condiciones Crónicas</label>
+                                        <div class="info-value-box" id="view-conditions">-</div>
+                                    </div>
+                                </div>
+
+                                <!-- 2. History -->
+                                <div class="form-section-container">
+                                    <div class="form-section-divider">
+                                        <h4 class="form-section-title">Antecedentes y Tratamientos</h4>
+                                    </div>
+
+                                    <div class="info-row-item">
+                                        <div class="flex-row-center">
+                                            <span class="material-icons-outlined status-icon"
+                                                id="icon-surgeries">help_outline</span>
+                                            <strong>Cirugías</strong>
+                                        </div>
+                                        <div class="info-value-text" id="view-surgeries-det">-</div>
+                                    </div>
+
+                                    <div class="info-row-item">
+                                        <div class="flex-row-center">
+                                            <span class="material-icons-outlined status-icon"
+                                                id="icon-medications">help_outline</span>
+                                            <strong>Medicamentos</strong>
+                                        </div>
+                                        <div class="info-value-text" id="view-medications-det">-</div>
+                                    </div>
+
+                                    <div class="info-row-item">
+                                        <div class="flex-row-center">
+                                            <span class="material-icons-outlined status-icon"
+                                                id="icon-therapy">help_outline</span>
+                                            <strong>Terapias</strong>
+                                        </div>
+                                        <div class="info-value-text" id="view-therapy-det">-</div>
+                                    </div>
+                                </div>
+
+                                <!-- 3. Contacts & Insurance -->
+                                <div class="form-section-container">
+                                    <div class="form-section-divider">
+                                        <h4 class="form-section-title">Emergencia y Seguro</h4>
+                                    </div>
+                                    <div
+                                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; margin-bottom: 1.5rem;">
+                                        <div>
+                                            <label class="info-label-sm">Contacto Emergencia</label>
+                                            <div class="info-value-md text-primary" id="view-emergency-name">-</div>
+                                            <div class="info-value-sm" id="view-emergency-phone">-</div>
+                                        </div>
+                                        <div>
+                                            <label class="info-label-sm">Doctor Particular</label>
+                                            <div class="info-value-md text-primary" id="view-doctor-name">-</div>
+                                            <div class="info-value-sm" id="view-doctor-phone">-</div>
+
+                                            <!-- NEW FIELDS -->
+                                            <div
+                                                style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed #e2e8f0;">
+                                                <div class="text-xs text-slate-400 uppercase">Email</div>
+                                                <div id="view-doctor-email" class="text-sm text-slate-700 font-medium">-
+                                                </div>
+
+                                                <div class="text-xs text-slate-400 uppercase mt-2">Consultorio</div>
+                                                <div id="view-doctor-office" class="text-sm text-slate-700 font-medium">
+                                                    -</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div
+                                        style="background: #eff6ff; padding: 1rem; border-radius: 0.5rem; border: 1px solid #dbeafe;">
+                                        <div
+                                            style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                            <span style="font-size: 0.85rem; color: #64748b;">Aseguradora</span>
+                                            <span style="font-weight: 600; color: #1e293b;"
+                                                id="view-insurance-company">-</span>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between;">
+                                            <span style="font-size: 0.85rem; color: #64748b;">Póliza</span>
+                                            <span style="font-weight: 600; color: #1e293b;"
+                                                id="view-insurance-policy">-</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Additional Notes -->
+                                    <div style="margin-top: 1.5rem;">
+                                        <label class="info-label-sm">Notas Adicionales</label>
+                                        <div class="info-value-box" id="view-notes"
+                                            style="background: #fff; border: 1px solid #e2e8f0;">-</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Financial Info -->
+                        <div id="tab-financial" class="parent-tab-pane hidden"
+                            style="padding: 2rem; text-align: center; color: #64748b;">
+                            <span class="material-icons-outlined"
+                                style="font-size: 3rem; margin-bottom: 1rem;">account_balance</span>
+                            <h3>Información Financiera</h3>
+                            <p>Estado de cuenta, historial de pagos y facturas.</p>
+                        </div>
+
+                        <!-- Evaluations Info -->
+                        <div id="tab-evaluations" class="parent-tab-pane hidden"
+                            style="padding: 2rem; text-align: center; color: #64748b;">
+                            <span class="material-icons-outlined"
+                                style="font-size: 3rem; margin-bottom: 1rem;">insights</span>
+                            <h3>Evaluaciones</h3>
+                            <p>Boletas de calificaciones y evaluaciones continuas.</p>
+                        </div>
+
+                        <!-- Tasks Info -->
+                        <div id="tab-tasks" class="parent-tab-pane hidden"
+                            style="padding: 2rem; text-align: center; color: #64748b;">
+                            <span class="material-icons-outlined"
+                                style="font-size: 3rem; margin-bottom: 1rem;">assignment</span>
+                            <h3>Tareas</h3>
+                            <p>Tareas asignadas y pendientes de entregar.</p>
+                        </div>
+
+                        <!-- Notifications Info -->
+                        <div id="tab-notifications" class="parent-tab-pane hidden"
+                            style="padding: 2rem; text-align: center; color: #64748b;">
+                            <span class="material-icons-outlined"
+                                style="font-size: 3rem; margin-bottom: 1rem;">notifications</span>
+                            <h3>Notificaciones</h3>
+                            <p>Avisos importantes de la escuela.</p>
+                        </div>
+
+                        <!-- Config Info -->
+                        <div id="tab-config" class="parent-tab-pane hidden"
+                            style="padding: 2rem; text-align: center; color: #64748b;">
+                            <span class="material-icons-outlined"
+                                style="font-size: 3rem; margin-bottom: 1rem;">settings</span>
+                            <h3>Configuración</h3>
+                            <p>Preferencias de la cuenta del alumno.</p>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: Estado de Cuenta (Hidden by default, toggled by bottom nav) -->
+            <div id="parents-finance-section" class="hidden"
+                style="max-width: 800px; margin: 0 auto; padding-top: 1rem;">
+                <h3 style="margin-bottom: 1rem; color: #334155;">Estado de Cuenta</h3>
+
+                <!-- Summary Card -->
+                <div id="parents-account-summary" class="card"
+                    style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; margin-bottom: 1.5rem;">
+                    <div style="font-size: 0.875rem; opacity: 0.9;">Saldo Total Pendiente</div>
+                    <div style="font-size: 2rem; font-weight: 700; margin: 0.25rem 0;">$0.00</div>
+                    <div style="font-size: 0.75rem; opacity: 0.8;">Al día de hoy</div>
+                </div>
+
+                <div style="margin-bottom: 1.5rem; text-align: center;">
+                    <button id="btn-open-codi" class="btn-primary"
+                        style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: #e31e25; border: none; padding: 1rem; font-size: 1.1rem; box-shadow: 0 4px 6px -1px rgba(227, 30, 37, 0.2);">
+                        <span class="material-icons-outlined">qr_code_scanner</span>
+                        Pagar con CoDi
+                    </button>
+                    <p style="margin-top: 0.5rem; font-size: 0.8rem; color: #64748b;">
+                        <span class="material-icons-outlined"
+                            style="font-size: 0.9rem; vertical-align: middle;">notifications_active</span>
+                        Envía una solicitud de cobro directo a tu celular.
+                    </p>
+                </div>
+
+                <div id="parents-finance-list" style="display: flex; flex-direction: column; gap: 1rem;">
+                    <!-- Finance Items populated by JS -->
+                </div>
+            </div>
+
+            <!-- Change Password Section & Modal -->
+            <div
+                style="padding: 1rem 1.5rem; text-align: center; color: #94a3b8; font-size: 0.8rem; padding-bottom: 5rem;">
+                <button id="btn-open-change-password"
+                    style="background: none; border: none; color: #3b82f6; cursor: pointer; text-decoration: underline; font-size: 0.9rem;">
+                    Cambiar mi contraseña
+                </button>
+                <br><br>
+                &copy; 2025 Sistema Escolar
+            </div>
+
+            <div id="change-password-modal" class="modal hidden" style="z-index: 70;">
+                <div class="modal-content" style="max-width: 400px; border-radius: 12px; padding: 2rem;">
+                    <h3 style="margin-top: 0; color: #1e293b; text-align: center;">Cambiar Contraseña</h3>
+                    <p style="color: #64748b; text-align: center; margin-bottom: 1.5rem; font-size: 0.9rem;">Ingresa tu
+                        nueva contraseña para acceder al portal.</p>
+
+                    <div class="form-group">
+                        <label
+                            style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 0.5rem;">Nueva
+                            Contraseña</label>
+                        <input type="password" id="new-password-input" class="form-input"
+                            placeholder="Mínimo 6 caracteres" style="width: 100%;">
+                    </div>
+
+                    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                        <button id="btn-cancel-password" class="btn-secondary" style="flex: 1;">Cancelar</button>
+                        <button id="btn-save-password" class="btn-primary" style="flex: 1;">Guardar</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+
+
+
+    </div>
+
+    <!-- Modal for Adding/Editing Student -->
+    <div id="student-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Agregar Alumno</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <form id="student-form">
+                <!-- ID Fields -->
+                <input type="hidden" id="student-id">
+                <input type="hidden" id="student-unique-id">
+
+                <!-- Section 1: Personal Data -->
+                <div class="form-section-divider">
+                    <h4 class="form-section-title">Datos del Alumno</h4>
+                </div>
+                <div class="form-group">
+                    <label for="student-family-id">ID Familiar</label>
+                    <input type="text" id="student-family-id" placeholder="Generado automáticamente" readonly
+                        style="background-color: #f3f4f6;">
+                </div>
+                <div class="form-group">
+                    <label for="student-name">Nombre(s)</label>
+                    <input type="text" id="student-name" placeholder="Nombre completo" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="student-lastname-p">Apellido Paterno</label>
+                        <input type="text" id="student-lastname-p" placeholder="Apellido Paterno" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="student-lastname-m">Apellido Materno</label>
+                        <input type="text" id="student-lastname-m" placeholder="Apellido Materno" required>
+                    </div>
+                </div> <!-- Closing form-row -->
+
+
+                <!-- Section 2: Academic Info -->
+                <div class="form-section-divider">
+                    <h4 class="form-section-title">Información Académica</h4>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="student-grade">Nivel Educativo</label>
+                        <select id="student-grade" required>
+                            <option value="">Seleccionar</option>
+                            <option value="MATERNAL">MATERNAL</option>
+                            <option value="PREESCOLAR">PREESCOLAR</option>
+                            <option value="PRIMARIA">PRIMARIA</option>
+                            <option value="SECUNDARIA">SECUNDARIA</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="student-subgrade">Grado</label>
+                        <select id="student-subgrade" required disabled>
+                            <option value="">Seleccionar Nivel</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="student-group">Salón</label>
+                        <select id="student-group" required disabled>
+                            <option value="">Seleccionar Grado</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-actions"
+                    style="margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+                    <button type="button" class="btn-secondary close-modal">Cancelar</button>
+                    <button type="submit" class="btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- User Modal Moved to End of Body -->
+
+
+
+
+    <!-- Add Concept Modal -->
+    <div id="concept-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-modal" id="close-concept-modal">&times;</span>
+            <h2 id="concept-modal-title">Agregar Nuevo Concepto</h2>
+            <form id="concept-form">
+                <input type="hidden" id="concept-id"> <!-- Hidden ID for Editing -->
+
+                <div class="form-group">
+                    <label for="concept-level">Nivel Académico</label>
+                    <select id="concept-level" name="level" required>
+                        <option value="GENERAL">General/Administrativo</option>
+                        <option value="MATERNAL">Maternal</option>
+                        <option value="PREESCOLAR">Preescolar</option>
+                        <option value="PRIMARIA">Primaria</option>
+                        <option value="SECUNDARIA">Secundaria</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="concept-name">Nombre del Concepto</label>
+                    <input type="text" id="concept-name" name="name" required placeholder="Ej. Colegiatura Septiembre">
+                </div>
+
+                <div class="form-group">
+                    <label for="concept-amount">Precio Sugerido</label>
+                    <input type="number" id="concept-amount" name="amount" step="0.01" required placeholder="0.00">
+                </div>
+                <div class="modal-actions" style="margin-top: 1.5rem;">
+                    <button type="button" class="btn-secondary close-modal" id="cancel-concept-modal">Cancelar</button>
+                    <button type="submit" class="btn-primary">Guardar Concepto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Family Grid Modal (NEW) -->
+    <div id="family-modal" class="modal hidden">
+        <div class="modal-content" style="max-width: 950px;">
+            <div class="modal-header">
+                <h3>Información Familiar</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+
+            <div style="margin-bottom: 2rem;">
+                <h4 style="margin-bottom: 0.5rem; color: var(--primary);">ID Familiar: <span id="family-modal-id"
+                        style="color: black; font-weight: normal;">-</span></h4>
+            </div>
+
+            <!-- Siblings Section -->
+            <div class="form-section-divider">
+                <h4 class="form-section-title">Hermanos / Alumnos Relacionados</h4>
+            </div>
+            <div class="card" style="box-shadow: none; border: 1px solid var(--border); overflow-x: auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre Completo</th>
+                            <th>CURP</th>
+                            <th>Nivel</th>
+                            <th>Grado</th>
+                            <th>Grupo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="family-siblings-body">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Parents Section -->
+            <div class="form-section-divider" style="margin-top: 2rem;">
+                <h4 class="form-section-title">Padres / Tutores</h4>
+            </div>
+            <div class="card" style="box-shadow: none; border: 1px solid var(--border); overflow-x: auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Parentesco</th>
+                            <th>Nombre</th>
+                            <th>Teléfono</th>
+                            <th>Email</th>
+                        </tr>
+                    </thead>
+                    <tbody id="family-parents-body">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="modal-actions"
+                style="margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+                <button type="button" class="btn-secondary close-modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CoDi Web Modal -->
+    <div id="codi-web-modal" class="modal hidden">
+        <div class="modal-content" style="max-width: 500px; text-align: center;">
+            <div class="modal-header">
+                <h3>Pagar con CoDi</h3>
+                <button class="close-modal-codi"
+                    onclick="document.getElementById('codi-web-modal').classList.add('hidden')">&times;</button>
+            </div>
+
+            <div id="codi-step-selection">
+                <p style="color: #64748b; margin-bottom: 1.5rem;">Selecciona el mes a pagar:</p>
+
+                <!-- Month Grid -->
+                <div id="codi-month-grid"
+                    style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 2rem;">
+                    <!-- Populated by JS -->
+                </div>
+
+                <div id="codi-selection-summary" class="hidden"
+                    style="margin-bottom: 1.5rem; background: #f8fafc; padding: 1rem; border-radius: 8px;">
+                    <div style="font-size: 0.9rem; color: #64748b;">Concepto</div>
+                    <div id="codi-summary-concept" style="font-weight: 600; color: #1e293b; margin-bottom: 0.5rem;">-
+                    </div>
+                    <div style="font-size: 0.9rem; color: #64748b;">Monto</div>
+                    <div id="codi-summary-amount" style="font-weight: 700; color: #166534; font-size: 1.25rem;">$0.00
+                    </div>
+                </div>
+
+                <!-- Phone Input -->
+                <div style="margin-bottom: 2rem;">
+                    <label style="display: block; font-size: 0.9rem; color: #64748b; margin-bottom: 0.5rem;">Número
+                        Celular para Cobro:</label>
+                    <div style="position: relative;">
+                        <span class="material-icons-outlined"
+                            style="position: absolute; left: 12px; top: 10px; color: #94a3b8;">smartphone</span>
+                        <input type="tel" id="codi-phone-input" placeholder="10 dígitos" maxlength="10"
+                            style="width: 100%; padding: 0.75rem 0.75rem 0.75rem 2.5rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; outline: none; transition: all 0.2s;"
+                            oninput="this.value = this.value.replace(/[^0-9]/g, ''); validateCodiPhone();">
+                    </div>
+                </div>
+
+                <button id="btn-generate-codi-web" class="btn-primary"
+                    style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;"
+                    disabled>
+                    <span class="material-icons-outlined">send_to_mobile</span>
+                    Enviar Solicitud de Cobro
+                </button>
+            </div>
+
+            <!-- Notification Success Step -->
+            <div id="codi-step-qr" class="hidden" style="text-align: center; padding: 1rem;">
+                <div
+                    style="width: 80px; height: 80px; background: #e0f2fe; color: #0284c7; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                    <span class="material-icons-outlined" style="font-size: 3rem;">mark_chat_unread</span>
+                </div>
+
+                <h3 style="color: #0f172a; margin: 0 0 1rem;">¡Solicitud Enviada!</h3>
+
+                <p style="color: #64748b; line-height: 1.6; margin-bottom: 2rem;">
+                    Hemos enviado un mensaje de cobro CoDi a <strong id="codi-sent-phone"
+                        style="color:#0f172a"></strong>.<br>
+                    Por favor ingresa a tu aplicación bancaria y autoriza el pago.
+                </p>
+
+                <!-- Summary of amount -->
+                <div
+                    style="background: #f8fafc; padding: 1rem; border-radius: 12px; margin-bottom: 2rem; border: 1px dashed #e2e8f0;">
+                    <div style="font-size: 0.9rem; color: #64748b;">Monto Total</div>
+                    <div id="codi-qr-amount-label" style="font-weight: 700; color: #166534; font-size: 1.5rem;">-</div>
+                </div>
+
+                <button class="btn-success" onclick="finishCodiPayment()"
+                    style="width: 100%; background: #22c55e; border: none; color: white; padding: 0.75rem; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                    <span class="material-icons-outlined">check_circle</span>
+                    Ya Autoricé el Pago
+                </button>
+            </div>
+
+            <!-- Debug Info (Hidden by default) -->
+            <div id="codi-debug-info" class="hidden"
+                style="margin-top: 2rem; text-align: left; background: #f1f5f9; padding: 0.5rem; font-size: 0.7rem; color: #ef4444;">
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Appointment Modal (Moved) -->
+    <div id="appointment-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-modal" id="close-appointment-modal">&times;</span>
+            <h2 id="appointment-modal-title">Agendar Cita</h2>
+            <form id="appointment-form">
+                <input type="hidden" id="appointment-id">
+                <div class="form-group">
+                    <label for="appointment-title">Título</label>
+                    <input type="text" id="appointment-title" required placeholder="Ej. Entrevista Padres">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="appointment-start">Inicio</label>
+                        <input type="datetime-local" id="appointment-start" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="appointment-end">Fin</label>
+                        <input type="datetime-local" id="appointment-end" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="appointment-description">Descripción</label>
+                    <textarea id="appointment-description" rows="3"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="btn-delete-appointment" class="btn-secondary hidden"
+                        style="color: #ef4444; border-color: #ef4444; margin-right: auto;">Eliminar</button>
+                    <button type="button" class="btn-secondary" id="cancel-appointment-modal">Cancelar</button>
+                    <button type="submit" class="btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Permission Configuration Modal -->
+    <!-- Old duplicate modal removed -->
+
+    <script src="mexico_data.js"></script>
+    <!-- Modal for Adding User (Moved to verify scope) -->
+    <div id="user-modal-prod" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="user-modal-title">Agregar Perfil</h3>
+                <button class="close-modal-user">&times;</button>
+            </div>
+            <form id="user-form">
+                <input type="hidden" id="user-id">
+
+                <!-- Section 1: Access Info -->
+                <div class="form-section-divider">
+                    <h4 class="form-section-title">Información de Acceso</h4>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="user-username">Nombre de Usuario</label>
+                        <input type="text" id="user-username" placeholder="Ej. jperez" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-email">Correo Electrónico</label>
+                        <input type="email" id="user-email" placeholder="correo@ejemplo.com" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="user-password">Contraseña</label>
+                    <input type="password" id="user-password" placeholder="••••••••" required>
+                </div>
+
+                <!-- Section 2: Role Info -->
+                <div class="form-section-divider">
+                    <h4 class="form-section-title">Rol y Perfil</h4>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="user-role">Rol de Sistema</label>
+                        <select id="user-role" required>
+                            <option value="admin">Administrador</option>
+                            <option value="director">Director</option>
+                            <option value="control_escolar">Control Escolar</option>
+                            <option value="cobranza">Cobranza</option>
+                            <option value="recepcion">Recepción</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-profile">Nombre del Perfil</label>
+                        <input type="text" id="user-profile" placeholder="Ej. Dirección General">
+                    </div>
+                </div>
+                <!-- Family Link (New) -->
+                <div class="form-group">
+                    <label for="user-family-id">ID Familia (Solo para Tutores)</label>
+                    <input type="text" id="user-family-id" placeholder="Ej. FAM-XXXXX" style="border-color: #3b82f6;">
+                    <small style="color: #64748b; display: block; margin-top: 4px;">Este ID vincula al papá con sus
+                        hijos.</small>
+                </div>
+
+                <div class="modal-actions"
+                    style="margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+                    <button type="button" class="btn-secondary close-modal">Cancelar</button>
+                    <button type="submit" class="btn-primary">Guardar Perfil</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Permissions Modal (Injected Fix) -->
+    <div id="permissions-modal" class="modal hidden">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3>Configurar Permisos</h3>
+                <button class="close-modal-perms"
+                    style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="role-select-perms">Seleccionar Rol</label>
+                    <select id="role-select-perms">
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+
+                <div id="permission-matrix"
+                    style="max-height: 400px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                    <!-- Checkboxes populated by JS -->
+                </div>
+
+                <div class="modal-actions" style="margin-top: 1.5rem;">
+                    <button type="button" class="btn-secondary close-modal-perms">Cancelar</button>
+                    <button type="button" id="btn-save-perms" class="btn-primary">Guardar Cambios</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manage Roles Modal -->
+    <div id="manage-roles-modal-prod" class="modal hidden">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Gestionar Roles</h3>
+                <button class="close-modal-manage-roles"
+                    style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Add New Role Section -->
+                <div
+                    style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--border); margin-bottom: 1.5rem;">
+                    <h5 style="margin-bottom: 0.5rem; font-weight: 500;">Crear Nuevo Rol</h5>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" id="manage-new-role-name" placeholder="Nombre del nuevo rol"
+                            style="flex: 1;">
+                        <button id="btn-manage-add-role" class="btn-primary"
+                            style="padding: 0.5rem 1rem;">Agregar</button>
+                    </div>
+                </div>
+
+                <!-- Roles List -->
+                <h5 style="margin-bottom: 0.5rem; font-weight: 500;">Roles Existentes</h5>
+                <ul id="manage-roles-list"
+                    style="list-style: none; padding: 0; max-height: 300px; overflow-y: auto; border: 1px solid var(--border); border-radius: 0.5rem;">
+                    <!-- Populated by JS -->
+                </ul>
+
+                <div class="modal-actions" style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
+                    <button class="btn-primary close-modal-manage-roles">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout Confirmation Modal (Styled) -->
+    <div id="logout-modal" class="modal hidden">
+        <div class="modal-content" style="max-width: 400px; text-align: center; padding: 2rem;">
+            <div style="margin-bottom: 1.5rem; color: #ef4444;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+            </div>
+            <h3 style="margin-bottom: 0.5rem; color: #1e293b;">¿Cerrar Sesión?</h3>
+            <p style="color: #64748b; margin-bottom: 2rem;">¿Estás seguro que deseas salir del sistema?</p>
+
+            <div style="display: flex; gap: 1rem; justify-content: center;">
+                <button id="btn-cancel-logout" class="btn-secondary"
+                    style="width: 100%; justify-content: center;">Cancelar</button>
+                <button id="btn-confirm-logout" class="btn-primary"
+                    style="width: 100%; background-color: #ef4444; justify-content: center;">Salir</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js?v=prod45"></script>
+
+    <!-- Account Statement Modal -->
+    <div id="account-statement-modal" class="modal hidden">
+        <div class="modal-content" style="max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                <h3>Estado de Cuenta</h3>
+                <span class="close-modal close-modal-statement"
+                    onclick="document.getElementById('account-statement-modal').classList.add('hidden')">&times;</span>
+            </div>
+
+            <div id="statement-print-area" style="padding: 1rem;">
+                <!-- Header (School Info) -->
+                <div
+                    style="text-align: center; margin-bottom: 2rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 1rem;">
+                    <h2 id="statement-modal-school-name" style="margin: 0; color: #1e293b;">Nombre de la Escuela</h2>
+                    <p id="statement-modal-school-address"
+                        style="margin: 0.25rem 0; color: #64748b; font-size: 0.9rem;">
+                        Dirección de la Escuela</p>
+                    <p id="statement-modal-date" style="margin: 0.25rem 0; color: #64748b; font-size: 0.9rem;">Fecha de
+                        Emisión: DD/MM/AAAA</p>
+                </div>
+
+                <!-- Student Info -->
+                <div style="margin-bottom: 2rem; background-color: #f8fafc; padding: 1rem; border-radius: 0.5rem;">
+                    <h4 style="margin-top: 0; margin-bottom: 0.5rem; color: #334155;">Información del Alumno</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.95rem;">
+                        <div><strong>Nombre:</strong> <span id="statement-modal-student-name">-</span></div>
+                        <div><strong>ID:</strong> <span id="statement-modal-student-id">-</span></div>
+                        <div><strong>Grado/Grupo:</strong> <span id="statement-modal-student-group">-</span></div>
+                        <div><strong>Nivel:</strong> <span id="statement-modal-student-level">-</span></div>
+                    </div>
+                </div>
+
+                <!-- Tuition Control (Semáforo) -->
+                <div style="margin-bottom: 2rem;">
+                    <h4
+                        style="margin-bottom: 1rem; color: #334155; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem;">
+                        Control de Colegiaturas (Ciclo Actual)
+                    </h4>
+                    <div id="statement-modal-tuition-grid"
+                        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 0.75rem;">
+                        <!-- Generated by JS -->
+                    </div>
+                </div>
+
+                <!-- Transactions Table -->
+                <table class="data-table" style="width: 100%; border-collapse: collapse; margin-bottom: 2rem;">
+                    <thead>
+                        <tr style="background-color: #f1f5f9; border-bottom: 2px solid #e2e8f0;">
+                            <th style="padding: 0.75rem; text-align: left;">Fecha</th>
+                            <th style="padding: 0.75rem; text-align: left;">Concepto</th>
+                            <th style="padding: 0.75rem; text-align: left;">Método</th>
+                            <th style="padding: 0.75rem; text-align: right;">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody id="statement-modal-table-body">
+                        <!-- Rows -->
+                    </tbody>
+                    <tfoot>
+                        <tr style="border-top: 2px solid #e2e8f0; font-weight: bold;">
+                            <td colspan="3" style="padding: 0.75rem; text-align: right;">Total Pagado:</td>
+                            <td id="statement-modal-total" style="padding: 0.75rem; text-align: right;">$0.00</td>
+                        </tr>
+                    </tfoot>
+                </table>
+
+                <div style="text-align: center; font-size: 0.8rem; color: #94a3b8; margin-top: 3rem;">
+                    <p>Este documento es un comprobante informativo de los pagos realizados.</p>
+                </div>
+            </div>
+
+            <div style="text-align: right; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
+                <button onclick="printAccountStatement()" class="btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        style="vertical-align: middle; margin-right: 4px;">
+                        <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                        <rect x="6" y="14" width="12" height="8"></rect>
+                    </svg>
+                    Imprimir / Descargar PDF
+                </button>
+                <button onclick="document.getElementById('account-statement-modal').classList.add('hidden')"
+                    class="btn-secondary" style="margin-left: 0.5rem;">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

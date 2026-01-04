@@ -1,0 +1,131 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
+    <title>Bienvenido al Portal de Padres</title>
+    <style type="text/css">
+        /* Force Light Mode */
+        :root {
+            color-scheme: light;
+            supported-color-schemes: light;
+        }
+
+        /* Responsive */
+        @media only screen and (max-width: 600px) {
+            .email-container {
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 10px !important;
+            }
+        }
+
+        /* Branding Colors */
+        .text-red {
+            color: #E31E25 !important;
+        }
+
+        .bg-red {
+            background-color: #E31E25 !important;
+            color: #ffffff !important;
+        }
+
+        .btn-primary {
+            background-color: #E31E25 !important;
+            color: #ffffff !important;
+            text-decoration: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            font-weight: bold;
+            display: inline-block;
+        }
+    </style>
+</head>
+
+<body style="margin: 0; padding: 0; background-color: #f6f6f6; color: #555555; font-family: Arial, sans-serif;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f6f6f6;">
+        <tr>
+            <td align="center" style="padding: 20px 0;">
+                <!-- Main Container -->
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" class="email-container"
+                    style="border-collapse: collapse; background-color: #ffffff; border-radius: 8px; overflow: hidden; max-width: 600px; margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td align="center" bgcolor="#ffffff" class="text-red"
+                            style="padding: 30px 20px; border-bottom: 3px solid #E31E25;">
+                            <img src="cid:school_logo" alt="Logo Colegio"
+                                style="display: block; margin-bottom: 10px; max-height: 150px; border: 0;" />
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td bgcolor="#ffffff" style="padding: 40px 30px;">
+                            <h2
+                                style="font-size: 20px; color: #000000; margin: 0 0 20px 0; font-family: Arial, sans-serif; font-weight: bold;">
+                                ¡Bienvenido al Portal de Padres!
+                            </h2>
+                            <p style="font-size: 16px; line-height: 24px; color: #555555; margin: 0 0 25px 0;">
+                                Estimado padre/madre de familia,
+                            </p>
+                            <p style="font-size: 16px; line-height: 24px; color: #555555; margin: 0 0 25px 0;">
+                                Se ha generado exitosamente su cuenta de acceso. A través de este portal podrá consultar
+                                el progreso académico, estados de cuenta, trámites administrativos etc.
+                            </p>
+
+                            <!-- Credentials Box -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" class="text-red"
+                                style="background-color: #edefee; border-left: 4px solid #E31E25; margin: 25px 0;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <h3 style="margin: 0 0 15px 0; color: #E31E25; font-size: 16px;">Sus
+                                            Credenciales de Acceso:</h3>
+                                        <p style="margin: 5px 0; font-size: 15px; color: #555555;">
+                                            <strong style="color: #333;">Usuario:</strong> {{username}}
+                                        </p>
+                                        <p style="margin: 5px 0; font-size: 15px; color: #555555;">
+                                            <strong style="color: #333;">Contraseña Temporal:</strong> {{password}}
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="font-size: 14px; color: #E31E25; margin: 0 0 25px 0;">
+                                <em>Importante: Por seguridad, le recomendamos cambiar su contraseña al iniciar sesión
+                                    por primera vez.</em>
+                            </p>
+
+                            <div style="text-align: center; margin-top: 30px; margin-bottom: 30px;">
+                                <a href="{{loginLink}}" class="btn-primary">
+                                    Acceder al Portal
+                                </a>
+                            </div>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td bgcolor="#ffffff" class="text-red"
+                            style="padding: 20px; text-align: center; color: #9C9E9D; border-top: 3px solid #E31E25;">
+                            <p style="margin: 0 0 5px 0; font-size: 10px; color: #9C9E9D; text-transform: uppercase;">
+                                Este mensaje fue enviado automáticamente. No responda a este correo.
+                            </p>
+                            <p style="margin: 5px 0; font-size: 12px;">
+                                <a href="https://www.culturalterranova.edu.mx" class="text-red"
+                                    style="color: #E31E25; text-decoration: none; font-weight: bold;">www.culturalterranova.edu.mx</a>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>

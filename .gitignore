@@ -1,0 +1,9 @@
+node_modules/
+.env
+school.db
+*.log
+backups/
+deploy_package.zip
+.DS_Store
+pdf_uploads/
+school-key.pem

@@ -1,0 +1,67 @@
+{
+    "admin": {
+        "name": "Administrador",
+        "permissions": [
+            "alumnos.list",
+            "alumnos.general_info",
+            "caja.pagos",
+            "caja.conceptos",
+            "config.roles",
+            "config.email_templates",
+            "config.permissions",
+            "school.info",
+            "school.structure_academic",
+            "school.structure_admin",
+            "hr.personal",
+            "reports.income",
+            "inquiries.form",
+            "inquiries.list",
+            "inquiries.agenda"
+        ]
+    },
+    "director": {
+        "name": "Director",
+        "permissions": [
+            "alumnos.list",
+            "alumnos.general_info"
+        ]
+    },
+    "control_escolar": {
+        "name": "Control Escolar",
+        "permissions": [
+            "alumnos.view_menu",
+            "alumnos.list",
+            "alumnos.edit",
+            "alumnos.general_info",
+            "school.view_menu",
+            "school.info",
+            "inquiries.view_menu",
+            "inquiries.form",
+            "inquiries.list"
+        ]
+    },
+    "cobranza": {
+        "name": "Cobranza",
+        "permissions": [
+            "caja.view_menu",
+            "caja.pagos"
+        ]
+    },
+    "recepcion": {
+        "name": "Recepción",
+        "permissions": [
+            "alumnos.view_menu",
+            "alumnos.list",
+            "inquiries.view_menu",
+            "inquiries.form",
+            "inquiries.list"
+        ]
+    },
+    "tutor": {
+        "name": "Padre / Tutor",
+        "permissions": [
+            "alumnos.list",
+            "caja.pagos"
+        ]
+    }
+}

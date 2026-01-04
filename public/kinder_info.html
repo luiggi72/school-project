@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kinder 2025-2026 - Colegio Cultural Terranova</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #E31E25;
+            /* Red */
+            --secondary-color: #f4f4f4;
+            /* Light Grey background */
+            --accent-color: #E31E25;
+            --text-dark: #222;
+            --text-grey: #9C9E9D;
+            /* Grey */
+            --white: #ffffff;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            background-color: #fafafa;
+        }
+
+        header {
+            background: linear-gradient(135deg, white 0%, #fefefe 100%);
+            color: var(--text-dark);
+            padding: 3rem 1rem;
+            text-align: center;
+            border-bottom: 5px solid var(--primary-color);
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at top right, rgba(227, 30, 37, 0.05), transparent 40%);
+            pointer-events: none;
+        }
+
+        header img {
+            max-width: 250px;
+            height: auto;
+            margin-bottom: 1rem;
+        }
+
+        header p {
+            font-size: 1.25rem;
+            color: var(--text-grey);
+            font-weight: 300;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .section {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+        }
+
+        .section-title {
+            color: var(--primary-color);
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+            padding-bottom: 0.5rem;
+            display: inline-block;
+            font-weight: 700;
+        }
+
+
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        @media (min-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .card {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            border: 1px solid #eee;
+            transition: transform 0.2s, box-shadow 0.2s;
+            height: 100%;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow);
+            border-color: transparent;
+        }
+
+        .card h3 {
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card h3::before {
+            content: '';
+            display: block;
+            width: 8px;
+            height: 8px;
+            background: var(--primary-color);
+            border-radius: 50%;
+        }
+
+        ul {
+            list-style-position: inside;
+            margin-left: 1rem;
+        }
+
+        li {
+            margin-bottom: 0.25rem;
+        }
+
+        .highlight-box {
+            background: linear-gradient(to right, #fff, #fcfcfc);
+            border: 1px solid #eee;
+            border-left: 5px solid var(--primary-color);
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        }
+
+        .price-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .price-table th,
+        .price-table td {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .price-table th {
+            color: var(--text-grey);
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            font-weight: 600;
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        .price-table td {
+            border-bottom: 1px solid #f0f0f0;
+            color: var(--text-dark);
+        }
+
+        .price-value {
+            font-weight: 700;
+            text-align: right !important;
+            color: var(--primary-color);
+            font-size: 1.1rem;
+        }
+
+        .price-table th:last-child,
+        .price-table td:last-child {
+            text-align: center;
+        }
+
+        .notice {
+            font-size: 0.9rem;
+            color: var(--text-grey);
+            background: #f9f9f9;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1.5rem;
+            border-left: 3px solid var(--text-grey);
+        }
+
+        .contact-info {
+            text-align: center;
+            margin-top: 3rem;
+            padding: 3rem 2rem;
+            background: #fafafa;
+            color: var(--text-dark);
+            border-radius: 16px;
+        }
+
+        .contact-info a {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .values-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .value-tag {
+            background: #fff;
+            color: var(--text-grey);
+            border: 1px solid #E31E25;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-size: 0.9em;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .value-tag:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .schedule-container {
+            max-width: 650px;
+            margin: 2.5rem auto;
+            background: #fff;
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid #f0f0f0;
+        }
+
+        .schedule-title {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            display: block;
+        }
+
+        .schedule-item {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #f0f0f0;
+            padding: 1.2rem 0;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .schedule-item:hover {
+            background-color: #fafafa;
+            padding-left: 10px;
+            padding-right: 10px;
+            border-radius: 8px;
+            border-bottom-color: transparent;
+        }
+
+        .schedule-item span:first-child {
+            color: var(--text-grey);
+        }
+
+        .schedule-item span:last-child {
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <img src="logo.png" alt="Colegio Cultural Terranova">
+        <p>Formación educativa integral para un futuro valioso</p>
+    </header>
+
+    <div class="container">
+
+        <!-- Philosophy Section -->
+        <section class="section">
+            <h2 class="section-title">Nuestra Filosofía</h2>
+            <p>El Colegio Cultural Terranova es un espacio donde niñas, niños y jóvenes desarrollan competencias
+                formativas para un proyecto de vida valioso, innovador y transformacional.</p>
+
+            <div class="grid-2" style="margin-top: 1.5rem;">
+                <div class="card">
+                    <h3>Misión</h3>
+                    <p>Promovemos una formación educativa integral donde los alumnos adquieren habilidades,
+                        conocimientos, actitudes y valores con el compromiso de toda la comunidad.</p>
+                </div>
+                <div class="card">
+                    <h3>Visión</h3>
+                    <p>Ser un colegio de vanguardia con más de 15 años de experiencia, respondiendo a las necesidades de
+                        nuestra sociedad.</p>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 1.5rem; margin-bottom: 1rem;">Valores Terranova</h3>
+            <div class="values-grid">
+                <span class="value-tag">Metacognición</span>
+                <span class="value-tag">Disciplina</span>
+                <span class="value-tag">Compromiso</span>
+                <span class="value-tag">Cultura de Paz</span>
+                <span class="value-tag">Altruismo</span>
+                <span class="value-tag">Colaboración</span>
+                <span class="value-tag">Ciudadanía Digital</span>
+                <span class="value-tag">Creatividad e Innovación</span>
+                <span class="value-tag">Pensamiento Crítico</span>
+                <span class="value-tag">Conciencia Social</span>
+            </div>
+        </section>
+
+        <!-- Kinder Section -->
+        <section class="section">
+            <h2 class="section-title">KINDER</h2>
+            <div class="highlight-box">
+                <strong>Objetivo:</strong> Favorecemos el desarrollo de competencias para la vida consolidando las áreas
+                psicomotora, cognitiva, de lenguaje y socioemocional en un ambiente de constante estimulación y juego.
+            </div>
+
+            <div class="grid-2" style="margin-top: 2rem;">
+                <div>
+                    <h3>Diseño Curricular</h3>
+                    <ul>
+                        <li>Sistema Bilingüe</li>
+                        <li>Mini Ciudad (Juego simbólico)</li>
+                        <li>Academia Psico</li>
+                        <li>Academia Música</li>
+                        <li>Academia Arte</li>
+                        <li>Academia Ciencias</li>
+                        <li>Academia Matemágicas</li>
+                        <li>Academia Tecnología</li>
+                        <li>Academia Educación Física</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>Programas Articulados</h3>
+                    <ul>
+                        <li>Disciplina Consciente</li>
+                        <li>Habilinovas</li>
+                        <li>Terrapensadores</li>
+                        <li>TerraEconomy</li>
+                        <li>Novolectores</li>
+                        <li>STEM Terranova</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 1.5rem;">
+                <h3>Personal de Atención</h3>
+                <ul>
+                    <li>Docente titular en Español (mitad del día)</li>
+                    <li>Docente titular en Inglés (mitad del día)</li>
+                    <li>Asistente educativo</li>
+                    <li>Docente especializado para cada Academia</li>
+                </ul>
+                <p style="margin-top: 0.5rem; font-size: 0.9em;">* Cupo máximo de 20 alumnos por grupo</p>
+            </div>
+
+            <div class="schedule-container">
+                <h3 class="schedule-title">Horarios</h3>
+                <div class="schedule-item"><span>Kinder I</span> <span>9:00 - 13:30 hrs</span></div>
+                <div class="schedule-item"><span>Kinder II</span> <span>8:50 - 13:50 hrs</span></div>
+                <div class="schedule-item"><span>Kinder III y Pre First</span> <span>8:20 - 13:50 hrs</span></div>
+                <div class="schedule-item"><span>Horario Extendido (Salida)</span> <span>17:30 hrs</span></div>
+            </div>
+        </section>
+
+        <!-- Financial Info -->
+        <section class="section">
+            <h2 class="section-title">Cuotas Ciclo Escolar 2025-2026</h2>
+
+            <table class="price-table">
+                <tr>
+                    <th>Concepto</th>
+                    <th class="price-value">Costo</th>
+                    <th>Frecuencia</th>
+                </tr>
+                <tr>
+                    <td>Inscripción</td>
+                    <td class="price-value">$ 9,800.00</td>
+                    <td>Anual</td>
+                </tr>
+                <tr>
+                    <td>Reinscripción</td>
+                    <td class="price-value">$ 6,050.00</td>
+                    <td>Anual</td>
+                </tr>
+                <tr>
+                    <td>Cuota de material</td>
+                    <td class="price-value">$ 4,300.00</td>
+                    <td>Anual</td>
+                </tr>
+                <tr>
+                    <td>Mensualidad (11 meses)</td>
+                    <td class="price-value">$ 5,650.00</td>
+                    <td>Mensual</td>
+                </tr>
+            </table>
+
+            <p class="notice" style="margin-top: 1rem;">
+                * La mensualidad incluye un taller vespertino de 4:00 a 5:00 dos veces por semana a partir de KI.<br>
+                * La cuota de material incluye papelería, útiles, eventos, fotos, credencial, plataformas, seguro y
+                ambulancia.<br>
+                * No incluye libros.
+            </p>
+
+            <h3 style="margin-top: 2rem;">Servicios Adicionales</h3>
+            <table class="price-table">
+                <tr>
+                    <td>Servicio de Lunch</td>
+                    <td class="price-value">$ 650.00</td>
+                    <td>Mensual</td>
+                </tr>
+                <tr>
+                    <td>Horario Extendido (5 días) + Comida + Taller</td>
+                    <td class="price-value">$ 2,860.00</td>
+                    <td>Mensual</td>
+                </tr>
+                <tr>
+                    <td>Horario Extendido (4 días) + Comida + Taller</td>
+                    <td class="price-value">$ 2,580.00</td>
+                    <td>Mensual</td>
+                </tr>
+                <tr>
+                    <td>Horario Extendido (2 días) + Comida + Taller</td>
+                    <td class="price-value">$ 1,650.00</td>
+                    <td>Mensual</td>
+                </tr>
+                <tr>
+                    <td>Horario Extendido (1 día) + Comida + Taller</td>
+                    <td class="price-value">$ 825.00</td>
+                    <td>Mensual</td>
+                </tr>
+            </table>
+
+            <div class="highlight-box">
+                <h3>Descuentos</h3>
+                <ul>
+                    <li><strong>15% en Inscripción:</strong> Antes del 31 de marzo 2025 (al pagar material).</li>
+                    <li><strong>5% Pago Anual:</strong> Pagando antes del último día hábil de agosto 2025.</li>
+                    <li><strong>10% Hermanos:</strong> A partir del 2º hijo en colegiaturas e inscripción.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <div class="contact-info">
+            <h3>Contáctanos</h3>
+            <p>Teléfonos: 728 102 3923 / 728 102 3924</p>
+            <p><a href="https://www.culturalterranova.edu.mx" target="_blank">www.culturalterranova.edu.mx</a></p>
+            <p style="margin-top: 1rem; font-size: 0.8em;">Ver video de instalaciones: <a
+                    href="https://youtu.be/kxsR32utiZU" target="_blank">YouTube</a></p>
+        </div>
+
+    </div>
+
+</body>
+
+</html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
+    <meta name="x-apple-disable-message-reformatting">
+    <title>Confirmación de Solicitud</title>
+    <style type="text/css">
+        /* Force Light Mode in Apple Mail / iOS - These cannot be inlined easily so we keep them as backup/override */
+        :root {
+            color-scheme: light;
+            supported-color-schemes: light;
+        }
+
+        /* Responsive overrides */
+        @media only screen and (max-width: 600px) {
+            .email-container {
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 10px !important;
+            }
+        }
+
+        /* Dark Mode Support: Keep container white, let background go dark */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #222222 !important;
+            }
+
+            .email-container {
+                background-color: #ffffff !important;
+                color: #555555 !important;
+            }
+
+            /* Force black text inside the white card in dark mode */
+            h1,
+            h2,
+            h3,
+            p,
+            span,
+            strong {
+                color: #000000 !important;
+            }
+
+            .text-gray {
+                color: #555555 !important;
+            }
+
+            /* Keep brand red elements red */
+            .text-red {
+                color: #E31E25 !important;
+            }
+        }
+    </style>
+</head>
+
+<body
+    style="margin: 0; padding: 0; background-color: #f6f6f6; color: #555555; font-family: Arial, sans-serif; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f6f6f6;">
+        <tr>
+            <td align="center" style="padding: 20px 0;">
+                <!-- Main Container -->
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" class="email-container"
+                    style="border-collapse: collapse; background-color: #ffffff; border-radius: 8px; overflow: hidden; max-width: 600px; margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td align="center" bgcolor="#ffffff" class="text-red"
+                            style="padding: 30px 20px; border-bottom: 3px solid #E31E25;">
+                            <img src="cid:school_logo" alt="Logo Colegio"
+                                style="display: block; margin-bottom: 10px; max-height: 150px; border: 0; outline: none; text-decoration: none;" />
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td bgcolor="#ffffff" style="padding: 40px 30px;">
+                            <h2
+                                style="font-size: 20px; color: #000000; margin: 0 0 20px 0; font-family: Arial, sans-serif; font-weight: bold;">
+                                ¡Hola, {{parent_name}}!
+                            </h2>
+                            <p
+                                style="font-size: 16px; line-height: 24px; color: #555555; margin: 0 0 25px 0; font-family: Arial, sans-serif;">
+                                Gracias por considerar a <strong style="color: #000000; font-weight: bold;">Colegio
+                                    Cultural Terranova</strong> para la formación de tu hijo(a). Hemos recibido
+                                exitosamente tu solicitud de información.
+                            </p>
+
+                            <!-- Data Box -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" class="text-red"
+                                style="background-color: #edefee; border-left: 2px solid #E31E25; margin: 20px 0;">
+                                <tr>
+                                    <td style="padding: 15px;">
+                                        <p
+                                            style="margin: 5px 0; font-size: 15px; color: #555555; font-family: Arial, sans-serif;">
+                                            <strong style="color: #555555;">Alumno:</strong> <span
+                                                style="color: #000000; font-weight: bold;">{{child_name}}</span>
+                                        </p>
+                                        <p
+                                            style="margin: 5px 0; font-size: 15px; color: #555555; font-family: Arial, sans-serif;">
+                                            <strong style="color: #555555;">Grado de Interés:</strong> <span
+                                                style="color: #000000; font-weight: bold;">{{requested_grade}}</span>
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p
+                                style="font-size: 16px; line-height: 24px; color: #555555; margin: 0 0 25px 0; font-family: Arial, sans-serif;">
+                                Nuestro equipo de admisiones en breve estará revisando tus datos y se pondrá en contacto
+                                contigo muy pronto para brindarte la información solicitada.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td bgcolor="#ffffff" class="text-red"
+                            style="padding: 20px; text-align: center; color: #9C9E9D; border-top: 3px solid #E31E25;">
+                            <p
+                                style="margin: 0 0 5px 0; font-size: 10px; color: #9C9E9D; text-transform: uppercase; letter-spacing: 1px; font-family: Arial, sans-serif;">
+                                Este correo fue generado automáticamente por el sistema de admisiones.
+                            </p>
+                            <p
+                                style="margin: 5px 0 15px 0; font-size: 11px; color: #9C9E9D; font-style: italic; font-family: Arial, sans-serif;">
+                                Nota: Por favor no responda a este correo, es solo para fines informativos.
+                            </p>
+                            <p style="margin: 5px 0; font-size: 12px; font-family: Arial, sans-serif;">
+                                <a href="https://www.culturalterranova.edu.mx" class="text-red"
+                                    style="color: #E31E25; text-decoration: none; font-weight: bold;">www.culturalterranova.edu.mx</a>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>
