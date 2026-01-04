@@ -8171,7 +8171,9 @@ function renderNotificationList(notifications, container) {
                 targetLabel = `Para: ${userName}`;
             }
             else if (notif.category.startsWith('STUDENT:')) {
-                const studentName = notif.category.split(':')[1];
+                // Robust extraction like mobile app
+                const splitIndex = notif.category.indexOf(':');
+                const studentName = (splitIndex !== -1) ? notif.category.substring(splitIndex + 1).trim() : 'Alumno';
                 badgeText = 'Alumno';
                 targetLabel = `Para: ${studentName}`;
             }
@@ -8244,6 +8246,15 @@ window.openNotificationDetail = async function (notif, cardElement) {
             headerText = '#991b1b'; // Red-800
             badgeBg = '#f87171'; // Red-400
             badgeText = '#7f1d1d';
+        } else if (cat.startsWith('STUDENT:')) {
+            // Robust extraction for modal
+            const splitIndex = cat.indexOf(':');
+            const studentName = (splitIndex !== -1) ? cat.substring(splitIndex + 1).trim() : 'Alumno';
+            targetText = studentName;
+            headerBg = '#e0e7ff'; // Indigo-100 to match list
+            headerText = '#3730a3'; // Indigo-800
+            badgeBg = '#818cf8'; // Indigo-400
+            badgeText = '#312e81';
         } else if (cat === 'GENERAL') {
             targetText = 'GENERAL';
             headerBg = '#f1f5f9'; // Slate-100

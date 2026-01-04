@@ -64,16 +64,16 @@ export default function NotificationsScreen({ navigation }) {
     };
 
     const getCategoryStyles = (category) => {
-        console.log('DEBUG: getCategoryStyles input:', category);
         // Defaults (GENERAL)
         let styles = {
             headerBg: '#f1f5f9', headerText: '#334155', badgeBg: '#94a3b8', badgeText: '#1e293b', targetText: 'GENÉRICO'
         };
 
         if (category) {
-            const cat = category.toUpperCase();
-            if (cat.startsWith('LEVEL:')) {
-                const level = cat.split(':')[1];
+            const catUpper = category.toUpperCase();
+
+            if (catUpper.startsWith('LEVEL:')) {
+                const level = catUpper.split(':')[1];
                 styles.targetText = level;
                 if (level.includes('PREESCOLAR')) {
                     styles = { headerBg: '#fef9c3', headerText: '#854d0e', badgeBg: '#facc15', badgeText: '#713f12', targetText: level };
@@ -82,13 +82,17 @@ export default function NotificationsScreen({ navigation }) {
                 } else if (level.includes('SECUNDARIA')) {
                     styles = { headerBg: '#f3e8ff', headerText: '#6b21a8', badgeBg: '#c084fc', badgeText: '#581c87', targetText: level };
                 }
-            } else if (cat.startsWith('GROUP:')) {
-                styles = { headerBg: '#e0f2fe', headerText: '#075985', badgeBg: '#38bdf8', badgeText: '#0c4a6e', targetText: 'GRUPO ' + cat.split(':')[1] };
-            } else if (cat.includes('STUDENT:')) {
-                // Extract Name
-                const name = cat.split(':')[1];
-                styles = { headerBg: '#e0e7ff', headerText: '#3730a3', badgeBg: '#818cf8', badgeText: '#312e81', targetText: name };
-            } else if (cat === 'PERSONAL') {
+            } else if (catUpper.startsWith('GROUP:')) {
+                styles = { headerBg: '#e0f2fe', headerText: '#075985', badgeBg: '#38bdf8', badgeText: '#0c4a6e', targetText: 'GRUPO ' + catUpper.split(':')[1] };
+            } else if (catUpper.includes('STUDENT:')) {
+                // Extract Name from ORIGINAL string to preserve casing
+                // Split by first colon
+                const splitIndex = category.indexOf(':');
+                if (splitIndex !== -1) {
+                    const name = category.substring(splitIndex + 1).trim();
+                    styles = { headerBg: '#e0e7ff', headerText: '#3730a3', badgeBg: '#818cf8', badgeText: '#312e81', targetText: name };
+                }
+            } else if (catUpper === 'PERSONAL') {
                 styles = { headerBg: '#fee2e2', headerText: '#991b1b', badgeBg: '#f87171', badgeText: '#7f1d1d', targetText: 'PERSONAL' };
             }
         }

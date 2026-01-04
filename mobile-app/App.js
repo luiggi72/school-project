@@ -17,7 +17,7 @@ import SchoolInfoScreen from './src/screens/SchoolInfoScreen';
 import StudentProfileScreen from './src/screens/StudentProfileScreen';
 import ChatScreen from './src/screens/ChatScreen';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
@@ -63,7 +63,7 @@ export default function App() {
 
   const registerForPushNotificationsAsync = async (userId = null) => {
     if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync('school-alerts', {
+      await Notifications.setNotificationChannelAsync('school-alerts-v2', {
         name: 'Notificaciones Escolares',
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
@@ -140,53 +140,55 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
-        <StatusBar style="dark" backgroundColor="white" />
-        <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Home" component={HomeScreen} />
-          <Stack.Screen
-            name="Notifications"
-            component={NotificationsScreen}
-            options={{ headerShown: true, title: 'Notificaciones', headerTintColor: '#e31e25' }}
-          />
-          <Stack.Screen
-            name="SchoolInfo"
-            component={SchoolInfoScreen}
-            options={{ headerShown: true, title: 'Información', headerTintColor: '#e31e25' }}
-          />
-          <Stack.Screen
-            name="StudentProfile"
-            component={StudentProfileScreen}
-            options={{ headerShown: true, title: 'Perfil del Alumno', headerTintColor: '#e31e25', headerStyle: { backgroundColor: '#f3f4f6' } }}
-          />
-          <Stack.Screen
-            name="Medical"
-            component={MedicalScreen}
-            options={{ headerShown: true, title: 'Salud', headerTintColor: '#e31e25' }}
-          />
-          <Stack.Screen
-            name="Payments"
-            component={PaymentsScreen}
-            options={{ headerShown: true, title: 'Pagos', headerTintColor: '#e31e25' }}
-          />
-          <Stack.Screen
-            name="Grades"
-            component={GradesScreen}
-            options={{ headerShown: true, title: 'Boleta', headerTintColor: '#e31e25' }}
-          />
-          <Stack.Screen
-            name="Tasks"
-            component={TasksScreen}
-            options={{ headerShown: true, title: 'Tareas', headerTintColor: '#e31e25' }}
-          />
-          <Stack.Screen
-            name="Chat"
-            component={ChatScreen}
-            options={{ headerShown: false }}
-          />
-        </Stack.Navigator>
-      </NavigationContainer>
+      <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }} edges={['bottom', 'left', 'right']}>
+        <NavigationContainer>
+          <StatusBar style="dark" backgroundColor="white" />
+          <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen
+              name="Notifications"
+              component={NotificationsScreen}
+              options={{ headerShown: true, title: 'Notificaciones', headerTintColor: '#e31e25' }}
+            />
+            <Stack.Screen
+              name="SchoolInfo"
+              component={SchoolInfoScreen}
+              options={{ headerShown: true, title: 'Información', headerTintColor: '#e31e25' }}
+            />
+            <Stack.Screen
+              name="StudentProfile"
+              component={StudentProfileScreen}
+              options={{ headerShown: true, title: 'Perfil del Alumno', headerTintColor: '#e31e25', headerStyle: { backgroundColor: '#f3f4f6' } }}
+            />
+            <Stack.Screen
+              name="Medical"
+              component={MedicalScreen}
+              options={{ headerShown: true, title: 'Salud', headerTintColor: '#e31e25' }}
+            />
+            <Stack.Screen
+              name="Payments"
+              component={PaymentsScreen}
+              options={{ headerShown: true, title: 'Pagos', headerTintColor: '#e31e25' }}
+            />
+            <Stack.Screen
+              name="Grades"
+              component={GradesScreen}
+              options={{ headerShown: true, title: 'Boleta', headerTintColor: '#e31e25' }}
+            />
+            <Stack.Screen
+              name="Tasks"
+              component={TasksScreen}
+              options={{ headerShown: true, title: 'Tareas', headerTintColor: '#e31e25' }}
+            />
+            <Stack.Screen
+              name="Chat"
+              component={ChatScreen}
+              options={{ headerShown: false }}
+            />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </SafeAreaView>
     </SafeAreaProvider>
   );
 }

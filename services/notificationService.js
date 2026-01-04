@@ -20,9 +20,13 @@ const savePushToken = (userId, token) => {
     });
 };
 
-const sendPushNotification = async (tokens, title, message, data = {}) => {
+const sendPushNotification = async (recipients, title, message, data = {}) => {
     let messages = [];
-    for (let token of tokens) {
+    for (let recipient of recipients) {
+        // Handle both simple token string (legacy) and object {token, badge}
+        const token = typeof recipient === 'string' ? recipient : recipient.token;
+        const badge = typeof recipient === 'object' ? recipient.badge : undefined;
+
         if (!Expo.isExpoPushToken(token)) {
             console.error(`Push token ${token} is not a valid Expo push token`);
             continue;
@@ -35,7 +39,8 @@ const sendPushNotification = async (tokens, title, message, data = {}) => {
             body: message,
             data: data,
             priority: 'high',
-            channelId: 'school-alerts', // Updated channel ID
+            channelId: 'school-alerts-v2', // Updated channel ID to forced V2
+            badge: badge, // Send badge count
         });
     }
 
@@ -65,40 +70,43 @@ const dispatchNotification = (target, title, message, data) => {
 
         switch (target.type) {
             case 'ALL':
-                query = 'SELECT push_token, id as user_id FROM users';
+                query = `
+                     SELECT u.push_token, u.id as user_id,
+                     (SELECT COUNT(*) FROM user_notifications un WHERE un.user_id = u.id AND un.is_read = 0) as unread_count
+                     FROM users u
+                 `;
                 break;
 
             case 'LEVEL':
-                // target.value = 'PREESCOLAR', 'PRIMARIA', etc.
-                // Join users -> students (via family_id)
                 query = `
-                    SELECT DISTINCT u.push_token, u.id as user_id
-                    FROM users u 
-                    JOIN students s ON u.linked_family_id = s.family_id 
-                    WHERE s.grade LIKE ?
-                `;
+                     SELECT DISTINCT u.push_token, u.id as user_id,
+                     (SELECT COUNT(*) FROM user_notifications un WHERE un.user_id = u.id AND un.is_read = 0) as unread_count
+                     FROM users u 
+                     JOIN students s ON u.linked_family_id = s.family_id 
+                     WHERE s.grade LIKE ?
+                 `;
                 params = [`%${target.value}%`];
                 break;
 
             case 'GROUP':
-                // target.value = '3 A', etc.
                 query = `
-                    SELECT DISTINCT u.push_token, u.id as user_id
-                    FROM users u 
-                    JOIN students s ON u.linked_family_id = s.family_id 
-                    WHERE s.group_name = ?
-                `;
+                     SELECT DISTINCT u.push_token, u.id as user_id,
+                     (SELECT COUNT(*) FROM user_notifications un WHERE un.user_id = u.id AND un.is_read = 0) as unread_count
+                     FROM users u 
+                     JOIN students s ON u.linked_family_id = s.family_id 
+                     WHERE s.group_name = ?
+                 `;
                 params = [target.value];
                 break;
 
             case 'STUDENT':
-                // target.value = student_id
                 query = `
-                    SELECT DISTINCT u.push_token, u.id as user_id
-                    FROM users u 
-                    JOIN students s ON u.linked_family_id = s.family_id 
-                    WHERE s.id = ?
-                `;
+                     SELECT DISTINCT u.push_token, u.id as user_id,
+                     (SELECT COUNT(*) FROM user_notifications un WHERE un.user_id = u.id AND un.is_read = 0) as unread_count
+                     FROM users u 
+                     JOIN students s ON u.linked_family_id = s.family_id 
+                     WHERE s.id = ?
+                 `;
                 params = [target.value];
                 break;
 
@@ -109,10 +117,13 @@ const dispatchNotification = (target, title, message, data) => {
         db.query(query, params, async (err, results) => {
             if (err) return reject(err);
 
-            // Filter for valid tokens only for Push
-            const tokens = results
-                .map(r => r.push_token)
-                .filter(t => t && t !== '' && Expo.isExpoPushToken(t));
+            // Prepare recipients with token and calculated badge (current unread + 1 new)
+            const recipients = results
+                .filter(r => r.push_token && r.push_token !== '' && Expo.isExpoPushToken(r.push_token))
+                .map(r => ({
+                    token: r.push_token,
+                    badge: (r.unread_count || 0) + 1
+                }));
 
             const userIds = results.map(r => r.user_id);
 
@@ -120,19 +131,12 @@ const dispatchNotification = (target, title, message, data) => {
                 return resolve({ count: 0, message: 'No users found for this target.' });
             }
 
-            // Persist notifications first (or in parallel)
             // Determine category from target
             let category = 'GENERAL';
             if (target.type === 'LEVEL') category = `LEVEL:${target.value}`;
             else if (target.type === 'GROUP') category = `GROUP:${target.value}`;
             else if (target.type === 'STUDENT') {
-                // Check if a student name was provided in the target object
                 category = target.name ? `STUDENT:${target.name}` : 'PERSONAL';
-
-                // Prepend Student Name to Title for personalization - REMOVED per user request
-                // if (target.name) {
-                //    title = `${target.name} - ${title}`;
-                // }
             }
 
             // Bulk Insert for Web Notifications (All Users)
@@ -148,14 +152,13 @@ const dispatchNotification = (target, title, message, data) => {
             try {
                 // Only attempt push if there are tokens
                 let tickets = [];
-                if (tokens.length > 0) {
-                    tickets = await sendPushNotification(tokens, title, message, data);
+                if (recipients.length > 0) {
+                    tickets = await sendPushNotification(recipients, title, message, data);
                 }
-                resolve({ count: userIds.length, pushCount: tokens.length, tickets });
+                resolve({ count: userIds.length, pushCount: recipients.length, tickets });
             } catch (sendError) {
-                // Don't fail the whole request if push fails, as web notifs are saved
                 console.error('Push send error:', sendError);
-                resolve({ count: userIds.length, pushCount: tokens.length, error: 'Push failed but saved to DB' });
+                resolve({ count: userIds.length, pushCount: recipients.length, error: 'Push failed but saved to DB' });
             }
         });
     });

@@ -114,8 +114,7 @@ export default function HomeScreen({ navigation }) {
                     data={students}
                     renderItem={renderStudent}
                     keyExtractor={item => item.id.toString()}
-                    keyExtractor={item => item.id.toString()}
-                    contentContainerStyle={[styles.list, { paddingBottom: 100 }]} // Increased bottom padding
+                    contentContainerStyle={styles.list} // Reverted padding
                     refreshControl={
                         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#e31e25']} />
                     }
@@ -437,7 +436,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         right: 20,
         right: 20,
-        bottom: 50, // Increased to avoid Android nav bar overlap
+        bottom: 80, // Increased to avoid Android nav bar overlap clearly
         backgroundColor: '#2563eb',
         borderRadius: 30,
         elevation: 8,
