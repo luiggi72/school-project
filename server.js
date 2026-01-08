@@ -58,3 +58,5 @@ app.use('/api/chat', checkAuth, require('./routes/chat'));
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
+
+// Force Restart Triggered

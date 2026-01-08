@@ -394,13 +394,24 @@
                                     <!-- Section 1: Student Info -->
                                     <div class="form-section-divider"
                                         style="display: flex; justify-content: space-between; align-items: center;">
-                                        <h4 class="form-section-title">Información del Alumno</h4>
-                                        <button type="button" class="btn-secondary btn-remove-student hidden"
-                                            style="font-size: 0.8rem; padding: 0.2rem 0.6rem; background-color: #ef4444; color: white;">Eliminar
-                                            Ficha</button>
-                                        <button type="button" id="general-clear-btn" class="btn-secondary"
-                                            style="font-size: 0.8rem; padding: 0.2rem 0.6rem;">Nueva Ficha
-                                            (Limpiar)</button>
+                                        <div style="display: flex; align-items: center; gap: 1rem;">
+                                            <h4 class="form-section-title" style="margin: 0;">Información del Alumno
+                                            </h4>
+                                        </div>
+                                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                            <button type="button" id="btn-back-from-general-info" class="btn-primary"
+                                                style="font-size: 0.9rem; padding: 0.4rem 1rem; display: none; align-items: center; gap: 0.5rem;">
+                                                <span class="material-icons-outlined"
+                                                    style="font-size: 1.2rem;">arrow_back</span>
+                                                Regresar a Lista
+                                            </button>
+                                            <button type="button" class="btn-secondary btn-remove-student hidden"
+                                                style="font-size: 0.8rem; padding: 0.2rem 0.6rem; background-color: #ef4444; color: white;">Eliminar
+                                                Ficha</button>
+                                            <button type="button" id="general-clear-btn" class="btn-secondary"
+                                                style="font-size: 0.8rem; padding: 0.2rem 0.6rem;">Nueva Ficha
+                                                (Limpiar)</button>
+                                        </div>
                                     </div>
                                     <div class="form-row">
                                         <div class="form-group" style="display: none;">
@@ -640,7 +651,14 @@
                             <div class="section-header"
                                 style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
                                 <h3 id="medical-section-title">Ficha Médica del Alumno</h3>
-                                <button type="submit" class="btn-primary">Guardar Ficha Médica</button>
+                                <div style="display: flex; align-items: center; gap: 1rem;">
+                                    <button type="button" id="btn-back-medical" class="btn-primary"
+                                        style="display: none; align-items: center; gap: 0.5rem; padding: 0.4rem 1rem;">
+                                        <span class="material-icons-outlined"
+                                            style="font-size: 1.2rem;">arrow_back</span>
+                                        Regresar a Lista
+                                    </button>
+                                </div>
                             </div>
 
                             <!-- ... rest of medical form ... -->
@@ -948,11 +966,13 @@
 
                 <!-- Account Statement Section (NEW) -->
                 <div id="account-statement-section" class="section hidden">
-                    <div class="section-header">
-                        <h3>Estado de Cuenta del Alumno</h3>
-                        <button class="btn-secondary"
-                            onclick="document.getElementById('account-statement-section').classList.add('hidden'); document.getElementById('students-section').classList.remove('hidden');">
-                            Volver a Lista
+                    <div class="section-header"
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h3 style="margin: 0;">Estado de Cuenta del Alumno</h3>
+                        <button type="button" id="btn-back-account-statement" class="btn-primary"
+                            style="display: none; margin-left: auto; align-items: center; gap: 0.5rem; padding: 0.4rem 1rem;">
+                            <span class="material-icons-outlined" style="font-size: 1.2rem;">arrow_back</span>
+                            Regresar a Lista
                         </button>
                     </div>
 
@@ -1009,6 +1029,55 @@
                 </div>
 
                 <!-- School Info Section -->
+                <!-- Dashboard Home Section (New) -->
+                <div id="dashboard-home-section" class="section hidden" 
+                    style="min-height: 80vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+                    
+                    <!-- Decorative Icon -->
+                    <div style="margin-bottom: 1.5rem; color: #3b82f6; background: #eff6ff; padding: 1.5rem; border-radius: 50%;">
+                        <span class="material-icons-outlined" style="font-size: 4rem;">school</span>
+                    </div>
+
+                    <!-- Welcome Heading -->
+                    <h1 id="dashboard-welcome-msg" 
+                        style="font-size: 2.5rem; font-weight: 800; color: #1e293b; margin-bottom: 0.5rem; letter-spacing: -0.03em; line-height: 1.2;">
+                        Bienvenido
+                    </h1>
+                    
+                    <!-- Elegant Date Display -->
+                    <div id="dashboard-date" 
+                        style="font-size: 1.25rem; color: #64748b; font-weight: 400; margin-bottom: 3rem;">
+                        cargando...
+                    </div>
+
+                    <!-- Widgets Container (Centered Grid) -->
+                    <div id="dashboard-widgets-grid" 
+                        style="display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 1000px;">
+                        <!-- Widgets injected by JS -->
+                    </div>
+                </div>
+                <div id="dashboard-home-section" class="section hidden">
+                    <div class="section-header">
+                        <h3>Panel de Control</h3>
+                        <div id="dashboard-date" style="color: #64748b; font-size: 0.9rem;"></div>
+                    </div>
+
+                    <!-- Welcome Widget (Always Visible) -->
+                    <div class="card"
+                        style="margin-bottom: 2rem; background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: white;">
+                        <h2 id="dashboard-welcome-msg" style="font-size: 1.5rem; margin-bottom: 0.5rem;">Bienvenido</h2>
+                        <p style="opacity: 0.8;">Sistema de Gestión Escolar - Selecciona una opción del menú para
+                            comenzar.</p>
+                    </div>
+
+                    <!-- Dynamic Widgets Container -->
+                    <div id="dashboard-widgets-grid"
+                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                        <!-- Widgets injected by JS based on permissions -->
+                    </div>
+                </div>
+
+                <!-- Existing Sections -->
                 <div id="school-info-section" class="section hidden">
 
                     <div class="info-card"

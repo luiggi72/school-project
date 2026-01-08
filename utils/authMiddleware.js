@@ -55,10 +55,15 @@ const verifyPermission = (requiredPermission) => {
         }
 
         // 3. Validate Permission
-        if (roleConfig.permissions.includes(requiredPermission)) {
+        const permissionsToCheck = Array.isArray(requiredPermission) ? requiredPermission : [requiredPermission];
+
+        const hasPermission = permissionsToCheck.some(p => roleConfig.permissions.includes(p));
+
+        if (hasPermission) {
             next();
         } else {
-            return res.status(403).json({ error: `Access Denied: Missing permission ${requiredPermission}` });
+            console.warn(`Access Denied: Missing permission(s) ${permissionsToCheck.join(' OR ')}`);
+            return res.status(403).json({ error: `Access Denied: Missing required permission` });
         }
     };
 };

@@ -5,7 +5,8 @@ const { verifyPermission } = require('../utils/authMiddleware');
 const { PERMISSIONS } = require('../config/permissions');
 
 // Get all students (optionally filtered by family_id)
-router.get('/', verifyPermission(PERMISSIONS.VIEW_STUDENTS), (req, res) => {
+// Allow if user can VIEW_STUDENTS ("Alumnos") OR VIEW_PAYMENTS ("Caja")
+router.get('/', verifyPermission([PERMISSIONS.VIEW_STUDENTS, PERMISSIONS.VIEW_PAYMENTS]), (req, res) => {
     const { family_id } = req.query;
     let query = `
         SELECT s.*, 
@@ -26,7 +27,7 @@ router.get('/', verifyPermission(PERMISSIONS.VIEW_STUDENTS), (req, res) => {
 });
 
 // Get single student profile with parents
-router.get('/:id', verifyPermission(PERMISSIONS.VIEW_STUDENTS), (req, res) => {
+router.get('/:id', verifyPermission([PERMISSIONS.VIEW_STUDENTS, PERMISSIONS.VIEW_PAYMENTS]), (req, res) => {
     const studentId = req.params.id;
 
     // 1. Get Student Details

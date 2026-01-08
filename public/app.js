@@ -131,12 +131,16 @@ const PERMISSIONS = {
     ALUMNOS_MENU: 'alumnos.view_menu',
     ALUMNOS_LIST: 'alumnos.list',
     ALUMNOS_INFO: 'alumnos.general_info',
+    ALUMNOS_EDIT: 'alumnos.edit',   // NEW
+    ALUMNOS_DELETE: 'alumnos.delete', // NEW
     ALUMNOS_MEDICAL: 'alumnos.medical',
     CAJA_MENU: 'caja.view_menu',
     CAJA_PAGOS: 'caja.pagos',
     CAJA_CONCEPTOS: 'caja.conceptos',
     CONFIG_MENU: 'config.view_menu',
     CONFIG_ROLES: 'config.roles',
+    USERS_EDIT_BTN: 'users.edit', // NEW
+    USERS_DELETE_BTN: 'users.delete', // NEW
     CONFIG_PERMISSIONS: 'config.permissions',
     CONFIG_EMAIL: 'config.email_templates',
     SCHOOL_MENU: 'school.view_menu',
@@ -151,6 +155,7 @@ const PERMISSIONS = {
     INQUIRIES_FORM: 'inquiries.form',
     INQUIRIES_LIST: 'inquiries.list',
     VIEW_AGENDA: 'inquiries.agenda',
+    NOTIFICATIONS_MENU: 'notifications.view_menu', // NEW
     NOTIFICATIONS_SEND: 'notifications.send',
     CONFIG_CHATBOT: 'config.chatbot'
 };
@@ -210,6 +215,7 @@ function updateUIForLogin() {
     if (loginView && dashboardView) {
         loginView.classList.add('hidden');
         dashboardView.classList.remove('hidden');
+        hideAllSections(); // Ensure clean slate
     }
 }
 
@@ -292,7 +298,13 @@ async function checkLoginStatus() {
             loadParentsDashboard(currentUser);
         } else {
             // Admin Logic
-            if (checkPermission(PERMISSIONS.ALUMNOS_LIST)) loadStudents();
+            // Default to Dashboard
+            document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
+            const dashSection = document.getElementById('dashboard-home-section');
+            if (dashSection) dashSection.classList.remove('hidden');
+
+            loadDashboard();
+
             if (checkPermission(PERMISSIONS.CONFIG_ROLES)) loadUsers();
             loadSchoolInfo();
         }
@@ -393,17 +405,24 @@ async function refreshUserData(userId) {
     return null;
 }
 
-async function loadStudents() {
-    console.log('--- Loading Students ---');
+// Core fetcher - silent
+async function fetchStudentsData() {
+    console.log('--- Fetching Students Data ---');
     students = await apiFetch('/students') || [];
     console.log('Students loaded:', students.length);
+    return students;
+}
+
+// UI Loader - fetches AND renders
+async function loadStudents() {
+    await fetchStudentsData();
 
     // Verify DOM access
     const tbody = document.getElementById('students-table-body');
     if (tbody) {
         // tbody.innerHTML = '<tr style="background: red; color: white; font-weight: bold;"><td colspan="8">TEST ROW - IF YOU SEE THIS, TABLE IS VISION OK</td></tr>';
     } else {
-        alert('CRITICAL: Table Body Not Found in DOM');
+        // alert('CRITICAL: Table Body Not Found in DOM'); // Suppress alert if just caching
     }
 
     // Ensure render happens even if updateSearch fails or input missing
@@ -546,7 +565,13 @@ if (userForm) {
                 body: JSON.stringify(userData)
             });
 
-            alert(isEditingUser ? 'Perfil actualizado exitosamente.' : 'Perfil creado exitosamente.');
+            showConfirmModal({
+                title: 'Éxito',
+                message: isEditingUser ? 'Perfil actualizado exitosamente.' : 'Perfil creado exitosamente.',
+                isAlert: true,
+                isSuccess: true,
+                isDestructive: false
+            });
             userModal.classList.add('hidden');
             userForm.reset();
             isEditingUser = false;
@@ -640,9 +665,9 @@ if (loginForm) {
                 applyPermissions();
 
                 // Load Data based on Permissions
-                if (checkPermission(PERMISSIONS.ALUMNOS_LIST)) {
-                    loadStudents();
-                }
+                // if (checkPermission(PERMISSIONS.ALUMNOS_LIST)) {
+                //     loadStudents();
+                // }
 
                 if (checkPermission(PERMISSIONS.CONFIG_ROLES)) {
                     loadUsers();
@@ -1053,8 +1078,8 @@ function renderUsers() {
     usersTableBody.innerHTML = '';
 
     // Permission Check
-    const canEdit = checkPermission(PERMISSIONS.USERS_EDIT);
-    const canDelete = checkPermission(PERMISSIONS.USERS_DELETE);
+    const canEdit = checkPermission(PERMISSIONS.USERS_EDIT_BTN);
+    const canDelete = checkPermission(PERMISSIONS.USERS_DELETE_BTN);
 
     users.forEach((user) => {
         let optionsHtml = '<option value="" disabled selected>Acciones</option>';
@@ -1090,18 +1115,28 @@ function renderUsers() {
 // Duplicate editUser removed. Using the async version defined above.
 
 window.deleteUser = async (id) => {
-    if (!checkPermission(PERMISSIONS.USERS_DELETE)) {
+    if (!checkPermission(PERMISSIONS.USERS_DELETE_BTN)) {
         return alert('No tienes permiso para eliminar usuarios.');
     }
-    if (!confirm('¿Estás seguro de eliminar este usuario?')) return;
-    try {
-        await apiFetch(`/users/${id}`, { method: 'DELETE' });
-        loadUsers();
-    } catch (e) {
-        console.error(e);
-        alert('Error al eliminar usuario');
-    }
-}
+
+    showConfirmModal({
+        title: 'Eliminar Usuario',
+        message: '¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer.',
+        confirmText: 'Sí, eliminar',
+        cancelText: 'Cancelar',
+        isDestructive: true,
+        onConfirm: async () => {
+            try {
+                await apiFetch(`/users/${id}`, { method: 'DELETE' });
+                alert('Usuario eliminado correctamente');
+                await loadUsers();
+            } catch (error) {
+                console.error('Error deleting user:', error);
+                alert('Error al eliminar usuario');
+            }
+        }
+    });
+};
 
 // --- Student CRUD ---
 
@@ -1337,11 +1372,66 @@ if (generalClearBtn) {
         firstEntry.querySelectorAll('select').forEach(s => s.value = '');
         firstEntry.querySelector('.student-unique-id').value = '';
         firstEntry.querySelector('.student-family-id').value = '';
+
+        // Hide Back button since we are creating new
+        const btnBack = document.getElementById('btn-back-from-general-info');
+        if (btnBack) btnBack.style.display = 'none';
     });
 }
 
-// Remove the old "Add Sibling" specific button logic since we now use the dedicated button
-// Old button handling removed
+// Back Button Logic
+const btnBackGeneral = document.getElementById('btn-back-from-general-info');
+if (btnBackGeneral) {
+    btnBackGeneral.addEventListener('click', () => {
+        // Return to Students List
+        document.getElementById('general-info-section').classList.add('hidden');
+        document.getElementById('students-section').classList.remove('hidden');
+
+        // Update Sidebar
+        document.querySelectorAll('.nav-item, .submenu-item').forEach(nav => nav.classList.remove('active'));
+        const studentsLink = document.querySelector('[data-target="students-section"]');
+        if (studentsLink) studentsLink.classList.add('active');
+
+        // Reload list to ensure fresh data
+        loadStudents();
+    });
+}
+
+
+
+// Medical Back Button
+const btnBackMed = document.getElementById('btn-back-medical');
+if (btnBackMed) {
+    btnBackMed.addEventListener('click', () => {
+        document.getElementById('medical-data-section').classList.add('hidden');
+        document.getElementById('students-section').classList.remove('hidden');
+
+        // Update Sidebar
+        document.querySelectorAll('.nav-item, .submenu-item').forEach(nav => nav.classList.remove('active'));
+        const studentsLink = document.querySelector('[data-target="students-section"]');
+        if (studentsLink) studentsLink.classList.add('active');
+
+        loadStudents();
+    });
+}
+
+
+
+// Account Statement Back Button
+const btnBackAccount = document.getElementById('btn-back-account-statement');
+if (btnBackAccount) {
+    btnBackAccount.addEventListener('click', () => {
+        document.getElementById('account-statement-section').classList.add('hidden');
+        document.getElementById('students-section').classList.remove('hidden');
+
+        // Update Sidebar
+        document.querySelectorAll('.nav-item, .submenu-item').forEach(nav => nav.classList.remove('active'));
+        const studentsLink = document.querySelector('[data-target="students-section"]');
+        if (studentsLink) studentsLink.classList.add('active');
+
+        loadStudents();
+    });
+}
 
 
 // Function to load student details into General Info form and switch view
@@ -1362,6 +1452,14 @@ window.viewStudentDetails = async (id) => {
     document.querySelectorAll('.section').forEach(section => section.classList.add('hidden'));
     document.getElementById('general-info-section').classList.remove('hidden');
     document.getElementById('page-title').textContent = 'Información General';
+
+    // Show Back Button
+    const btnBack = document.getElementById('btn-back-from-general-info');
+    if (btnBack) btnBack.style.display = 'flex';
+
+    // Hide New/Clear Button (User Request: Only when calling from student)
+    const btnClear = document.getElementById('general-clear-btn');
+    if (btnClear) btnClear.style.display = 'none';
 
     // Populate Fields
     document.getElementById('general-db-id').value = student.id;
@@ -1561,7 +1659,13 @@ if (generalForm) {
                 }
             }
 
-            alert('Todos los alumnos han sido guardados exitosamente.');
+            showConfirmModal({
+                title: 'Éxito',
+                message: 'Todos los alumnos han sido guardados exitosamente.',
+                isAlert: true,
+                isSuccess: true,
+                isDestructive: false
+            });
             loadStudents();
             document.querySelectorAll('.student-entry').forEach((e, index) => {
                 if (index > 0) e.remove(); // Remove extra siblings
@@ -1608,7 +1712,13 @@ if (schoolInfoForm) {
             method: 'POST',
             body: JSON.stringify(infoData)
         });
-        alert('Información guardada');
+        showConfirmModal({
+            title: 'Éxito',
+            message: 'Información guardada exitosamente',
+            isAlert: true,
+            isSuccess: true,
+            isDestructive: false
+        });
     });
 }
 
@@ -1815,6 +1925,9 @@ window.actualHandleStudentAction = async function (select, id) {
         // Load Medical Data
         if (typeof loadMedicalData === 'function') {
             loadMedicalData(id).catch(err => console.error('Error loading medical data:', err));
+            // Show Back Button
+            const btnBackMed = document.getElementById('btn-back-medical');
+            if (btnBackMed) btnBackMed.style.display = 'flex';
         } else {
             console.error('loadMedicalData IS MISSING');
         }
@@ -1829,6 +1942,10 @@ window.actualHandleStudentAction = async function (select, id) {
             document.getElementById('general-info-section')?.classList.add('hidden');
             document.getElementById('medical-data-section')?.classList.add('hidden');
             statementSection.classList.remove('hidden');
+
+            // Show Back Button
+            const btnBackAccount = document.getElementById('btn-back-account-statement');
+            if (btnBackAccount) btnBackAccount.style.display = 'flex';
 
             if (typeof loadAccountStatement === 'function') {
                 loadAccountStatement(id).catch(err => console.error('Error loading statement:', err));
@@ -1937,7 +2054,13 @@ document.getElementById('medical-data-form')?.addEventListener('submit', async (
             method: 'POST',
             body: JSON.stringify(data)
         });
-        alert('Ficha médica guardada correctamente');
+        showConfirmModal({
+            title: 'Éxito',
+            message: 'Ficha médica guardada correctamente',
+            isAlert: true,
+            isSuccess: true,
+            isDestructive: false
+        });
         // Optional: reload to refresh
     } catch (error) {
         console.error('Error saving medical data:', error);
@@ -2014,8 +2137,8 @@ function renderStudents(filters = { text: '', grade: '', subgrade: '', group: ''
             const row = document.createElement('tr');
 
             // Determine Actions
-            const canEdit = checkPermission(PERMISSIONS.STUDENTS_EDIT);
-            const canDelete = checkPermission(PERMISSIONS.STUDENTS_DELETE);
+            const canEdit = checkPermission(PERMISSIONS.ALUMNOS_EDIT);
+            const canDelete = checkPermission(PERMISSIONS.ALUMNOS_DELETE);
             let actionsHtml = '';
 
             if (canEdit || canDelete) {
@@ -2271,11 +2394,19 @@ function performLogout(silent = false) {
     if (logoutModal) {
         logoutModal.classList.remove('hidden');
     } else {
-        // Fallback
-        if (confirm('¿Cerrar sesión?')) {
-            localStorage.removeItem('user');
-            location.reload();
-        }
+        // Fallback using Standard Confirmation
+        showConfirmModal({
+            title: 'Cerrar Sesión',
+            message: '¿Estás seguro de que quieres cerrar tu sesión?',
+            confirmText: 'Cerrar Sesión',
+            cancelText: 'Cancelar',
+            isDestructive: true,
+            onConfirm: () => {
+                localStorage.removeItem('user');
+                localStorage.removeItem('authToken');
+                location.reload();
+            }
+        });
     }
 }
 
@@ -2461,7 +2592,9 @@ function applyPermissions() {
         { selector: '[data-group="school"]', permission: PERMISSIONS.SCHOOL_MENU },
         { selector: '[data-group="hr"]', permission: PERMISSIONS.HR_MENU },
         { selector: '[data-group="reports"]', permission: PERMISSIONS.REPORTS_MENU },
-        { selector: '[data-group="inquiries"]', permission: PERMISSIONS.INQUIRIES_MENU }
+        { selector: '[data-group="reports"]', permission: PERMISSIONS.REPORTS_MENU },
+        { selector: '[data-group="inquiries"]', permission: PERMISSIONS.INQUIRIES_MENU },
+        { selector: '[data-group="notifications"]', permission: PERMISSIONS.NOTIFICATIONS_MENU } // NEW
     ];
 
     groupRules.forEach(rule => {
@@ -2547,10 +2680,53 @@ function applyPermissions() {
     }
 }
 
+// --- Dashboard Logic (Aesthetic Welcome) ---
+async function loadDashboard() {
+    console.log('--- Loading Aesthetic Dashboard ---');
+
+    // 1. Date (Capitalized)
+    const dateEl = document.getElementById('dashboard-date');
+    if (dateEl) {
+        const now = new Date();
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const dateStr = now.toLocaleDateString('es-MX', options);
+        dateEl.textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+    }
+
+    // 2. Greeting & Name
+    const welcomeEl = document.getElementById('dashboard-welcome-msg');
+    if (welcomeEl) {
+        const hour = new Date().getHours();
+        let greeting = 'Bienvenido';
+        if (hour >= 5 && hour < 12) greeting = 'Buenos días';
+        else if (hour >= 12 && hour < 19) greeting = 'Buenas tardes';
+        else greeting = 'Buenas noches';
+
+        // Extensive fallback for name
+        let userName = 'Usuario';
+        if (typeof currentUser !== 'undefined' && currentUser) {
+            userName = currentUser.name || currentUser.username || currentUser.email || 'Usuario';
+            // If name contains email, maybe take part before @? 
+            if (userName.includes('@')) userName = userName.split('@')[0];
+        } else if (window.currentUser) {
+            userName = window.currentUser.name || 'Usuario';
+        } else {
+            console.warn('loadDashboard: No currentUser found');
+        }
+
+        const finalName = userName !== 'Usuario' ? `, ${userName}` : '';
+        welcomeEl.textContent = `${greeting}${finalName}`;
+    }
+
+    // 3. Clear Widgets (Clean look)
+    const container = document.getElementById('dashboard-widgets-grid');
+    if (container) container.innerHTML = '';
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     checkLoginStatus();
     // Start polling automatically or wait for login?
-    // startInquiryPolling() is called at bottom of file
+
     console.log('App Initializing...');
 
 
@@ -2625,6 +2801,19 @@ document.addEventListener('DOMContentLoaded', () => {
             // Specific Section Logic
             if (targetId === 'concepts-section' && typeof loadConcepts === 'function') {
                 loadConcepts();
+            }
+
+            if (targetId === 'students-section') {
+                loadStudents();
+            }
+
+            if (targetId === 'general-info-section') {
+                // "New" Mode: Show Clear Button, Hide Back Button
+                const btnClear = document.getElementById('general-clear-btn');
+                if (btnClear) btnClear.style.display = 'inline-block';
+
+                const btnBack = document.getElementById('btn-back-from-general-info');
+                if (btnBack) btnBack.style.display = 'none';
             }
 
             if (targetId === 'permissions-section') {
@@ -3215,7 +3404,13 @@ if (agendaConfigForm) {
                 calendar.render();
             }
 
-            alert('Configuración guardada exitosamente.');
+            showConfirmModal({
+                title: 'Éxito',
+                message: 'Configuración guardada exitosamente.',
+                isAlert: true,
+                isSuccess: true,
+                isDestructive: false
+            });
             agendaConfigModal.classList.add('hidden');
 
             // Refresh slots if a date is selected
@@ -3802,6 +3997,14 @@ async function selectStudentForPayment(student) {
 
 // Autocomplete Logic
 if (cajaStudentSearch) {
+    // Auto-load students if missing (e.g. user has permissions for Caja but not Student List)
+    cajaStudentSearch.addEventListener('focus', async () => {
+        if (!students || students.length === 0) {
+            console.log('Caja Search: Students empty, fetching background...');
+            await fetchStudentsData(); // Silent fetch
+        }
+    });
+
     cajaStudentSearch.addEventListener('input', () => {
         const term = cajaStudentSearch.value.trim().toLowerCase();
         cajaSearchSuggestions.innerHTML = ''; // Clear previous
@@ -5950,6 +6153,10 @@ function initPermissionsUI() {
         'manage_users': 'Gestionar Usuarios',
         'users_edit': 'Editar Usuarios',
         'users_delete': 'Eliminar Usuarios',
+        'alumnos.edit': 'Editar Alumno', // NEW
+        'alumnos.delete': 'Eliminar Alumno', // NEW
+        'users.edit': 'Editar Usuario', // NEW
+        'users.delete': 'Eliminar Usuario', // NEW
         // Finance / Caja mappings
         'view_finance': 'Ver Finanzas (Legacy)',
         'manage_payments': 'Gestionar Pagos (Legacy)',
@@ -5979,7 +6186,8 @@ function initPermissionsUI() {
         'inquiries.view_menu': 'Ver Menú Solicitudes',
         'inquiries.form': 'Formulario Solicitud',
         'inquiries.list': 'Lista de Solicitudes',
-        'inquiries.agenda': 'Agenda de Citas'
+        'inquiries.agenda': 'Agenda de Citas',
+        'notifications.view_menu': 'Ver Menú Notificaciones' // NEW
     };
 
 
@@ -5990,13 +6198,19 @@ function initPermissionsUI() {
         {
             title: 'Alumnos',
             items: [
-                { label: 'Lista General', permission: PERMISSIONS.ALUMNOS_LIST },
+                { label: 'Ver Menú Alumnos', permission: PERMISSIONS.ALUMNOS_MENU }, // NEW
+                {
+                    label: 'Lista General',
+                    permission: PERMISSIONS.ALUMNOS_LIST,
+                    actions: ['alumnos.edit_btn', 'alumnos.delete_btn'] // NEW: Button permissions
+                },
                 { label: 'Información General', permission: PERMISSIONS.ALUMNOS_INFO }
             ]
         },
         {
             title: 'Caja',
             items: [
+                { label: 'Ver Menú Caja', permission: PERMISSIONS.CAJA_MENU }, // NEW
                 { label: 'Pagos y Cobros', permission: PERMISSIONS.CAJA_PAGOS },
                 { label: 'Conceptos', permission: PERMISSIONS.CAJA_CONCEPTOS }
             ]
@@ -6004,7 +6218,12 @@ function initPermissionsUI() {
         {
             title: 'Configuración',
             items: [
-                { label: 'Roles y Perfiles', permission: PERMISSIONS.CONFIG_ROLES },
+                { label: 'Ver Menú Configuración', permission: PERMISSIONS.CONFIG_MENU }, // NEW
+                {
+                    label: 'Roles y Perfiles',
+                    permission: PERMISSIONS.CONFIG_ROLES,
+                    actions: ['users.edit', 'users.delete'] // NEW
+                },
                 { label: 'Formato Correos', permission: PERMISSIONS.CONFIG_EMAIL },
                 { label: 'Configurar Permisos', permission: PERMISSIONS.CONFIG_PERMISSIONS }
             ]
@@ -6012,6 +6231,7 @@ function initPermissionsUI() {
         {
             title: 'Información Escolar',
             items: [
+                { label: 'Ver Menú Escuela', permission: PERMISSIONS.SCHOOL_MENU }, // NEW
                 { label: 'Datos Institución', permission: PERMISSIONS.SCHOOL_INFO },
                 {
                     label: 'Estructura',
@@ -6026,18 +6246,21 @@ function initPermissionsUI() {
         {
             title: 'Recursos Humanos',
             items: [
+                { label: 'Ver Menú RRHH', permission: PERMISSIONS.HR_MENU }, // NEW
                 { label: 'Personal', permission: PERMISSIONS.HR_PERSONAL }
             ]
         },
         {
             title: 'Reportes',
             items: [
+                { label: 'Ver Menú Reportes', permission: PERMISSIONS.REPORTS_MENU }, // NEW
                 { label: 'Reporte de Ingresos', permission: PERMISSIONS.REPORTS_INCOME }
             ]
         },
         {
             title: 'Solicitudes',
             items: [
+                { label: 'Ver Menú Solicitudes', permission: PERMISSIONS.INQUIRIES_MENU }, // NEW
                 { label: 'Solicitud de Informes', permission: PERMISSIONS.INQUIRIES_FORM },
                 { label: 'Lista de Informes', permission: PERMISSIONS.INQUIRIES_LIST },
                 { label: 'Agenda', permission: PERMISSIONS.VIEW_AGENDA }
@@ -6045,7 +6268,9 @@ function initPermissionsUI() {
         },
         {
             title: 'Notificaciones',
+            title: 'Notificaciones',
             items: [
+                { label: 'Ver Menú Notificaciones', permission: PERMISSIONS.NOTIFICATIONS_MENU }, // NEW
                 { label: 'Enviar Notificación', permission: PERMISSIONS.NOTIFICATIONS_SEND }
             ]
         }
@@ -6144,6 +6369,37 @@ function initPermissionsUI() {
                 label.appendChild(checkbox);
                 label.appendChild(document.createTextNode(item.label));
                 container.appendChild(label);
+
+                // Render Actions (Buttons) if any
+                if (item.actions && Array.isArray(item.actions)) {
+                    item.actions.forEach(actionKey => {
+                        const actionLabel = document.createElement('label');
+                        actionLabel.style.display = 'flex';
+                        actionLabel.style.alignItems = 'center';
+                        actionLabel.style.gap = '0.5rem';
+                        actionLabel.style.marginBottom = '0.25rem';
+                        actionLabel.style.fontSize = '0.8rem'; // Slightly smaller
+                        actionLabel.style.color = '#64748b'; // Muted color
+                        actionLabel.style.cursor = 'pointer';
+                        actionLabel.style.lineHeight = '1.2';
+                        actionLabel.style.paddingLeft = ((level + 1) * 15) + 'px'; // Indented
+
+                        const actionCheckbox = document.createElement('input');
+                        actionCheckbox.type = 'checkbox';
+                        actionCheckbox.value = actionKey;
+                        actionCheckbox.dataset.role = roleKey;
+                        if (rolePermissions.includes(actionKey)) {
+                            actionCheckbox.checked = true;
+                        }
+
+                        // Friendly name from translations
+                        const friendlyName = PERMISSION_TRANSLATIONS[actionKey] || actionKey;
+
+                        actionLabel.appendChild(actionCheckbox);
+                        actionLabel.appendChild(document.createTextNode(friendlyName));
+                        container.appendChild(actionLabel);
+                    });
+                }
             }
         });
     }
@@ -6280,7 +6536,13 @@ function initPermissionsUI() {
                 method: 'PUT',
                 body: JSON.stringify(window.currentRolesConfig)
             });
-            alert(msg || 'Configuración guardada.');
+            showConfirmModal({
+                title: 'Éxito',
+                message: msg || 'Configuración guardada.',
+                isAlert: true,
+                isSuccess: true,
+                isDestructive: false
+            });
         } catch (e) {
             console.error('Error saving roles:', e);
             alert('Error al guardar: ' + e.message);
@@ -8431,30 +8693,20 @@ window.printAccountStatement = () => {
 // --- User Notifications Logic ---
 
 async function updateNotificationBadge() {
-    if (!currentUser || !currentUser.id) {
-        console.log('DEBUG: updateNotificationBadge aborting - No currentUser or ID:', currentUser);
-        return;
-    }
+    if (!currentUser || !currentUser.id) return;
     try {
-        console.log('DEBUG: Updating Notification Badge for user:', currentUser.id);
         const notifications = await apiFetch(`/notifications/my-notifications?userId=${currentUser.id}`);
-        console.log('DEBUG: Notifications fetched:', notifications);
 
         if (notifications && Array.isArray(notifications)) {
             const unreadCount = notifications.filter(n => !n.is_read).length;
-            console.log('DEBUG: Unread count:', unreadCount);
-
             const badge = document.getElementById('notif-badge-count');
-            console.log('DEBUG: Badge element found:', !!badge);
 
             if (badge) {
                 if (unreadCount > 0) {
                     badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
                     badge.style.display = 'inline-block';
-                    console.log('DEBUG: Badge set to display inline-block');
                 } else {
                     badge.style.display = 'none';
-                    console.log('DEBUG: Badge set to display none (HIDDEN)');
                 }
             }
         } else {
@@ -8876,24 +9128,30 @@ async function loadManagedAppointments() {
                 });
             };
 
-            row.querySelector('.btn-delete-appt').onclick = async () => {
-                if (confirm('¿Seguro que deseas eliminar esta cita?')) {
-                    const res = await apiFetch(`/calendar/${evt.id}`, { method: 'DELETE' });
-                    if (res) {
-                        loadManagedAppointments(); // Refresh list
-                        if (calendar) {
-                            calendar.refetchEvents(); // Refresh calendar (availability updates)
-                            // Instant Slot Refresh
-                            if (evt.start) {
-                                const dateStr = evt.start.split('T')[0];
-                                const title = document.getElementById('selected-date-title');
-                                if (title && title.dataset.date === dateStr) {
-                                    loadTimeSlots(dateStr);
+            row.querySelector('.btn-delete-appt').onclick = () => {
+                showConfirmModal({
+                    title: 'Eliminar Cita',
+                    message: '¿Seguro que deseas eliminar esta cita?',
+                    confirmText: 'Sí, eliminar',
+                    isDestructive: true,
+                    onConfirm: async () => {
+                        const res = await apiFetch(`/calendar/${evt.id}`, { method: 'DELETE' });
+                        if (res) {
+                            loadManagedAppointments(); // Refresh list
+                            if (calendar) {
+                                calendar.refetchEvents(); // Refresh calendar (availability updates)
+                                // Instant Slot Refresh
+                                if (evt.start) {
+                                    const dateStr = evt.start.split('T')[0];
+                                    const title = document.getElementById('selected-date-title');
+                                    if (title && title.dataset.date === dateStr) {
+                                        loadTimeSlots(dateStr);
+                                    }
                                 }
                             }
                         }
                     }
-                }
+                });
             };
 
             appointmentsList.appendChild(row);
