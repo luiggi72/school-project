@@ -8,6 +8,32 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    <style>
+        /* Agenda / Calendar Styles */
+        .day-available {
+            background-color: #86efac !important;
+            /* Darker green (Green-300) */
+        }
+
+        .day-full {
+            background-color: #fee2e2 !important;
+            /* Light red force */
+        }
+
+        .availability-badge {
+            font-size: 0.75rem;
+            color: #1e293b;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 2px 4px;
+            border-radius: 4px;
+            pointer-events: none;
+        }
+
+        .badge-full {
+            color: #ef4444;
+            font-weight: bold;
+        }
+    </style>
 </head>
 
 <body>
@@ -1774,37 +1800,216 @@
                     </div>
                 </div>
 
-                <!-- Agenda Section (NEW) - Enhanced with FullCalendar -->
+                <!-- Agenda Section (NEW) - Enhanced with FullCalendar & Slot Picker -->
                 <div id="agenda-section" class="section hidden">
                     <div class="section-header">
                         <h3>Agenda de Citas/Eventos</h3>
                         <div style="display: flex; gap: 0.5rem;">
-                            <!-- Connect Google Button -->
-                            <a href="/api/calendar/auth/google" class="btn-primary"
-                                style="background-color: white; color: #4285F4; border: 1px solid #d2e3fc; display: flex; align-items: center; gap: 0.5rem; text-decoration: none;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 48 48">
-                                    <path fill="#FFC107"
-                                        d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z">
-                                    </path>
-                                    <path fill="#FF3D00"
-                                        d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z">
-                                    </path>
-                                    <path fill="#4CAF50"
-                                        d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z">
-                                    </path>
-                                    <path fill="#1976D2"
-                                        d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z">
-                                    </path>
-                                </svg>
-                                Conectar Google
-                            </a>
+                            <!-- MANAGE APPOINTMENTS BUTTON (NEW) -->
+                            <button id="btn-manage-appointments" class="btn-secondary"
+                                style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span class="material-icons-outlined">edit_calendar</span> Gestionar Citas
+                            </button>
+
+                            <!-- CONFIG BUTTON -->
+                            <button id="btn-config-agenda" class="btn-secondary"
+                                style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span class="material-icons-outlined">settings</span> Configurar
+                            </button>
+
+
                             <button id="btn-add-appointment" class="btn-primary">+ Nueva Cita</button>
                         </div>
                     </div>
-                    <div class="card" style="padding: 1rem;">
-                        <div id="calendar"></div>
+
+
+                    <!-- NEW: Split Layout matching SAT style -->
+                    <div class="card" style="padding: 1.5rem;">
+                        <div class="agenda-container"
+                            style="display: flex; flex-direction: column; gap: 2rem; height: 750px;">
+                            <!-- Top: Instructions -->
+                            <div
+                                style="background: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 1rem; color: #0c4a6e; border-radius: 4px;">
+                                <p style="margin: 0; font-size: 0.9rem;">
+                                    <strong>Instrucciones:</strong> Selecciona una fecha disponible en el calendario de
+                                    la izquierda, luego elige un horario disponible de la lista derecha para agendar tu
+                                    cita.
+                                </p>
+                            </div>
+
+                            <div style="display: flex; gap: 2rem; flex: 1; overflow: hidden;">
+                                <!-- Left: Calendar Picker -->
+                                <div class="agenda-calendar"
+                                    style="flex: 1.2; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; display:flex; flex-direction:column;">
+                                    <div id="calendar" style="flex:1;"></div>
+                                </div>
+
+                                <!-- Right: Slots -->
+                                <div class="agenda-slots"
+                                    style="flex: 0.8; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.5rem; background: #fafafa; overflow-y: auto; display: flex; flex-direction: column;">
+                                    <h4 id="selected-date-title"
+                                        style="margin: 0 0 1.5rem 0; color: #1e293b; font-size: 1.1rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; text-align: center; text-transform: capitalize;">
+                                        Selecciona una fecha
+                                    </h4>
+
+                                    <div id="time-slots-loading" class="hidden"
+                                        style="text-align: center; color: #64748b; padding: 2rem;">
+                                        <span class="material-icons-outlined spin">sync</span>
+                                        <p>Buscando horarios...</p>
+                                    </div>
+
+                                    <div id="time-slots-container"
+                                        style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;">
+                                        <!-- Slots populated by JS -->
+                                        <div
+                                            style="grid-column: span 2; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 200px; color: #94a3b8; text-align: center;">
+                                            <span class="material-icons-outlined"
+                                                style="font-size: 3rem; margin-bottom: 0.5rem; opacity: 0.5;">calendar_today</span>
+                                            <p>Selecciona un día en el calendario<br>para ver horarios disponibles.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
+                <!-- Agenda CONFIG Modal -->
+                <div id="agenda-config-modal" class="modal hidden">
+                    <div class="modal-content" style="max-width: 800px;">
+                        <span class="close-modal close-config-modal">&times;</span>
+                        <h2>Configuración de Agenda</h2>
+                        <form id="agenda-config-form" style="margin-top: 1.5rem;">
+
+                            <div class="form-group">
+                                <label style="font-weight: 600;">Días Laborales</label>
+                                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem;">
+                                    <label class="check-box-pill"><input type="checkbox" name="workday" value="1">
+                                        Lun</label>
+                                    <label class="check-box-pill"><input type="checkbox" name="workday" value="2">
+                                        Mar</label>
+                                    <label class="check-box-pill"><input type="checkbox" name="workday" value="3">
+                                        Mié</label>
+                                    <label class="check-box-pill"><input type="checkbox" name="workday" value="4">
+                                        Jue</label>
+                                    <label class="check-box-pill"><input type="checkbox" name="workday" value="5">
+                                        Vie</label>
+                                    <label class="check-box-pill"><input type="checkbox" name="workday" value="6">
+                                        Sáb</label>
+                                    <label class="check-box-pill"><input type="checkbox" name="workday" value="0">
+                                        Dom</label>
+                                </div>
+                            </div>
+
+                            <!-- Slot List Editor -->
+                            <div class="form-group" style="margin-top: 1rem;">
+                                <label style="display: flex; justify-content: space-between; align-items: center;">
+                                    Horarios Definidos
+                                    <button type="button" id="btn-add-slot" class="btn-secondary"
+                                        style="padding: 2px 8px; font-size: 0.8rem;">+ Agregar Horario</button>
+                                </label>
+                                <div id="slots-editor-container"
+                                    style="max-height: 300px; overflow-y: auto; border: 1px solid #e2e8f0; padding: 0.5rem; border-radius: 4px;">
+                                    <!-- Dynamic Rows will be added here via JS -->
+                                    <div class="slot-row-header"
+                                        style="display: grid; grid-template-columns: 1fr 2.5fr 0.5fr 0.5fr 30px; gap: 0.5rem; margin-bottom: 0.5rem; font-size: 0.8rem; font-weight: bold; color: #64748b;">
+                                        <span>Hora</span>
+                                        <span>Nombre/Etiqueta</span>
+                                        <span>Capacidad</span>
+                                        <span>Duración (min)</span>
+                                        <span></span>
+                                    </div>
+                                </div>
+                                <small style="color: #64748b; margin-top: 4px; display: block;">Define cada bloque de
+                                    horario individualmente.</small>
+                            </div>
+
+                            <div style="text-align: right; margin-top: 1.5rem;">
+                                <button type="submit" class="btn-primary">Guardar Configuración</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <style>
+                    /* Custom Pill Checkboxes */
+                    .check-box-pill {
+                        background: #f1f5f9;
+                        border: 1px solid #cbd5e1;
+                        border-radius: 20px;
+                        padding: 0.25rem 0.75rem;
+                        font-size: 0.85rem;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        gap: 0.25rem;
+                        transition: all 0.2s;
+                    }
+
+                    .check-box-pill:has(input:checked) {
+                        background: #eff6ff;
+                        border-color: #3b82f6;
+                        color: #1d4ed8;
+                        font-weight: 600;
+                    }
+
+                    /* Button Slot Styles */
+                    .time-slot-btn {
+                        background: white;
+                        border: 1px solid #cbd5e1;
+                        color: #334155;
+                        padding: 0.75rem;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-size: 0.95rem;
+                        transition: all 0.2s;
+                        text-align: center;
+                    }
+
+                    .time-slot-btn:hover:not(:disabled) {
+                        border-color: #3b82f6;
+                        color: #2563eb;
+                        background: #eff6ff;
+                    }
+
+                    .time-slot-btn:disabled {
+                        opacity: 0.5;
+                        cursor: not-allowed;
+                        background: #f1f5f9;
+                        border-color: #e2e8f0;
+                    }
+
+                    /* Disabled Calendar Day */
+                    .day-disabled {
+                        background-color: #f8fafc !important;
+                        cursor: not-allowed;
+                        opacity: 0.6;
+                    }
+
+                    /* Availability Badge (Event) */
+                    .availability-badge {
+                        background-color: transparent !important;
+                        /* Transparent bg */
+                        border: none !important;
+                        text-align: center;
+                        pointer-events: none;
+                        /* Let clicks pass through to the day cell */
+                        margin-top: 15px;
+                        /* Push down to middle-ish */
+                    }
+
+                    .availability-badge .fc-event-main {
+                        color: #15803d;
+                        /* Green text */
+                        font-weight: bold;
+                        font-size: 0.9rem;
+                    }
+
+                    .availability-badge.badge-full .fc-event-main {
+                        color: #b91c1c;
+                        /* Red text */
+                    }
+                </style>
 
 
 
@@ -2579,6 +2784,8 @@
 
 
 
+
+
     <!-- Add Concept Modal -->
     <div id="concept-modal" class="modal hidden">
         <div class="modal-content">
@@ -2768,6 +2975,24 @@
         <div class="modal-content">
             <span class="close-modal" id="close-appointment-modal">&times;</span>
             <h2 id="appointment-modal-title">Agendar Cita</h2>
+
+            <!-- Read-Only Summary View (For new appointments) -->
+            <div id="appointment-summary-view" class="hidden" style="text-align: center; margin-bottom: 1.5rem;">
+                <div style="background: #f8fafc; border-radius: 12px; padding: 1.5rem; border: 1px dashed #cbd5e1;">
+                    <h3 id="summary-label" style="margin: 0 0 0.5rem 0; color: #0f172a; font-size: 1.25rem;">-</h3>
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem; color: #475569;">
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                            <span class="material-icons-outlined" style="font-size: 1.2rem;">calendar_today</span>
+                            <span id="summary-date" style="font-weight: 500;">-</span>
+                        </div>
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                            <span class="material-icons-outlined" style="font-size: 1.2rem;">schedule</span>
+                            <span id="summary-time" style="font-weight: 500;">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <form id="appointment-form">
                 <input type="hidden" id="appointment-id">
                 <div class="form-group">
@@ -2800,6 +3025,24 @@
 
     <!-- Permission Configuration Modal -->
     <!-- Old duplicate modal removed -->
+
+    <!-- Appointment Manager Modal -->
+    <div id="appointment-manager-modal" class="modal hidden">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>Gestionar Citas Programadas</h3>
+                <span class="close-modal" id="close-manager-modal">&times;</span>
+            </div>
+            <div style="margin-bottom: 1rem; color: #64748b; font-size: 0.9rem;">
+                Mostrando citas de los próximos 30 días:
+            </div>
+            <div id="appointments-list"
+                style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 400px; overflow-y: auto;">
+                <!-- Filled dynamically -->
+                <div style="text-align: center; padding: 2rem; color: #94a3b8;">Cargando...</div>
+            </div>
+        </div>
+    </div>
 
     <script src="mexico_data.js"></script>
     <!-- Modal for Adding User (Moved to verify scope) -->
@@ -2955,7 +3198,7 @@
         </div>
     </div>
 
-    <script src="app.js?v=prod47"></script>
+    <script src="app.js?v=prod50"></script>
 
     <!-- Generic Confirmation Modal -->
     <div id="generic-confirm-modal" class="modal-overlay hidden"

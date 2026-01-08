@@ -156,6 +156,7 @@ const PERMISSIONS = {
 };
 
 let currentRolesConfig = {}; // Store fetched config
+let globalAgendaConfig = { days: [], slots: [] }; // Agenda Config
 
 // Auto-Logout State
 const INACTIVITY_LIMIT = 5 * 60 * 1000; // 5 minutes in milliseconds
@@ -233,38 +234,56 @@ function updateUIForLogout() {
 
 async function checkLoginStatus() {
     const userJson = localStorage.getItem('user');
-    if (userJson) {
-        currentUser = JSON.parse(userJson);
-        updateUIForLogin();
 
-        // Fetch dynamic roles for permission checking
+    if (userJson) {
         try {
-            const roles = await apiFetch('/config/roles');
-            if (roles) {
-                currentRolesConfig = roles;
-            }
+            currentUser = JSON.parse(userJson);
         } catch (e) {
-            console.warn('Failed to load dynamic roles, using static fallback:', e);
+            console.error('Error parsing user JSON', e);
+            handleLogout();
+            return;
         }
 
-        // FRESHNESS CHECK: Always refresh user profile on load to ensure name/permissions are up to date
+        // Check for "Half-Login" state (User exists but No Token)
+        if (!localStorage.getItem('authToken')) {
+            console.warn('Detectada sesión antigua sin token. Forzando re-login...');
+            handleLogout();
+            return;
+        }
+
+        // Init UI for Logged In User
+        updateUIForLogin();
+        // loadDashboardStats(); // Typo fix
+        if (typeof loadDashboardData === 'function') loadDashboardData();
+
+        // Load Agenda Config (safe now)
+        if (typeof loadAgendaConfig === 'function') loadAgendaConfig();
+
+        // 1. Fetch dynamic roles
         try {
-            // Only refresh if valid ID
+            const roles = await apiFetch('/config/roles');
+            if (roles) currentRolesConfig = roles;
+        } catch (e) {
+            console.warn('Failed to load dynamic roles:', e);
+        }
+
+        // 2. Refresh User Profile
+        try {
             if (currentUser.id) {
                 const freshUser = await refreshUserData(currentUser.id);
                 if (freshUser) {
-                    currentUser = freshUser; // Update memory
-                    localStorage.setItem('user', JSON.stringify(freshUser)); // Update storage
-                    console.log('User profile refreshed on load:', currentUser.profile);
+                    currentUser = freshUser;
+                    localStorage.setItem('user', JSON.stringify(freshUser));
+                    console.log('User profile refreshed:', currentUser.profile);
                 }
             }
         } catch (e) {
             console.error('Background user refresh failed:', e);
         }
 
-        applyPermissions(); // Apply UI restrictions with loaded config
+        applyPermissions();
 
-        // Role-Based Redirect
+        // 3. Role Redirect
         const role = normalizeRole(currentUser.role);
         if (role === 'tutor') {
             if (dashboardView) dashboardView.classList.add('hidden');
@@ -272,36 +291,24 @@ async function checkLoginStatus() {
             if (parentsView) parentsView.classList.remove('hidden');
             loadParentsDashboard(currentUser);
         } else {
-            // Load Admin/Staff Data
-            if (checkPermission(PERMISSIONS.ALUMNOS_LIST)) {
-                loadStudents();
-            }
-
-            if (checkPermission(PERMISSIONS.CONFIG_ROLES)) {
-                loadUsers();
-            }
-
+            // Admin Logic
+            if (checkPermission(PERMISSIONS.ALUMNOS_LIST)) loadStudents();
+            if (checkPermission(PERMISSIONS.CONFIG_ROLES)) loadUsers();
             loadSchoolInfo();
         }
 
-        // Start inactivity timer (existing)
+        // 4. Background Tasks
         startInactivityTracking();
 
-        // --- NEW: Start Notification Polling ---
+        // Notifications
         if (typeof updateNotificationBadge === 'function') {
-            updateNotificationBadge(); // Initial fetch
-
-            // Clear any existing interval to prevent duplicates
+            updateNotificationBadge();
             if (window.notificationPollInterval) clearInterval(window.notificationPollInterval);
-
-            // Poll every 5 seconds for fast feedback
-            // Poll every 5 seconds for fast feedback
             window.notificationPollInterval = setInterval(() => {
-                if (currentUser && currentUser.id) {
-                    updateNotificationBadge();
-                }
+                if (currentUser && currentUser.id) updateNotificationBadge();
             }, 5000);
         }
+
     } else {
         if (window.notificationPollInterval) clearInterval(window.notificationPollInterval);
         updateUIForLogout();
@@ -331,10 +338,16 @@ function normalizeRole(role) {
 
 async function apiFetch(endpoint, options = {}) {
     try {
-        // Add basic auth header for prototype role check
+        // Add Auth Token
+        const token = localStorage.getItem('authToken');
         const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        // Keep role for legacy checks if needed (but server should trust token)
         if (currentUser && currentUser.role) {
-            // Normalize for backend match (admin, director, etc.)
             headers['x-user-role'] = normalizeRole(currentUser.role);
         }
 
@@ -343,13 +356,22 @@ async function apiFetch(endpoint, options = {}) {
             headers: headers
         });
         if (!response.ok) {
+            if (response.status === 401) {
+                console.warn('Sesión expirada o inválida. Cerrando sesión...');
+                handleLogout(); // Graceful logout instead of reload
+                return null;
+            }
             const errorData = await response.json().catch(() => ({}));
             throw new Error(errorData.error || errorData.message || `API Error: ${response.statusText}`);
         }
         return await response.json();
     } catch (error) {
         console.error('Fetch error:', error);
-        alert(error.message);
+        // Don't alert for 401s as we handle them above (though throw skips here?)
+        // Actually, if we return null above, we don't catch.
+        // If we throw, we catch. 
+        // Let's alert only if it's NOT a reload
+        if (error.message !== 'Failed to fetch') alert(error.message);
         return null;
     }
 }
@@ -559,9 +581,13 @@ if (loginForm) {
                 currentUser = data.user;
                 // Save session
                 localStorage.setItem('user', JSON.stringify(currentUser));
+                if (data.token) {
+                    localStorage.setItem('authToken', data.token); // Correct Key & Value
+                }
                 console.log('Login successful:', currentUser);
 
-                localStorage.setItem('auth_token', 'mock_token'); // Backend doesn't return token yet, using mock
+                // localStorage.setItem('auth_token', 'mock_token'); // REMOVED
+                localStorage.setItem('user_role', currentUser.role);
                 localStorage.setItem('user_role', currentUser.role);
                 localStorage.setItem('user_name', currentUser.username);
                 // Save linked family ID if present
@@ -593,14 +619,21 @@ if (loginForm) {
                 if (displayRoleEl) displayRoleEl.textContent = currentUser.role;
                 if (userInitialEl) userInitialEl.textContent = profileName.charAt(0).toUpperCase();
 
-                // Load Dynamic Roles for Permissions
-                try {
-                    const roles = await apiFetch('/config/roles');
-                    if (roles) {
-                        currentRolesConfig = roles;
+                if (currentUser) {
+                    // Init UI for Logged In User
+                    // Assuming updateUIForLogin and loadDashboardStats are defined elsewhere
+                    // updateUIForLogin();
+                    // loadDashboardStats();
+
+                    // Fetch dynamic roles for permission checking
+                    try {
+                        const roles = await apiFetch('/config/roles');
+                        if (roles) {
+                            currentRolesConfig = roles;
+                        }
+                    } catch (e) {
+                        console.warn('Failed to load dynamic roles, using static fallback');
                     }
-                } catch (e) {
-                    console.warn('Failed to load dynamic roles on login, using static fallback');
                 }
 
                 // Apply Permissions UI first
@@ -1604,25 +1637,29 @@ async function loadAcademicStructureData() {
         if (studentGradeSelect) {
             const currentValue = studentGradeSelect.value;
             studentGradeSelect.innerHTML = '<option value="">Seleccionar Nivel</option>';
-            levels.forEach(level => {
-                const option = document.createElement('option');
-                option.value = level.name; // Store as Uppercase for compatibility
-                option.textContent = level.name;
-                if (currentValue === level.name) option.selected = true;
-                studentGradeSelect.appendChild(option);
-            });
-        }
+            if (levels) {
+                levels.forEach(level => {
+                    const option = document.createElement('option');
+                    option.value = level.name;
+                    option.textContent = level.name;
+                    if (currentValue === level.name) option.selected = true;
+                    studentGradeSelect.appendChild(option);
+                });
+            }
+        } // Close studentGradeSelect
 
         // Populate Filter "Level" dropdown
         const filterGradeSelect = document.getElementById('filter-grade');
         if (filterGradeSelect) {
             filterGradeSelect.innerHTML = '<option value="">Todos los Niveles</option>';
-            levels.forEach(level => {
-                const option = document.createElement('option');
-                option.value = level.name;
-                option.textContent = level.name;
-                filterGradeSelect.appendChild(option);
-            });
+            if (levels) {
+                levels.forEach(level => {
+                    const option = document.createElement('option');
+                    option.value = level.name;
+                    option.textContent = level.name;
+                    filterGradeSelect.appendChild(option);
+                });
+            }
         }
 
     } catch (error) {
@@ -1630,8 +1667,12 @@ async function loadAcademicStructureData() {
     }
 }
 
-// Load on startup
-document.addEventListener('DOMContentLoaded', loadAcademicStructureData);
+// Load on startup ONLY if logged in
+document.addEventListener('DOMContentLoaded', () => {
+    if (currentUser) {
+        loadAcademicStructureData();
+    }
+});
 
 function updateSubgradeOptions(gradeSelectId, subgradeSelectId, selectedSubgrade = null) {
     const gradeSelect = document.getElementById(gradeSelectId);
@@ -3055,8 +3096,201 @@ function hideConceptModal() {
 if (closeConceptModalBtn) closeConceptModalBtn.addEventListener('click', (e) => { e.preventDefault(); hideConceptModal(); });
 if (cancelConceptModalBtn) cancelConceptModalBtn.addEventListener('click', (e) => { e.preventDefault(); hideConceptModal(); });
 
-// --- Calendar Logic ---
+// --- Calendar & Agenda Logic ---
 let calendar;
+// globalAgendaConfig initialized at top of file
+
+const agendaConfigModal = document.getElementById('agenda-config-modal');
+const agendaConfigForm = document.getElementById('agenda-config-form');
+const btnConfigAgenda = document.getElementById('btn-config-agenda');
+const closeConfigModalBtn = document.querySelector('.close-config-modal');
+
+// 1. Agenda Configuration (Load/Save)
+// Helper to render a slot row
+function addSlotRow(slot = {}) {
+    const container = document.getElementById('slots-editor-container');
+    const row = document.createElement('div');
+    row.className = 'slot-row';
+    row.style.cssText = 'display: grid; grid-template-columns: 1fr 2.5fr 0.5fr 0.5fr 30px; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center;';
+
+    row.innerHTML = `
+            <input type="time" class="slot-time input" value="${slot.time || '09:00'}" required>
+            <input type="text" class="slot-label input" value="${slot.label || ''}" placeholder="Ej. Informes" required>
+            <input type="number" class="slot-capacity input" value="${slot.capacity || 1}" min="1" required>
+            <input type="number" class="slot-duration input" value="${slot.duration || 60}" min="15" step="15" required placeholder="Min">
+            <button type="button" class="btn-remove-slot" style="color: #ef4444; background: none; border: none; cursor: pointer;">
+                <span class="material-icons-outlined">delete</span>
+            </button>
+        `;
+
+    row.querySelector('.btn-remove-slot').addEventListener('click', () => row.remove());
+    container.appendChild(row);
+}
+
+document.getElementById('btn-add-slot')?.addEventListener('click', () => {
+    addSlotRow(); // Add default
+});
+
+async function loadAgendaConfig() {
+    try {
+        const config = await apiFetch('/agenda/config');
+        if (config) {
+            console.log('DEBUG: Loaded Agenda Config:', config); // Check types
+            globalAgendaConfig = config; // Update global state
+
+            // Populate Days
+            const dayCheckboxes = document.querySelectorAll('input[name="workday"]');
+            dayCheckboxes.forEach(cb => {
+                cb.checked = config.days.includes(parseInt(cb.value));
+            });
+
+            // Populate Slots
+            const container = document.getElementById('slots-editor-container');
+            // Keep header, remove old rows
+            const header = container.querySelector('.slot-row-header');
+            container.innerHTML = '';
+            container.appendChild(header);
+
+            if (config.slots && Array.isArray(config.slots) && config.slots.length > 0) {
+                config.slots.forEach(slot => addSlotRow(slot));
+            } else {
+                // If no slots (migrating from old config?), maybe add one default or try help user
+                // Or just leave empty
+                addSlotRow({ time: '09:00', label: 'Apertura', capacity: 10 });
+            }
+
+            // Refresh Calendar Colors if active
+            if (typeof calendar !== 'undefined' && calendar) {
+                console.log('Refreshing calendar colors after config load...');
+                calendar.render();
+            }
+        }
+    } catch (e) {
+        console.error('Error loading agenda config:', e);
+    }
+}
+
+if (btnConfigAgenda) {
+    btnConfigAgenda.addEventListener('click', () => {
+        loadAgendaConfig(); // Refresh on open
+        agendaConfigModal.classList.remove('hidden');
+    });
+}
+
+if (closeConfigModalBtn) {
+    closeConfigModalBtn.addEventListener('click', () => agendaConfigModal.classList.add('hidden'));
+}
+
+if (agendaConfigForm) {
+    agendaConfigForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const selectedDays = Array.from(document.querySelectorAll('input[name="workday"]:checked')).map(cb => parseInt(cb.value));
+
+        // Scrape Slots
+        const slotRows = document.querySelectorAll('.slot-row');
+        const slots = Array.from(slotRows).map(row => ({
+            time: row.querySelector('.slot-time').value,
+            label: row.querySelector('.slot-label').value,
+            capacity: parseInt(row.querySelector('.slot-capacity').value) || 1,
+            duration: parseInt(row.querySelector('.slot-duration').value) || 60
+        })).sort((a, b) => a.time.localeCompare(b.time)); // Sort by time
+
+        const configData = {
+            days: selectedDays,
+            slots: slots
+        };
+
+        try {
+            await apiFetch('/agenda/config', {
+                method: 'PUT',
+                body: JSON.stringify(configData)
+            });
+
+            // Update local config immediately
+            globalAgendaConfig = configData;
+
+            // Refresh Calendar UI (Disabled days & Availability colors)
+            if (calendar) {
+                calendar.refetchEvents();
+                calendar.render();
+            }
+
+            alert('Configuración guardada exitosamente.');
+            agendaConfigModal.classList.add('hidden');
+
+            // Refresh slots if a date is selected
+            const selectedDateTitle = document.getElementById('selected-date-title');
+            if (selectedDateTitle && selectedDateTitle.dataset.date) {
+                loadTimeSlots(selectedDateTitle.dataset.date);
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Error al guardar configuración');
+        }
+    });
+}
+
+// 2. Time Slots Login (SAT Style)
+async function loadTimeSlots(date) {
+    const container = document.getElementById('time-slots-container');
+    const loading = document.getElementById('time-slots-loading');
+    const title = document.getElementById('selected-date-title');
+
+    // UI Updates
+    // Fix: Append T12:00:00 to avoid UTC midnight shift to previous day in Western timezones
+    title.textContent = `Horarios para: ${new Date(date + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
+    title.dataset.date = date; // Store for refresh
+
+    container.innerHTML = ''; // Clear previous
+    loading.classList.remove('hidden');
+
+    try {
+        const slots = await apiFetch(`/agenda/slots?date=${date}`);
+        loading.classList.add('hidden');
+
+        if (slots.length === 0) {
+            container.innerHTML = `<div style="grid-column: span 2; text-align: center; color: #ef4444; padding: 1rem;">No hay horarios disponibles para esta fecha.</div>`;
+            return;
+        }
+
+        slots.forEach(slot => {
+            const btn = document.createElement('button');
+            btn.className = 'time-slot-btn';
+
+            // Show Label + Avail
+            const labelText = slot.label ? ` ${slot.label}` : '';
+            const availText = slot.available > 1 ? ` (${slot.available})` : '';
+
+            btn.textContent = `${slot.time}${labelText}${availText}`;
+            if (labelText) {
+                btn.style.width = '100%'; // Full width if it has text
+                btn.style.textAlign = 'left';
+                btn.style.paddingLeft = '1rem';
+            } else {
+                btn.style.textAlign = 'center';
+            }
+
+            btn.onclick = () => {
+                if (slot.available > 0) {
+                    // Open Booking Modal
+                    openAppointmentModal({
+                        start: `${date}T${slot.time}:00`,
+                        label: slot.label, // Pass label for title
+                        duration: slot.duration // Pass configured duration
+                    });
+                } else {
+                    alert('Horario agotado');
+                }
+            };
+            container.appendChild(btn);
+        });
+
+    } catch (e) {
+        console.error(e);
+        loading.classList.add('hidden');
+        container.innerHTML = `<div style="color:red;">Error al cargar horarios.</div>`;
+    }
+}
 
 function initCalendar() {
     const calendarEl = document.getElementById('calendar');
@@ -3067,24 +3301,81 @@ function initCalendar() {
         headerToolbar: {
             left: 'prev,next today',
             center: 'title',
-            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            right: '' // Disable view switching, lock to interactions
         },
-        locale: 'es', // Spanish
-        navLinks: true, // can click day/week names to navigate views
-        selectable: true,
-        selectMirror: true,
-        select: function (arg) {
-            // Create new event on selection (dragging dates)
-            openAppointmentModal({ start: arg.startStr, end: arg.endStr });
-            calendar.unselect();
+        locale: 'es',
+        selectable: true, // Allow clicking days
+        validRange: {
+            start: new Date().toISOString().split('T')[0] // Disable past dates
         },
-        eventClick: function (arg) {
-            // Edit existing event
-            openAppointmentModal(arg.event);
+
+        dateClick: function (info) {
+            const day = info.date.getDay();
+            if (!globalAgendaConfig.days.includes(day)) {
+                return;
+            }
+
+            // Highlight selection
+            document.querySelectorAll('.fc-daygrid-day').forEach(el => el.style.backgroundColor = '');
+            info.dayEl.style.backgroundColor = '#bfdbfe'; // Stronger blue for selection
+
+            // Load Slots
+            loadTimeSlots(info.dateStr);
         },
-        editable: true, // Allow dragging
-        dayMaxEvents: true, // allow "more" link when too many events
-        events: '/api/calendar' // Fetch from our API
+        dayCellDidMount: function (info) {
+            const day = info.date.getDay();
+            // console.log(`DEBUG: Rendering day ${day}. Config days:`, globalAgendaConfig.days);
+            if (globalAgendaConfig.days && !globalAgendaConfig.days.includes(day)) {
+                info.el.classList.add('day-disabled-cell');
+                info.el.style.pointerEvents = 'none';
+                info.el.style.backgroundColor = '#f1f5f9'; // Gray out
+                info.el.style.opacity = '0.6';
+            } else {
+                // Available Day -> Green
+                info.el.style.backgroundColor = '#dcfce7';
+                info.el.classList.add('day-available');
+            }
+        },
+        eventClick: function (info) {
+            console.log('Event Clicked:', info.event);
+            const eventObj = info.event;
+            // Only handle regular events (not background avail)
+            if (eventObj.display === 'background') {
+                console.log('Background event ignored');
+                return;
+            }
+
+            console.log('Opening modal for edit...', eventObj.id);
+            // Open Modal in Edit Mode
+            openAppointmentModal({
+                id: eventObj.id,
+                title: eventObj.title, // Manual title? or calculated
+                start: eventObj.startStr, // ISO string
+                // End? 
+                // Description? (Need to make sure backend sends it in props)
+                description: eventObj.extendedProps.description || ''
+            });
+        },
+        eventSources: [
+            // Appointment Events REMOVED from visual calendar as per user request (Step Id: 429)
+            // {
+            //     url: '/api/calendar',
+            //     color: '#3b82f6',
+            //     failure: function() { console.error('Error fetching calendar events'); }
+            // },
+            {
+                url: '/api/agenda/availability', // Background colors (Green/Red)
+                display: 'background',
+                success: function (rawEvents) {
+                    console.log('Fetched Availability Events:', rawEvents.length);
+                    // Force background color check?
+                    if (rawEvents.length > 0) {
+                        console.log('Sample Event:', rawEvents[0]);
+                    }
+                },
+                failure: function () { console.error('Error fetching availability'); }
+            }
+        ]
     });
 
     calendar.render();
@@ -3103,14 +3394,72 @@ function openAppointmentModal(data = {}) {
     appointmentForm.reset();
     document.getElementById('appointment-id').value = '';
     btnDeleteAppointment.classList.add('hidden');
-    document.getElementById('appointment-modal-title').textContent = 'Agendar Cita';
 
+    // CUSTOM LOGIC: "Informative" Modal
+    const titleInput = document.getElementById('appointment-title');
+    const modalTitle = document.getElementById('appointment-modal-title');
+    const summaryView = document.getElementById('appointment-summary-view');
+    const formFields = document.querySelectorAll('#appointment-form .form-group, #appointment-form .form-row');
+
+    // If creating new from slot (has data.label)
+    if (data.label) {
+        // SUMMARY MODE (Confirm/Create)
+        modalTitle.textContent = 'Confirmar Cita';
+        titleInput.value = data.label; // Set Hidden Title for Submit
+
+        // Show Summary
+        summaryView.classList.remove('hidden');
+        document.getElementById('summary-label').textContent = data.label;
+
+        // Hide ALL standard inputs (Reverted to clean state)
+        formFields.forEach(f => f.classList.add('hidden'));
+
+    } else {
+        // EDIT MODE
+        modalTitle.textContent = data.id ? 'Editar Cita' : 'Agendar Cita';
+
+        // Hide Summary
+        summaryView.classList.add('hidden');
+
+        // Show ALL inputs
+        formFields.forEach(f => f.classList.remove('hidden'));
+    }
+
+    // Set Times (Always set hidden inputs for logic)
+    if (data.start) {
+        document.getElementById('appointment-start').value = data.start;
+        // Auto-calculate end
+        const startDate = new Date(data.start);
+        // Default to slot duration if available in data, else 30 mins
+        // We will pass 'duration' in data later from loadTimeSlots
+        const durationMins = data.duration || 30;
+        const endDate = new Date(startDate.getTime() + durationMins * 60000);
+
+        // Format for display text
+        const dateOptions = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+        const timeOptions = { hour: '2-digit', minute: '2-digit' };
+
+        if (summaryView && !summaryView.classList.contains('hidden')) {
+            document.getElementById('summary-date').textContent = startDate.toLocaleDateString('es-ES', dateOptions);
+            document.getElementById('summary-time').textContent = `${startDate.toLocaleTimeString('es-ES', timeOptions)} - ${endDate.toLocaleTimeString('es-ES', timeOptions)}`;
+            // Re-show text time since inputs are hidden again
+            if (document.getElementById('summary-time')) document.getElementById('summary-time').parentNode.classList.remove('hidden');
+        }
+
+        // Format to ISO string for input
+        const toLocalISO = (d) => {
+            const pad = (n) => n < 10 ? '0' + n : n;
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        };
+        document.getElementById('appointment-end').value = toLocalISO(endDate);
+    }
     // Populate Data
     if (data.id) {
         // Editing existing event
         document.getElementById('appointment-id').value = data.id;
         document.getElementById('appointment-title').value = data.title;
-        document.getElementById('appointment-description').value = data.extendedProps.description || '';
+        // Fix: Use data.description directly as passed from eventClick
+        document.getElementById('appointment-description').value = data.description || (data.extendedProps && data.extendedProps.description) || '';
         document.getElementById('appointment-modal-title').textContent = 'Editar Cita';
 
         // Format dates for input (YYYY-MM-DDTHH:mm)
@@ -3159,30 +3508,34 @@ if (appointmentForm) {
         };
 
         try {
-            let url = '/api/calendar';
+            let url = '/calendar'; // apiFetch adds /api prefix
             let method = 'POST';
 
             if (id) {
-                // Not implementing PUT for now as per plan, but let's assume create for simplicity or fix plan
-                // Actually my route only has POST. Let's stick to Create for now or add PUT/DELETE.
-                // Wait, delete is there. Update? I need to add PUT to backend if I want edit.
-                // For now, I'll just support Create. If ID exists, maybe I should delete and recreate?
-                // Or better, just add PUT to backend quickly.
-                // Let's stick to plan which said "CRUD". I missed PUT in backend.
-                // I will Add PUT later. For now, let's just Log it.
-                alert('La edición aún no está implementada en el servidor (Solo Crear y Eliminar). Crea una nueva cita.');
-                return;
+                // Update Mode
+                method = 'PUT';
+                url = `/calendar/${id}`;
             }
 
-            const res = await fetch(url, {
+            const res = await apiFetch(url, {
                 method: method,
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(appointmentData)
             });
 
-            if (res.ok) {
+            if (res) {
                 closeAppointmentModal();
-                calendar.refetchEvents(); // Refresh calendar
+                if (calendar) calendar.refetchEvents(); // Refresh calendar
+
+                // Refresh the slots side-panel immediately to show updated availability
+                const startVal = document.getElementById('appointment-start').value;
+                if (startVal) {
+                    const dateStr = startVal.split('T')[0];
+                    // Only refresh if the side panel is currently showing this date
+                    const title = document.getElementById('selected-date-title');
+                    if (title && title.dataset.date === dateStr) {
+                        loadTimeSlots(dateStr);
+                    }
+                }
             } else {
                 alert('Error al guardar la cita');
             }
@@ -3205,10 +3558,20 @@ if (btnDeleteAppointment) {
             isDestructive: true,
             onConfirm: async () => {
                 try {
-                    const res = await fetch(`/api/calendar/${id}`, { method: 'DELETE' });
-                    if (res.ok) {
+                    const res = await apiFetch(`/calendar/${id}`, { method: 'DELETE' });
+                    if (res) {
                         closeAppointmentModal();
-                        calendar.refetchEvents();
+                        if (calendar) calendar.refetchEvents();
+
+                        // Instant Slot Refresh
+                        const startVal = document.getElementById('appointment-start').value;
+                        if (startVal) {
+                            const dateStr = startVal.split('T')[0];
+                            const title = document.getElementById('selected-date-title');
+                            if (title && title.dataset.date === dateStr) {
+                                loadTimeSlots(dateStr);
+                            }
+                        }
                     } else {
                         alert('Error al eliminar');
                     }
@@ -4819,9 +5182,12 @@ async function loadGroupsForGrade(gradeId) {
 
     if (!gradeId) return;
 
-    const groups = await apiFetch(`/academic/groups?grade_id=${gradeId}`) || [];
+    const groups = await apiFetch(`/academic/groups?grade_id=${gradeId}`);
+    if (!groups) return;
+
     groups.forEach(g => {
         const item = createAcademicItem(
+            g.id, g.name, 'group',
             g.id, g.name, 'group',
             async (id) => {
                 showConfirmModal({
@@ -8357,3 +8723,117 @@ document.addEventListener('DOMContentLoaded', () => {
 // Expose to window
 window.loadUserNotifications = loadUserNotifications;
 window.markNotificationAsRead = markNotificationAsRead;
+
+// --- Appointment Manager Logic ---
+const managerModal = document.getElementById('appointment-manager-modal');
+const btnManageAppointments = document.getElementById('btn-manage-appointments');
+const closeManagerModalBtn = document.getElementById('close-manager-modal');
+const appointmentsList = document.getElementById('appointments-list');
+
+if (btnManageAppointments) {
+    btnManageAppointments.addEventListener('click', () => {
+        managerModal.classList.remove('hidden');
+        loadManagedAppointments();
+    });
+}
+
+if (closeManagerModalBtn) {
+    closeManagerModalBtn.addEventListener('click', () => {
+        managerModal.classList.add('hidden');
+    });
+}
+
+async function loadManagedAppointments() {
+    appointmentsList.innerHTML = '<div style="text-align: center; padding: 2rem; color: #94a3b8;">Cargando...</div>';
+
+    try {
+        // Fetch next 30 days
+        const start = new Date().toISOString();
+        const end = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+        // Re-use existing endpoint (it expects start/end query)
+        // Check if endpoints expects full ISO or just date. Our recent fix handles ISO.
+        const events = await apiFetch(`/calendar?start=${start}&end=${end}`);
+
+        appointmentsList.innerHTML = '';
+
+        if (!events || events.length === 0) {
+            appointmentsList.innerHTML = '<div style="text-align: center; padding: 2rem; color: #94a3b8;">No hay citas programadas próximamente.</div>';
+            return;
+        }
+
+        // Sort by date
+        events.sort((a, b) => new Date(a.start) - new Date(b.start));
+
+        events.forEach(evt => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0;';
+
+            const dateObj = new Date(evt.start);
+            const dateStr = dateObj.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' });
+            const timeStr = dateObj.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+
+            row.innerHTML = `
+                <div>
+                    <div style="font-weight: 600; color: #0f172a;">${evt.title}</div>
+                    <div style="font-size: 0.85rem; color: #64748b;">
+                        <span style="text-transform: capitalize;">${dateStr}</span> &bull; ${timeStr}
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn-edit-appt" style="background: none; border: none; cursor: pointer; color: #3b82f6;" title="Editar">
+                        <span class="material-icons-outlined">edit</span>
+                    </button>
+                    <button class="btn-delete-appt" style="background: none; border: none; cursor: pointer; color: #ef4444;" title="Eliminar">
+                        <span class="material-icons-outlined">delete</span>
+                    </button>
+                </div>
+            `;
+
+            // Handlers
+            row.querySelector('.btn-edit-appt').onclick = () => {
+                managerModal.classList.add('hidden'); // Close manager
+                // Open Editor
+                // Need to reconstruct the object expected by openAppointmentModal
+                openAppointmentModal({
+                    id: evt.id,
+                    title: evt.title,
+                    start: evt.start,
+                    description: evt.description || '' // API usually returns extendedProps flattened or not? 
+                    // Let's assume standard API return. If 'extendedProps' wrapper exists, check it.
+                    // The /api/calendar endpoint usually returns FullCalendar compliant array.
+                    // Let's check safely.
+                });
+            };
+
+            row.querySelector('.btn-delete-appt').onclick = async () => {
+                if (confirm('¿Seguro que deseas eliminar esta cita?')) {
+                    const res = await apiFetch(`/calendar/${evt.id}`, { method: 'DELETE' });
+                    if (res) {
+                        loadManagedAppointments(); // Refresh list
+                        if (calendar) {
+                            calendar.refetchEvents(); // Refresh calendar (availability updates)
+                            // Instant Slot Refresh
+                            if (evt.start) {
+                                const dateStr = evt.start.split('T')[0];
+                                const title = document.getElementById('selected-date-title');
+                                if (title && title.dataset.date === dateStr) {
+                                    loadTimeSlots(dateStr);
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            appointmentsList.appendChild(row);
+        });
+
+    } catch (e) {
+        console.error(e);
+        appointmentsList.innerHTML = '<div style="text-align: center; color: #ef4444;">Error al cargar citas.</div>';
+    }
+}
+
+// End of script
+// Initial loads are handled by checkLoginStatus()

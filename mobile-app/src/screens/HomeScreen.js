@@ -435,8 +435,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         right: 20,
-        right: 20,
-        bottom: 80, // Increased to avoid Android nav bar overlap clearly
+        bottom: 20, // Moved down to bottom
         backgroundColor: '#2563eb',
         borderRadius: 30,
         elevation: 8,

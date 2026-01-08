@@ -86,3 +86,13 @@ CREATE TABLE IF NOT EXISTS payments (
     codi_status ENUM('PENDING', 'COMPLETED', 'EXPIRED', 'FAILED'),
     FOREIGN KEY (student_id) REFERENCES students(id)
 );
+
+CREATE TABLE IF NOT EXISTS agenda_config (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    setting_key VARCHAR(50) UNIQUE NOT NULL,
+    setting_value JSON NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+INSERT IGNORE INTO agenda_config (setting_key, setting_value) 
+VALUES ('daily_schedule', '{\"days\": [1,2,3,4,5], \"start\": \"09:00\", \"end\": \"18:00\", \"duration\": 30, \"max_concurrent\": 1}');

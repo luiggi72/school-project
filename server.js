@@ -31,21 +31,26 @@ const administrativeRoutes = require('./routes/administrative'); // Added admini
 const configRoutes = require('./routes/config'); // Added config routes
 const calendarRoutes = require('./routes/calendar'); // Added calendar routes
 
-app.use('/api/auth', authRoutes);
-app.use('/api/students', studentRoutes);
-app.use('/api/payments', paymentsRoutes);
-app.use('/api/concepts', conceptsRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/school-info', schoolRoutes);
-app.use('/api/reports', reportsRoutes);
-app.use('/api/inquiries', inquiriesRoutes);
-app.use('/api/academic', academicRoutes);
-app.use('/api/administrative', administrativeRoutes);
-app.use('/api/config', configRoutes); // Config routes
-app.use('/api/calendar', calendarRoutes);
-app.use('/api/medical', require('./routes/medical')); // Medical routes
-app.use('/api/notifications', require('./routes/notifications')); // Notifications routes
-app.use('/api/chat', require('./routes/chat')); // Chat routes
+const checkAuth = require('./middleware/auth'); // Import Middleware
+
+app.use('/api/auth', authRoutes); // Public (Login)
+
+// Protected Routes
+app.use('/api/students', checkAuth, studentRoutes);
+app.use('/api/payments', checkAuth, paymentsRoutes);
+app.use('/api/concepts', checkAuth, conceptsRoutes);
+app.use('/api/users', checkAuth, userRoutes);
+app.use('/api/school-info', checkAuth, schoolRoutes);
+app.use('/api/reports', checkAuth, reportsRoutes);
+app.use('/api/inquiries', checkAuth, inquiriesRoutes);
+app.use('/api/academic', checkAuth, academicRoutes);
+app.use('/api/administrative', checkAuth, administrativeRoutes);
+app.use('/api/config', checkAuth, configRoutes);
+app.use('/api/calendar', checkAuth, calendarRoutes);
+app.use('/api/agenda', checkAuth, require('./routes/agenda'));
+app.use('/api/medical', checkAuth, require('./routes/medical'));
+app.use('/api/notifications', checkAuth, require('./routes/notifications'));
+app.use('/api/chat', checkAuth, require('./routes/chat'));
 
 
 // Start Server

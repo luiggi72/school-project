@@ -10,7 +10,8 @@ import {
     KeyboardAvoidingView,
     Platform
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios'; // We'll use the configured instance in next step or direct
 import { API_URL } from '../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,6 +21,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // For now, I'll use axios directly with the imported URL.
 
 export default function ChatScreen({ navigation }) {
+    const insets = useSafeAreaInsets();
     const [messages, setMessages] = useState([
         { role: 'assistant', content: 'Hola, soy el asistente virtual del colegio. ¿En qué puedo ayudarte hoy?' }
     ]);
@@ -79,7 +81,7 @@ export default function ChatScreen({ navigation }) {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <Text style={styles.backButtonText}>← Regresar</Text>
@@ -100,9 +102,9 @@ export default function ChatScreen({ navigation }) {
 
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={10}
+                keyboardVerticalOffset={0}
             >
-                <View style={styles.inputContainer}>
+                <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom - 20, 0) }]}>
                     <TextInput
                         style={styles.input}
                         value={inputText}
@@ -119,7 +121,7 @@ export default function ChatScreen({ navigation }) {
                         {isLoading ? (
                             <ActivityIndicator size="small" color="#fff" />
                         ) : (
-                            <Text style={styles.sendButtonText}>Enviar</Text>
+                            <Ionicons name="arrow-forward" size={24} color="#fff" />
                         )}
                     </TouchableOpacity>
                 </View>
@@ -188,7 +190,8 @@ const styles = StyleSheet.create({
     },
     inputContainer: {
         flexDirection: 'row',
-        padding: 16,
+        paddingHorizontal: 10,
+        paddingTop: 4,
         backgroundColor: '#fff',
         borderTopWidth: 1,
         borderTopColor: '#e5e7eb',
@@ -201,13 +204,13 @@ const styles = StyleSheet.create({
         borderColor: '#e5e7eb',
         borderRadius: 24,
         paddingHorizontal: 16,
-        paddingVertical: 10,
+        paddingVertical: 6,
         fontSize: 16,
         marginRight: 10,
         color: '#1f2937',
     },
     sendButton: {
-        backgroundColor: '#2563eb',
+        backgroundColor: '#e31e25',
         width: 44,
         height: 44,
         borderRadius: 22,
@@ -215,7 +218,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     disabledButton: {
-        backgroundColor: '#93c5fd',
+        backgroundColor: '#fca5a5',
     },
     sendButtonText: {
         color: '#fff',
