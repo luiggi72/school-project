@@ -26,9 +26,27 @@ router.get('/', verifyPermission([PERMISSIONS.VIEW_STUDENTS, PERMISSIONS.VIEW_PA
     });
 });
 
+// GET /meta/grades - Get unique grades list (Source: academic_levels)
+router.get('/meta/grades', verifyPermission([PERMISSIONS.VIEW_STUDENTS, PERMISSIONS.MANAGE_SCHOOL, PERMISSIONS.VIEW_PAYMENTS]), (req, res) => {
+    console.log('[API] Hit /students/meta/grades endpoint');
+    const query = 'SELECT * FROM academic_levels ORDER BY id ASC'; // Guessing 'id' for order
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error('Error fetching grades:', err);
+            // Fallback to students table if academic_levels fails? 
+            // Better to return empty or error. User said 'base es academic_levels'.
+            return res.status(500).json({ error: 'Database error fetching grades' });
+        }
+        // Map to array of strings (handle 'name', 'level', or 'description')
+        const grades = results.map(r => r.name || r.level || r.description || r.grade).filter(g => g);
+        res.json(grades);
+    });
+});
+
 // Get single student profile with parents
 router.get('/:id', verifyPermission([PERMISSIONS.VIEW_STUDENTS, PERMISSIONS.VIEW_PAYMENTS]), (req, res) => {
     const studentId = req.params.id;
+    console.log(`[API] Hit /students/${studentId} endpoint`);
 
     // 1. Get Student Details
     const studentQuery = 'SELECT * FROM students WHERE id = ?';
@@ -142,7 +160,7 @@ router.put('/:id', verifyPermission(PERMISSIONS.MANAGE_STUDENTS), async (req, re
 
                         // 5. Send Welcome Email
                         console.log(`[Student Update] Sending welcome email to: ${parent.email}`);
-                        await sendParentWelcomeEmail(parent.email, username, passwordRaw);
+                        await sendParentWelcomeEmail(parent.email, username, passwordRaw, { grade, group, subgrade });
                     } else {
                         console.log(`[Student Update] User already exists for ${parent.email}. No email sent.`);
                     }

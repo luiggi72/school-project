@@ -12,6 +12,7 @@
             "school.info",
             "school.structure_academic",
             "school.structure_admin",
+            "config.school",
             "hr.personal",
             "reports.income",
             "inquiries.form",

@@ -22,6 +22,9 @@ const PERMISSIONS = {
     // Inquiries (Informes)
     MANAGE_INQUIRIES: 'inquiries.list', // View list, edit status
     VIEW_AGENDA: 'inquiries.agenda', // View Agenda
+
+    // School Config (Smart Attachments, Templates)
+    MANAGE_SCHOOL: 'config.school'
 };
 
 const ROLES = {

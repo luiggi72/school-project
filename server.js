@@ -31,6 +31,7 @@ const academicRoutes = require('./routes/academic'); // Added academic routes
 const administrativeRoutes = require('./routes/administrative'); // Added administrative routes
 const configRoutes = require('./routes/config'); // Added config routes
 const calendarRoutes = require('./routes/calendar'); // Added calendar routes
+const attachmentsRoutes = require('./routes/attachments'); // Smart Attachments
 
 const checkAuth = require('./middleware/auth'); // Import Middleware
 
@@ -52,6 +53,7 @@ app.use('/api/agenda', checkAuth, require('./routes/agenda'));
 app.use('/api/medical', checkAuth, require('./routes/medical'));
 app.use('/api/notifications', checkAuth, require('./routes/notifications'));
 app.use('/api/chat', checkAuth, require('./routes/chat'));
+app.use('/api/attachments', checkAuth, attachmentsRoutes);
 
 
 // Start Server
@@ -59,4 +61,4 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
 
-// Force Restart Triggered
+// Force Restart Triggered: 2026-01-08T16:05:00

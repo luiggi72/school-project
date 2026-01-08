@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema Escolar</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=prod79">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
     <style>
@@ -146,6 +146,7 @@
                     <div class="nav-group-content">
                         <a class="submenu-item" data-target="roles-users-section">Roles y Perfiles</a>
                         <a class="submenu-item" data-target="email-templates-section">Formato Correos</a>
+                        <a class="submenu-item" data-target="smart-attachments-section">Gestor de Adjuntos</a>
                         <a class="submenu-item" data-target="chatbot-section">Asistente Virtual</a>
                     </div>
                 </div>
@@ -1030,28 +1031,29 @@
 
                 <!-- School Info Section -->
                 <!-- Dashboard Home Section (New) -->
-                <div id="dashboard-home-section" class="section hidden" 
+                <div id="dashboard-home-section" class="section hidden"
                     style="min-height: 80vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
-                    
+
                     <!-- Decorative Icon -->
-                    <div style="margin-bottom: 1.5rem; color: #3b82f6; background: #eff6ff; padding: 1.5rem; border-radius: 50%;">
+                    <div
+                        style="margin-bottom: 1.5rem; color: #3b82f6; background: #eff6ff; padding: 1.5rem; border-radius: 50%;">
                         <span class="material-icons-outlined" style="font-size: 4rem;">school</span>
                     </div>
 
                     <!-- Welcome Heading -->
-                    <h1 id="dashboard-welcome-msg" 
+                    <h1 id="dashboard-welcome-msg"
                         style="font-size: 2.5rem; font-weight: 800; color: #1e293b; margin-bottom: 0.5rem; letter-spacing: -0.03em; line-height: 1.2;">
                         Bienvenido
                     </h1>
-                    
+
                     <!-- Elegant Date Display -->
-                    <div id="dashboard-date" 
+                    <div id="dashboard-date"
                         style="font-size: 1.25rem; color: #64748b; font-weight: 400; margin-bottom: 3rem;">
                         cargando...
                     </div>
 
                     <!-- Widgets Container (Centered Grid) -->
-                    <div id="dashboard-widgets-grid" 
+                    <div id="dashboard-widgets-grid"
                         style="display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 1000px;">
                         <!-- Widgets injected by JS -->
                     </div>
@@ -1301,18 +1303,30 @@
                     </div>
 
                     <div class="card"
-                        style="padding: 1.5rem; height: calc(100vh - 180px); display: flex; flex-direction: column;">
+                        style="padding: 1.5rem; min-height: calc(100vh - 180px); display: flex; flex-direction: column;">
 
                         <div
                             style="margin-bottom: 1rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
                             <div style="flex: 1; min-width: 250px;">
-                                <label
-                                    style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Plantilla:</label>
-                                <select id="template-select"
-                                    style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem;">
-                                    <option value="">-- Seleccionar --</option>
-                                    <!-- Populated by JS -->
-                                </select>
+                                <label class="block mb-2 font-medium">Plantilla:</label>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <select id="template-select"
+                                        style="flex: 1; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem;">
+                                        <option value="">-- Seleccionar --</option>
+                                    </select>
+                                    <button id="btn-new-template" class="btn-secondary" title="Nueva Plantilla"
+                                        style="padding: 0.5rem;">
+                                        <span class="material-icons-outlined">add</span>
+                                    </button>
+                                    <button id="btn-rename-template" class="btn-secondary hidden" title="Renombrar"
+                                        style="padding: 0.5rem;">
+                                        <span class="material-icons-outlined">edit_note</span>
+                                    </button>
+                                    <button id="btn-delete-template" class="btn-secondary hidden" title="Eliminar"
+                                        style="padding: 0.5rem; color: #ef4444;">
+                                        <span class="material-icons-outlined">delete</span>
+                                    </button>
+                                </div>
                             </div>
 
                             <!-- Test Email Controls -->
@@ -1331,11 +1345,90 @@
                             </div>
                         </div>
 
-                        <div
-                            style="flex: 1; border: 1px solid var(--border); border-radius: 0.5rem; overflow: hidden; background-color: #f9fafb;">
-                            <iframe id="template-preview-frame"
-                                style="width: 100%; height: 100%; border: none;"></iframe>
+                        <!-- Editor Controls & Toolbar -->
+                        <div style="margin-bottom: 0.5rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <!-- Formatting Toolbar (Hidden by default) -->
+                                <div id="formatting-toolbar" class="hidden"
+                                    style="display: flex; gap: 0.25rem; background: #f1f5f9; padding: 0.25rem; border-radius: 0.25rem;">
+                                    <button data-cmd="bold" class="btn-tool" title="Negrita"><b>B</b></button>
+                                    <button data-cmd="italic" class="btn-tool" title="Cursiva"><i>I</i></button>
+                                    <button data-cmd="underline" class="btn-tool" title="Subrayado"><u>U</u></button>
+                                    <button data-cmd="strikeThrough" class="btn-tool" title="Tachado"><s>S</s></button>
+
+                                    <div style="width: 1px; background: #cbd5e1; margin: 0 0.25rem;"></div>
+
+                                    <button data-cmd="formatBlock" data-val="H1" class="btn-tool"
+                                        title="Título 1">T1</button>
+                                    <button data-cmd="formatBlock" data-val="H2" class="btn-tool"
+                                        title="Título 2">T2</button>
+                                    <button data-cmd="formatBlock" data-val="H3" class="btn-tool"
+                                        title="Título 3">T3</button>
+
+                                    <div style="width: 1px; background: #cbd5e1; margin: 0 0.25rem;"></div>
+
+                                    <button data-cmd="justifyLeft" class="btn-tool" title="Izquierda"><span
+                                            class="material-icons-outlined"
+                                            style="font-size:16px;">format_align_left</span></button>
+                                    <button data-cmd="justifyCenter" class="btn-tool" title="Centro"><span
+                                            class="material-icons-outlined"
+                                            style="font-size:16px;">format_align_center</span></button>
+                                    <button data-cmd="justifyRight" class="btn-tool" title="Derecha"><span
+                                            class="material-icons-outlined"
+                                            style="font-size:16px;">format_align_right</span></button>
+
+                                    <div style="width: 1px; background: #cbd5e1; margin: 0 0.25rem;"></div>
+
+                                    <button data-cmd="insertUnorderedList" class="btn-tool" title="Lista"><span
+                                            class="material-icons-outlined"
+                                            style="font-size:16px;">format_list_bulleted</span></button>
+                                    <button data-cmd="insertHorizontalRule" class="btn-tool"
+                                        title="Línea Horizontal"><span class="material-icons-outlined"
+                                            style="font-size:16px;">horizontal_rule</span></button>
+                                    <button id="btn-add-link" class="btn-tool" title="Link"><span
+                                            class="material-icons-outlined" style="font-size:16px;">link</span></button>
+                                    <button id="btn-insert-box" class="btn-tool" title="Insertar Recuadro"><span
+                                            class="material-icons-outlined"
+                                            style="font-size:16px;">all_out</span></button>
+
+                                    <div style="width: 1px; background: #cbd5e1; margin: 0 0.25rem;"></div>
+
+                                    <button data-cmd="undo" class="btn-tool" title="Deshacer"><span
+                                            class="material-icons-outlined" style="font-size:16px;">undo</span></button>
+                                    <button data-cmd="redo" class="btn-tool" title="Rehacer"><span
+                                            class="material-icons-outlined" style="font-size:16px;">redo</span></button>
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div style="display: flex; gap: 0.5rem; margin-left: auto;">
+                                    <button id="btn-edit-template" class="btn-secondary hidden"
+                                        style="padding: 0.4rem 0.8rem; font-size: 0.9rem;">
+                                        <span class="material-icons-outlined" style="font-size: 16px;">edit</span>
+                                        Editar
+                                    </button>
+                                    <button id="btn-save-template" class="btn-primary hidden"
+                                        style="padding: 0.4rem 0.8rem; font-size: 0.9rem;">
+                                        <span class="material-icons-outlined" style="font-size: 16px;">save</span>
+                                        Guardar
+                                    </button>
+                                    <button id="btn-cancel-edit" class="btn-secondary hidden"
+                                        style="padding: 0.4rem 0.8rem; font-size: 0.9rem;">
+                                        <span class="material-icons-outlined" style="font-size: 16px;">close</span>
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </div>
                         </div>
+
+                        <div
+                            style="height: 600px; min-height: 400px; border: 1px solid var(--border); border-radius: 0.5rem; overflow: hidden; background-color: #f9fafb; position: relative;">
+                            <!-- Preview / Edit Mode -->
+                            <iframe id="template-preview-frame"
+                                style="width: 100%; height: 100%; border: none; display: block;"></iframe>
+                        </div>
+
+
+
 
                     </div>
                 </div>
@@ -1343,7 +1436,142 @@
 
 
 
-                <!-- Roles and Profiles Section -->
+
+                <!-- Smart Attachment Manager Section (Separated) -->
+                <div id="smart-attachments-section" class="section hidden">
+                    <div class="section-header">
+                        <h3>Gestor de Adjuntos Inteligente</h3>
+                    </div>
+
+                    <div id="smart-attachments-content" class="card"
+                        style="padding: 2rem; background: #fff; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); border: 1px solid var(--border); display: block;">
+                        <div style="display: flex; gap: 3rem; flex-wrap: wrap;">
+
+                            <!-- Left: File Library -->
+                            <div style="flex: 1; min-width: 320px;">
+                                <h4
+                                    style="margin-bottom: 1.25rem; color: var(--text-primary); font-weight: 600; display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem;">
+                                    <span class="material-icons-outlined" style="color: #64748b;">folder_open</span>
+                                    Biblioteca de Archivos
+                                </h4>
+
+                                <!-- Uploader -->
+                                <div
+                                    style="background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px dashed #cbd5e1; margin-bottom: 1.5rem; display: flex; gap: 0.75rem; align-items: center;">
+                                    <input type="file" id="attachment-upload-input" class="input-control"
+                                        style="flex: 1; font-size: 0.9rem; border: none; background: transparent; padding: 0;">
+                                    <button id="btn-upload-file" class="btn-primary"
+                                        style="padding: 0.6rem 1.25rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;">
+                                        <span class="material-icons-outlined"
+                                            style="font-size: 18px;">cloud_upload</span>
+                                        Subir
+                                    </button>
+                                </div>
+
+                                <!-- File List -->
+                                <div
+                                    style="background: #fff; border: 1px solid var(--border); border-radius: 8px; height: 350px; overflow-y: auto; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                                    <ul id="attachment-file-list" style="list-style: none; padding: 0;">
+                                        <!-- content injected via JS -->
+                                        <li
+                                            style="padding: 2rem; text-align: center; color: #94a3b8; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+                                            <span class="material-icons-outlined"
+                                                style="font-size: 32px; opacity: 0.5;">hourglass_empty</span>
+                                            <span>Cargando archivos...</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <!-- Right: Rules Engine -->
+                            <div
+                                style="flex: 1; min-width: 320px; padding-left: 2rem; border-left: 1px solid var(--border);">
+                                <h4
+                                    style="margin-bottom: 1.25rem; color: var(--text-primary); font-weight: 600; display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem;">
+                                    <span class="material-icons-outlined" style="color: #64748b;">rule</span> Reglas de
+                                    Envío
+                                </h4>
+
+                                <div
+                                    style="background: linear-gradient(to bottom right, #f8fafc, #fff); border: 1px solid var(--border); padding: 1.5rem; border-radius: 10px; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                                    <label
+                                        style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase;">Nueva
+                                        Regla Automática:</label>
+                                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+
+                                        <div style="display: flex; gap: 0.75rem;">
+                                            <div style="flex: 1;">
+                                                <span
+                                                    style="display: block; font-size: 0.75rem; color: #64748b; margin-bottom: 0.25rem;">Plantilla
+                                                    de Correo</span>
+                                                <select id="rule-template-select" class="input-control"
+                                                    style="width: 100%;">
+                                                    <option value="">Seleccionar Plantilla...</option>
+                                                    <!-- populated via JS -->
+                                                </select>
+                                            </div>
+                                            <div style="width: 140px;">
+                                                <span
+                                                    style="display: block; font-size: 0.75rem; color: #64748b; margin-bottom: 0.25rem;">Nivel
+                                                    / Grado</span>
+                                                <select id="rule-grade-select" class="input-control"
+                                                    style="width: 100%;">
+                                                    <option value="">Todos (Niveles)</option>
+                                                    <!-- Populated from DB -->
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <span
+                                                style="display: block; font-size: 0.75rem; color: #64748b; margin-bottom: 0.25rem;">Archivo
+                                                a Adjuntar</span>
+                                            <select id="rule-file-select" class="input-control" style="width: 100%;">
+                                                <option value="">Seleccionar Archivo...</option>
+                                                <!-- populated via JS -->
+                                            </select>
+                                        </div>
+
+                                        <button id="btn-add-rule" class="btn-primary"
+                                            style="align-self: flex-end; display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem;">
+                                            <span class="material-icons-outlined"
+                                                style="font-size: 18px;">add_circle</span>
+                                            Agregar Regla
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Rules List -->
+                                <div
+                                    style="height: 220px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: #fff;">
+                                    <table class="data-table"
+                                        style="font-size: 0.9rem; width: 100%; border-collapse: collapse;">
+                                        <thead style="background: #f1f5f9; position: sticky; top: 0;">
+                                            <tr>
+                                                <th
+                                                    style="padding: 0.75rem; text-align: left; font-weight: 600; color: #475569;">
+                                                    Plantilla</th>
+                                                <th
+                                                    style="padding: 0.75rem; text-align: left; font-weight: 600; color: #475569;">
+                                                    Grado</th>
+                                                <th
+                                                    style="padding: 0.75rem; text-align: left; font-weight: 600; color: #475569;">
+                                                    Adjunto</th>
+                                                <th style="width: 40px;"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="attachment-rules-list">
+                                            <!-- JS populated -->
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
                 <div id="roles-users-section" class="section hidden">
                     <div class="section-header">
                         <h3>Roles y Perfiles</h3>
@@ -1400,7 +1628,7 @@
                     <div class="section-header">
                         <h3>Caja</h3>
                     </div>
-                    <div class="card" style="padding: 2rem;">
+                    <div class="card" style="padding: 1.5rem;">
                         <!-- Step 1: Search Student (part of Caja) -->
                         <div class="search-container" style="margin-bottom: 2rem;">
                             <h4>Buscar Alumno</h4>
@@ -3275,22 +3503,62 @@
         </div>
     </div>
 
-    <script src="app.js?v=prod50"></script>
+    <script src="app.js?v=prod92"></script>
 
     <!-- Generic Confirmation Modal -->
+    <style>
+        @keyframes popupEnter {
+            0% {
+                opacity: 0;
+                transform: scale(0.9) translateY(10px);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .popup-animate {
+            animation: popupEnter 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
     <div id="generic-confirm-modal" class="modal-overlay hidden"
+        style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; background-color: rgba(15, 23, 42, 0.65); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; transition: all 0.3s ease;">
+        <div class="modal-content popup-animate"
+            style="max-width: 420px; width: 90%; background: white; border-radius: 1.5rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); text-align: center; padding: 2.5rem 2rem; border: 1px solid rgba(255,255,255,0.1);">
+            <div id="generic-confirm-icon-container"
+                style="color: #ef4444; margin-bottom: 1.5rem; background: #fef2f2; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-left: auto; margin-right: auto;">
+                <span class="material-icons-outlined" style="font-size: 3.5rem;">warning</span>
+            </div>
+            <h3 id="generic-confirm-title"
+                style="margin-bottom: 0.75rem; font-size: 1.5rem; font-weight: 700; color: #1e293b; letter-spacing: -0.025em;">
+                Confirmación</h3>
+            <p id="generic-confirm-message"
+                style="color: #64748b; margin-bottom: 2rem; font-size: 1rem; line-height: 1.6;">¿Estás seguro?</p>
+            <div class="form-actions" style="display: flex; justify-content: center; gap: 1rem; width: 100%;">
+                <button id="btn-generic-cancel" class="btn-secondary"
+                    style="padding: 0.75rem 1.5rem; border-radius: 0.75rem; font-weight: 500; transition: all 0.2s;">Cancelar</button>
+                <button id="btn-generic-confirm" class="btn-primary"
+                    style="background-color: #ef4444; border-color: #ef4444; padding: 0.75rem 1.5rem; border-radius: 0.75rem; font-weight: 600; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3); transition: all 0.2s;">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generic Input Modal -->
+    <div id="generic-input-modal" class="modal-overlay hidden"
         style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center;">
         <div class="modal-content"
             style="max-width: 400px; width: 90%; background: white; border-radius: 1rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); text-align: center; padding: 2rem;">
-            <div id="generic-confirm-icon-container" style="color: #ef4444; margin-bottom: 1rem;">
-                <span class="material-icons-outlined" style="font-size: 3rem;">warning</span>
-            </div>
-            <h3 id="generic-confirm-title" style="margin-bottom: 0.5rem; font-size: 1.25rem;">Confirmación</h3>
-            <p id="generic-confirm-message" style="color: #64748b; margin-bottom: 2rem;">¿Estás seguro?</p>
+            <h3 id="generic-input-title" style="margin-bottom: 0.5rem; font-size: 1.25rem;">Input</h3>
+            <p id="generic-input-message" style="color: #64748b; margin-bottom: 1rem;"></p>
+
+            <input type="text" id="generic-input-field" class="input-control"
+                style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.5rem; margin-bottom: 1.5rem; font-size: 1rem;">
+
             <div class="form-actions" style="display: flex; justify-content: center; gap: 1rem; width: 100%;">
-                <button id="btn-generic-cancel" class="btn-secondary">Cancelar</button>
-                <button id="btn-generic-confirm" class="btn-primary"
-                    style="background-color: #ef4444; border-color: #ef4444;">Confirmar</button>
+                <button id="btn-input-cancel" class="btn-secondary">Cancelar</button>
+                <button id="btn-input-confirm" class="btn-primary">Aceptar</button>
             </div>
         </div>
     </div>

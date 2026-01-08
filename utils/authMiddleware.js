@@ -49,6 +49,8 @@ const verifyPermission = (requiredPermission) => {
         const roles = getRoles();
         const roleConfig = roles[userRole];
 
+        console.log(`[AuthDebug] Raw: '${rawRole}', Norm: '${userRole}', Available: ${Object.keys(roles).join(', ')}`);
+
         if (!roleConfig) {
             console.warn(`Access Denied: Role '${userRole}' (raw: ${rawRole}) not found in configuration.`);
             return res.status(403).json({ error: 'Access Denied: Invalid Role' });

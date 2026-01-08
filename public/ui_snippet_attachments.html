@@ -1,0 +1,87 @@
+<!-- Smart Attachment Manager Section -->
+<div class="section-header" style="margin-top: 2rem; padding-top: 1rem; border-top: 1px dashed #e2e8f0;">
+    <h3>Gestor de Adjuntos Inteligente</h3>
+</div>
+
+<div class="card" style="padding: 1.5rem;">
+    <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+
+        <!-- Left: File Library -->
+        <div style="flex: 1; min-width: 300px;">
+            <h4 style="margin-bottom: 1rem; color: #1e293b; display: flex; align-items: center; gap: 0.5rem;">
+                <span class="material-icons-outlined">folder_open</span> Biblioteca de Archivos
+            </h4>
+
+            <!-- Uploder -->
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                <input type="file" id="attachment-upload-input" class="input-control"
+                    style="flex: 1; font-size: 0.9rem;">
+                <button id="btn-upload-file" class="btn-primary" style="padding: 0.5rem 1rem;">Subir</button>
+            </div>
+
+            <!-- File List -->
+            <div
+                style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem; height: 300px; overflow-y: auto; padding: 0.5rem;">
+                <ul id="attachment-file-list" style="list-style: none; padding: 0;">
+                    <!-- content injected via JS -->
+                    <li style="padding: 1rem; text-align: center; color: #64748b;">Cargando archivos...</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Right: Rules Engine -->
+        <div style="flex: 1; min-width: 300px; padding-left: 2rem; border-left: 1px solid #e2e8f0;">
+            <h4 style="margin-bottom: 1rem; color: #1e293b; display: flex; align-items: center; gap: 0.5rem;">
+                <span class="material-icons-outlined">rule</span> Reglas de Envío
+            </h4>
+
+            <div
+                style="background: #fff; border: 1px solid #e2e8f0; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 0.25rem;">Nueva
+                    Regla:</label>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+
+                    <div style="display: flex; gap: 0.5rem;">
+                        <select id="rule-template-select" class="input-control" style="flex: 1;">
+                            <option value="">Seleccionar Plantilla...</option>
+                            <!-- populated via JS -->
+                        </select>
+                        <select id="rule-grade-select" class="input-control" style="width: 120px;">
+                            <option value="">Todos (Grados)</option>
+                            <option value="Maternal">Maternal</option>
+                            <option value="Kinder 1">Kinder 1</option>
+                            <option value="Kinder 2">Kinder 2</option>
+                            <option value="Kinder 3">Kinder 3</option>
+                            <option value="Pre-Primary">Pre-Primary</option>
+                        </select>
+                    </div>
+
+                    <select id="rule-file-select" class="input-control">
+                        <option value="">Seleccionar Archivo para Adjuntar...</option>
+                        <!-- populated via JS -->
+                    </select>
+
+                    <button id="btn-add-rule" class="btn-primary" style="align-self: flex-end;">+ Agregar Regla</button>
+                </div>
+            </div>
+
+            <!-- Rules List -->
+            <div style="height: 180px; overflow-y: auto;">
+                <table class="data-table" style="font-size: 0.85rem;">
+                    <thead>
+                        <tr>
+                            <th style="padding: 0.5rem;">Si Plantilla es...</th>
+                            <th style="padding: 0.5rem;">Y Grado es...</th>
+                            <th style="padding: 0.5rem;">Adjuntar...</th>
+                            <th style="width: 30px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="attachment-rules-list">
+                        <!-- JS populated -->
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+</div>

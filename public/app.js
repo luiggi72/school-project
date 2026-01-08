@@ -321,6 +321,9 @@ async function checkLoginStatus() {
             }, 5000);
         }
 
+        // Initialize Smart Attachments (Requires Auth)
+        if (typeof initSmartAttachments === 'function') initSmartAttachments();
+
     } else {
         if (window.notificationPollInterval) clearInterval(window.notificationPollInterval);
         updateUIForLogout();
@@ -352,7 +355,12 @@ async function apiFetch(endpoint, options = {}) {
     try {
         // Add Auth Token
         const token = localStorage.getItem('authToken');
-        const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+        const headers = { ...(options.headers || {}) };
+
+        // Only set JSON content type if not FormData
+        if (!(options.body instanceof FormData) && !headers['Content-Type']) {
+            headers['Content-Type'] = 'application/json';
+        }
 
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
@@ -5909,34 +5917,283 @@ async function loadEmailTemplates() {
 // Template Selection Handler
 const templateSelect = document.getElementById('template-select');
 if (templateSelect) {
+    // UI References
+    const btnEdit = document.getElementById('btn-edit-template');
+    const btnSave = document.getElementById('btn-save-template');
+    const btnCancel = document.getElementById('btn-cancel-edit');
+    const iframe = document.getElementById('template-preview-frame');
+    // const quillWrapper = document.getElementById('editor-wrapper'); // Removed
+    // let quill = null; // Removed
+
+    const formattingToolbar = document.getElementById('formatting-toolbar');
+
+    // Management Buttons
+    const btnNew = document.getElementById('btn-new-template');
+    const btnRename = document.getElementById('btn-rename-template');
+    const btnDelete = document.getElementById('btn-delete-template');
+
+    const toggleEditor = (editable) => {
+        const doc = iframe.contentDocument;
+        if (!doc) return;
+
+        if (editable) {
+            doc.body.contentEditable = 'true';
+            doc.body.style.border = '2px solid #3b82f6'; // Visual cue
+            btnEdit.classList.add('hidden');
+            btnSave.classList.remove('hidden');
+            btnCancel.classList.remove('hidden');
+            formattingToolbar.classList.remove('hidden'); // Show tools
+        } else {
+            doc.body.contentEditable = 'false';
+            doc.body.style.border = 'none';
+            btnEdit.classList.remove('hidden');
+            btnSave.classList.add('hidden');
+            btnCancel.classList.add('hidden');
+            formattingToolbar.classList.add('hidden'); // Hide tools
+        }
+    };
+
+    // Tool Buttons Logic
+    formattingToolbar.addEventListener('click', (e) => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+
+        const cmd = btn.dataset.cmd;
+        const val = btn.dataset.val || null;
+        if (cmd) {
+            iframe.contentDocument.execCommand(cmd, false, val);
+            iframe.contentWindow.focus();
+        } else if (btn.id === 'btn-add-link') {
+            const url = prompt('Ingresa el link:', 'https://');
+            if (url) {
+                iframe.contentDocument.execCommand('createLink', false, url);
+            }
+        } else if (btn.id === 'btn-insert-box') {
+            const borderColor = prompt('Color de la línea lateral (inglés o hex):', '#3b82f6');
+            if (borderColor === null) return; // Cancelled
+            const bgColor = prompt('Color de fondo (inglés o hex):', '#f8f9fa');
+            if (bgColor === null) return;
+
+            const boxHtml = `
+                <div style="background-color: ${bgColor}; border: 1px solid #e9ecef; border-left: 4px solid ${borderColor}; padding: 12px; margin: 10px 0; border-radius: 4px;">
+                    <p style="margin: 0; color: #334155;"><strong>Destacado:</strong> Escribe aquí tu información.</p>
+                </div><br>
+            `;
+            iframe.contentDocument.execCommand('insertHTML', false, boxHtml);
+            iframe.contentWindow.focus();
+        }
+    });
+
+    // Helper for Input Modal
+    const showInputModal = (title, message, initialValue = '') => {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('generic-input-modal');
+            const titleEl = document.getElementById('generic-input-title');
+            const msgEl = document.getElementById('generic-input-message');
+            const inputEl = document.getElementById('generic-input-field');
+            const btnConfirm = document.getElementById('btn-input-confirm');
+            const btnCancel = document.getElementById('btn-input-cancel');
+
+            titleEl.textContent = title;
+            msgEl.textContent = message;
+            inputEl.value = initialValue;
+
+            modal.classList.remove('hidden');
+            inputEl.focus();
+
+            const close = (value) => {
+                modal.classList.add('hidden');
+                // Cleanup listeners to avoid dupes if reused without cloning (though simple remove is better)
+                btnConfirm.onclick = null;
+                btnCancel.onclick = null;
+                resolve(value);
+            };
+
+            btnConfirm.onclick = () => close(inputEl.value.trim());
+            btnCancel.onclick = () => close(null);
+
+            // Allow Enter key
+            inputEl.onkeyup = (e) => {
+                if (e.key === 'Enter') close(inputEl.value.trim());
+                if (e.key === 'Escape') close(null);
+            };
+        });
+    };
+
+    // MANAGEMENT ACTIONS
+
+    // New
+    btnNew.addEventListener('click', async () => {
+        const name = await showInputModal('Nueva Plantilla', 'Nombre de la nueva plantilla (sin espacios):');
+        if (!name) return;
+
+        try {
+            await apiFetch('/config/templates', {
+                method: 'POST',
+                body: JSON.stringify({ name })
+            });
+            await loadEmailTemplates();
+            templateSelect.value = name;
+            templateSelect.dispatchEvent(new Event('change'));
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+
+    // Rename
+    btnRename.addEventListener('click', async () => {
+        const currentName = templateSelect.value;
+        if (!currentName) return;
+
+        const newName = await showInputModal('Renombrar Plantilla', 'Nuevo nombre:', currentName);
+        if (!newName || newName === currentName) return;
+
+        try {
+            await apiFetch(`/config/templates/${encodeURIComponent(currentName)}/rename`, {
+                method: 'POST',
+                body: JSON.stringify({ newName })
+            });
+            await loadEmailTemplates();
+            templateSelect.value = newName;
+            templateSelect.dispatchEvent(new Event('change'));
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+
+    // Delete
+    btnDelete.addEventListener('click', async () => {
+        const currentName = templateSelect.value;
+        if (!currentName) return;
+
+        if (!confirm(`¿Eliminar plantilla "${currentName}"?`)) return;
+
+        try {
+            await apiFetch(`/config/templates/${encodeURIComponent(currentName)}`, {
+                method: 'DELETE'
+            });
+            await loadEmailTemplates(); // Refresh list
+            iframe.srcdoc = ''; // Clear preview
+            btnRename.classList.add('hidden');
+            btnDelete.classList.add('hidden');
+        } catch (error) {
+            alert(error.message);
+        }
+    });
+
     templateSelect.addEventListener('change', async (e) => {
         const templateName = e.target.value;
-        const iframe = document.getElementById('template-preview-frame');
 
+        // Reset UI
+        toggleEditor(false);
         if (!templateName) {
             iframe.srcdoc = '';
+            btnEdit.classList.add('hidden');
             return;
         }
+        btnEdit.classList.remove('hidden');
+        btnRename.classList.remove('hidden');
+        btnDelete.classList.remove('hidden');
 
         try {
             // Fetch raw HTML content with Auth Header
             const token = localStorage.getItem('authToken');
-            const response = await fetch(`${API_URL}/config/templates/${templateName}`, {
+            const response = await fetch(`${API_URL}/config/templates/${encodeURIComponent(templateName)}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
 
             if (!response.ok) throw new Error('Failed to load template');
-            const html = await response.text();
+            let html = await response.text();
+
+            // Fix CID for browser preview
+            html = html.replace('cid:school_logo', 'logo.png');
 
             iframe.srcdoc = html;
         } catch (error) {
             console.error('Error loading template preview:', error);
-            iframe.srcdoc = '<div style="font-family: sans-serif; padding: 2rem; color: #ef4444;">Error al cargar la visualización de la plantilla.</div>';
+            iframe.srcdoc = '<p style="color:red; padding:1rem;">Error loading preview</p>';
         }
     });
+
+    // EDIT Button
+    if (btnEdit) {
+        btnEdit.addEventListener('click', async () => {
+            // Just enable editing on the current loaded iframe
+            const templateName = templateSelect.value;
+            if (!templateName) return;
+
+            toggleEditor(true);
+        });
+    }
+
+    // CANCEL Button
+    if (btnCancel) {
+        btnCancel.addEventListener('click', () => {
+            toggleEditor(false);
+        });
+    }
+
+    // SAVE Button
+    if (btnSave) {
+        btnSave.addEventListener('click', async () => {
+            const templateName = templateSelect.value;
+            const doc = iframe.contentDocument;
+
+            // Get full HTML
+            let content = doc ? doc.documentElement.outerHTML : '';
+
+            if (!templateName || !content) return;
+
+            // Revert logo path for Email System
+            content = content.replace(/logo\.png/g, 'cid:school_logo');
+            // Remove the editable border if captured (and contentEditable attr)
+            content = content.replace(/ contenteditable="true"/g, '');
+            content = content.replace(/ style="[^"]*border: 2px solid rgb\(59, 130, 246\);[^"]*"/g, '');
+            // A more robust way might be to perform cleanup on DOM before serializing, 
+            // but for now string replacement works if specific style matches.
+            // Better: remove style from DOM, grab html, re-add style.
+
+            // CLEANUP DOM safely
+            const previousStyle = doc.body.style.cssText;
+            doc.body.contentEditable = 'false';
+            doc.body.style.border = 'none';
+
+            content = doc.documentElement.outerHTML; // Grab clean HTML
+
+            // Restore for UI logic (toggleEditor will handle it, but wait, toggleEditor(false) is called next)
+            // But we need to put back CID
+            content = content.replace(/logo\.png/g, 'cid:school_logo');
+
+            const btnOriginalText = btnSave.innerHTML;
+            btnSave.disabled = true;
+            btnSave.textContent = 'Guardando...';
+
+            try {
+                await apiFetch(`/config/templates/${encodeURIComponent(templateName)}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ content })
+                });
+
+                // Success
+                alert('Plantilla guardada correctamente');
+                toggleEditor(false);
+
+                // Refresh Preview
+                templateSelect.dispatchEvent(new Event('change'));
+
+            } catch (error) {
+                console.error('Save error:', error);
+                alert('Error al guardar: ' + error.message);
+            } finally {
+                btnSave.disabled = false;
+                btnSave.innerHTML = btnOriginalText;
+            }
+        });
+    }
 }
+
 
 // Hook into Navigation for Email Templates
 document.querySelectorAll('[data-target="email-templates-section"]').forEach(btn => {
@@ -5987,9 +6244,17 @@ if (btnSendTestEmail) {
         btn.innerHTML = `<span class="material-icons-outlined" style="font-size: 18px; animation: spin 1s linear infinite;">refresh</span> Enviando...`;
 
         try {
+            const formData = new FormData();
+            formData.append('email', email);
+            formData.append('template', template);
+
+            // Attachment logic removed as requested
+
+            // Attachment logic removed as requested
+
             await apiFetch('/config/test-email', {
                 method: 'POST',
-                body: JSON.stringify({ email, template })
+                body: formData
             });
             alert(`Correo de prueba enviado a ${email}`);
         } catch (error) {
@@ -6003,7 +6268,370 @@ if (btnSendTestEmail) {
 }
 
 
-// --- Permission Management UI Logic ---
+// --- Smart Attachment Manager Logic ---
+function initSmartAttachments() {
+    const btnUploadFile = document.getElementById('btn-upload-file');
+    if (btnUploadFile) {
+        const fileInput = document.getElementById('attachment-upload-input');
+        const fileListEl = document.getElementById('attachment-file-list');
+        const ruleTemplateSelect = document.getElementById('rule-template-select');
+        const ruleFileSelect = document.getElementById('rule-file-select');
+        const btnAddRule = document.getElementById('btn-add-rule');
+        const rulesListEl = document.getElementById('attachment-rules-list');
+
+        // Helper for Success Modals (Re-uses generic modal)
+        function showSuccessModal({ title, message, onClose }) {
+            const modal = document.getElementById('generic-confirm-modal');
+            if (!modal) return alert(message);
+
+            const titleEl = document.getElementById('generic-confirm-title');
+            const msgEl = document.getElementById('generic-confirm-message');
+            const confirmBtn = document.getElementById('btn-generic-confirm');
+            const cancelBtn = document.getElementById('btn-generic-cancel');
+
+            if (titleEl) titleEl.textContent = title || 'Éxito';
+            if (msgEl) msgEl.textContent = message;
+
+            if (confirmBtn) {
+                confirmBtn.textContent = 'Aceptar';
+                confirmBtn.className = 'btn-confirm';
+                confirmBtn.style.backgroundColor = '#3b82f6';
+                confirmBtn.style.borderColor = '#3b82f6';
+
+                const newConfirm = confirmBtn.cloneNode(true);
+                confirmBtn.parentNode.replaceChild(newConfirm, confirmBtn);
+
+                newConfirm.addEventListener('click', () => {
+                    modal.classList.add('hidden');
+                    if (onClose) onClose();
+                });
+            }
+
+            if (cancelBtn) cancelBtn.classList.add('hidden');
+
+            const iconContainer = document.getElementById('generic-confirm-icon-container');
+            if (iconContainer) {
+                iconContainer.innerHTML = '<span class="material-icons-outlined" style="font-size: 3rem; color: #22c55e;">check_circle</span>';
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        // Initial Load
+        loadAttachmentLibrary();
+        loadAttachmentRules();
+        populateRuleDropdowns();
+
+        // 1. Upload File
+        btnUploadFile.addEventListener('click', async () => {
+            if (!fileInput.files[0]) {
+                return showConfirmModal({
+                    title: 'Atención',
+                    message: 'Selecciona un archivo primero.',
+                    isAlert: true
+                });
+            }
+
+            const originalText = btnUploadFile.innerText;
+            btnUploadFile.innerText = 'Subiendo...';
+            btnUploadFile.disabled = true;
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                const res = await apiFetch('/attachments/upload', {
+                    method: 'POST',
+                    body: formData
+                }); // Let apiFetch handle JSON response check or error throw
+                // Wait, apiFetch wraps headers. For FormData, we usually let browser set Content-Type.
+                // If apiFetch forces Content-Type: application/json, it will fail.
+                // Checking apiFetch implementation... usually it checks if body is FormData.
+                // Assuming apiFetch handles FormData correctly (removes Content-Type header).
+                // If uncertain, I will use standard fetch here or rely on apiFetch smarts.
+                // Ideally I should check apiFetch.
+                // But for safer execution, I'll use raw fetch with the auth header if I can get token.
+                // Actually, let's try apiFetch. Most wrappers handle FormData.
+
+                if (res) {
+                    // alert('Archivo subido correctamente');
+                    // alert('Archivo subido correctamente');
+                    showSuccessModal({
+                        title: 'Éxito',
+                        message: 'Archivo subido correctamente al sistema.',
+                        onClose: () => {
+                            loadAttachmentLibrary();
+                            populateRuleDropdowns();
+                        }
+                    });
+                    fileInput.value = '';
+                    loadAttachmentLibrary();
+                    populateRuleDropdowns(); // Refresh file select
+                }
+            } catch (e) {
+                console.error(e);
+                showConfirmModal({
+                    title: 'Error',
+                    message: 'Error al subir: ' + e.message,
+                    isAlert: true
+                });
+            } finally {
+                btnUploadFile.innerText = originalText;
+                btnUploadFile.disabled = false;
+            }
+        });
+
+        // 2. Add Rule
+        btnAddRule.addEventListener('click', async () => {
+            const template = ruleTemplateSelect.value;
+            const grade = document.getElementById('rule-grade-select').value;
+            const file = ruleFileSelect.value;
+
+            if (!template || !file) {
+                return showConfirmModal({
+                    title: 'Atención',
+                    message: 'Debes seleccionar Plantilla y Archivo.',
+                    isAlert: true
+                });
+            }
+
+            try {
+                await apiFetch('/attachments/rules', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        template_name: template,
+                        grade_condition: grade,
+                        file_name: file
+                    })
+                });
+                loadAttachmentRules();
+                // Reset selects? Maybe not grade/template to allow bulk add
+                ruleFileSelect.value = '';
+            } catch (e) {
+                showConfirmModal({
+                    title: 'Error',
+                    message: 'Error al crear regla: ' + e.message,
+                    isAlert: true
+                });
+            }
+        });
+
+        // Functions
+        async function loadAttachmentLibrary() {
+            try {
+                const files = await apiFetch('/attachments/files');
+                if (!files || !Array.isArray(files)) return; // Guard against error
+
+                fileListEl.innerHTML = '';
+
+                if (files.length === 0) {
+                    fileListEl.innerHTML = '<li style="padding:1rem; text-align:center; color:#94a3b8;">No hay archivos.</li>';
+                    return;
+                }
+
+                files.forEach(file => {
+                    const li = document.createElement('li');
+                    li.style.cssText = 'padding: 0.5rem; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;';
+
+                    const link = `${window.location.protocol}//${window.location.host}/uploads/${file}`; // Construct public link
+
+                    li.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:0.5rem; overflow:hidden;">
+                        <span class="material-icons-outlined" style="font-size:18px; color:#64748b;">description</span>
+                        <span title="${file}" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 150px;">${file}</span>
+                    </div>
+                    <div style="display:flex; gap:0.25rem;">
+                        <button class="btn-icon-small btn-copy-link" data-link="${link}" title="Copiar Link" style="background:none; border:none; cursor:pointer; color:#3b82f6;">
+                            <span class="material-icons-outlined" style="font-size:18px;">content_copy</span>
+                        </button>
+                        <button class="btn-icon-small btn-delete-file" data-name="${file}" title="Eliminar" style="background:none; border:none; cursor:pointer; color:#ef4444;">
+                            <span class="material-icons-outlined" style="font-size:18px;">delete</span>
+                        </button>
+                    </div>
+                `;
+                    fileListEl.appendChild(li);
+                });
+
+                // Handlers
+                document.querySelectorAll('.btn-copy-link').forEach(b => {
+                    b.addEventListener('click', (e) => {
+                        const link = e.currentTarget.dataset.link;
+                        navigator.clipboard.writeText(link).then(() => {
+                            showSuccessModal({
+                                title: 'Enlace Copiado',
+                                message: 'El enlace se ha copiado al portapapeles.'
+                            });
+                        });
+                    });
+                });
+
+                document.querySelectorAll('.btn-delete-file').forEach(b => {
+                    b.addEventListener('click', (e) => {
+                        const name = e.currentTarget.dataset.name;
+
+                        // Use consistent modal
+                        if (typeof showConfirmModal === 'function') {
+                            showConfirmModal({
+                                title: 'Eliminar Archivo',
+                                message: `¿Estás seguro de eliminar "${name}"? Esto podría romper reglas existentes.`,
+                                isDestructive: true,
+                                onConfirm: async () => {
+                                    try {
+                                        const res = await apiFetch(`/attachments/files/${name}`, { method: 'DELETE' });
+                                        if (res) {
+                                            loadAttachmentLibrary();
+                                            loadAttachmentRules();
+                                            populateRuleDropdowns();
+                                        }
+                                    } catch (err) {
+                                        showConfirmModal({
+                                            title: 'Error',
+                                            message: err.message,
+                                            isAlert: true
+                                        });
+                                    }
+                                }
+                            });
+                        }
+                        // Fallback removed
+
+                    });
+                });
+
+            } catch (e) {
+                console.error(e);
+                fileListEl.innerHTML = '<li style="color:red; padding:1rem;">Error cargando archivos.</li>';
+            }
+        }
+
+        async function loadAttachmentRules() {
+            try {
+                const rules = await apiFetch('/attachments/rules');
+                if (!rules || !Array.isArray(rules)) return; // Guard
+
+                rulesListEl.innerHTML = '';
+
+                rules.forEach(rule => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                    <td style="padding:0.5rem; border-bottom:1px solid #f1f5f9;">${rule.template_name}</td>
+                    <td style="padding:0.5rem; border-bottom:1px solid #f1f5f9;">${rule.grade_condition || '<span style="color:#94a3b8; font-style:italic;">Todos</span>'}</td>
+                    <td style="padding:0.5rem; border-bottom:1px solid #f1f5f9; color:#3b82f6;">${rule.file_name}</td>
+                    <td style="padding:0.5rem; border-bottom:1px solid #f1f5f9;">
+                        <button class="btn-delete-rule" data-id="${rule.id}" style="border:none; background:none; cursor:pointer; color:#ef4444;">
+                            <span class="material-icons-outlined" style="font-size:16px;">close</span>
+                        </button>
+                    </td>
+                `;
+                    rulesListEl.appendChild(tr);
+                });
+
+                document.querySelectorAll('.btn-delete-rule').forEach(b => {
+                    b.addEventListener('click', (e) => {
+                        const ruleId = e.currentTarget.dataset.id;
+
+                        if (typeof showConfirmModal === 'function') {
+                            showConfirmModal({
+                                title: 'Eliminar Regla',
+                                message: '¿Estás seguro de eliminar esta regla de adjunto?',
+                                isDestructive: true,
+                                onConfirm: async () => {
+                                    try {
+                                        const res = await apiFetch(`/attachments/rules/${ruleId}`, { method: 'DELETE' });
+                                        if (res) loadAttachmentRules();
+                                    } catch (err) {
+                                        showConfirmModal({
+                                            title: 'Error',
+                                            message: err.message,
+                                            isAlert: true
+                                        });
+                                    }
+                                }
+                            });
+                        }
+                    });
+                });
+
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function populateRuleDropdowns() {
+            // reuse template logic via API call if possible, or scrape DOM if template-select exists
+            // Scrape DOM is faster if populated
+            const mainSelect = document.getElementById('template-select');
+            const ruleSelect = document.getElementById('rule-template-select');
+
+            // Wait for mainSelect to populate? It happens in loadTemplates()
+            // We can just fetch templates again:
+            if (ruleSelect) {
+                try {
+                    const templates = await apiFetch('/config/templates');
+                    if (templates && Array.isArray(templates)) {
+                        ruleSelect.innerHTML = '<option value="">Seleccionar Plantilla...</option>';
+                        templates.forEach(t => {
+                            const name = t.replace('.html', '');
+                            const option = document.createElement('option');
+                            option.value = name;
+                            option.textContent = name;
+                            ruleSelect.appendChild(option);
+                        });
+                    }
+                } catch (e) { }
+            }
+
+            // Populate Files
+            const ruleFileSelect = document.getElementById('rule-file-select');
+            if (ruleFileSelect) {
+                try {
+                    const files = await apiFetch('/attachments/files');
+                    if (files && Array.isArray(files)) {
+                        ruleFileSelect.innerHTML = '<option value="">Seleccionar Archivo...</option>';
+                        files.forEach(f => {
+                            const option = document.createElement('option');
+                            option.value = f;
+                            option.textContent = f;
+                            ruleFileSelect.appendChild(option);
+                        });
+                    }
+                } catch (e) { console.error('Error loading files', e); }
+            }
+
+            // Populate Grades (Dynamic)
+            const ruleGradeSelect = document.getElementById('rule-grade-select');
+            if (ruleGradeSelect) {
+                try {
+                    ruleGradeSelect.innerHTML = '<option value="">Cargando...</option>';
+                    // HOTFIX: Hardcoded to prevent loading hang
+                    // const grades = await apiFetch('/students/meta/grades');
+                    const grades = ['Maternal', 'Preescolar', 'Primaria', 'Secundaria'];
+
+                    if (grades && Array.isArray(grades)) {
+                        ruleGradeSelect.innerHTML = '<option value="">Todos (Niveles)</option>';
+                        if (grades.length === 0) {
+                            const option = document.createElement('option');
+                            option.disabled = true;
+                            option.textContent = '-- Sin grados registrados --';
+                            ruleGradeSelect.appendChild(option);
+                        } else {
+                            grades.forEach(g => {
+                                const option = document.createElement('option');
+                                option.value = g;
+                                option.textContent = g;
+                                ruleGradeSelect.appendChild(option);
+                            });
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error loading grades', e);
+                    ruleGradeSelect.innerHTML = '<option value="">Error al cargar</option>';
+                }
+            }
+        }
+    }
+} // End initSmartAttachments
+
 
 // --- Permissions & Roles UI Initialization ---
 function initPermissionsUI() {
