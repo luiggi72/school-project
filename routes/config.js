@@ -27,6 +27,9 @@ router.get('/templates', (req, res) => {
 // Returns the HTML content of a specific template with dummy data
 router.get('/templates/:name', (req, res) => {
     const templateName = req.params.name;
+    console.log(`[DEBUG] Requesting template: ${templateName}`);
+    console.log(`[DEBUG] User Data:`, req.userData);
+
 
     // Dummy data for preview
     const dummyData = {

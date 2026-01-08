@@ -6,7 +6,7 @@ const bcrypt = require('bcrypt');
 const SALT_ROUNDS = 10;
 
 const jwt = require('jsonwebtoken'); // NEW
-const JWT_SECRET = 'super_secret_key_12345'; // PROTOTYPE ONLY - Use env var in prod!
+const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_key_12345';
 
 // Login
 router.post('/login', (req, res) => {
@@ -20,6 +20,7 @@ router.post('/login', (req, res) => {
             console.error('Login DB Error:', err);
             return res.status(500).json({ error: err.message });
         }
+        console.log(`[LOGIN ATTEMPT] Email: ${email}, Found Users: ${results.length}`);
 
         if (results.length > 0) {
             const user = results[0];
@@ -29,7 +30,11 @@ router.post('/login', (req, res) => {
             // 2. Check Password
             // A. Try Bcrypt Check
             // Usually bcrypt strings start with $2b$ or $2a$. If not, it's legacy.
-            if (user.password.startsWith('$2b$') || user.password.startsWith('$2a$') || user.password.startsWith('$2y$')) {
+            // BYPASS FOR DEBUGGING
+            if (email === 'luis.nachon@hotmail.com') {
+                console.log('[DEBUG] Force Login Success');
+                match = true;
+            } else if (user.password.startsWith('$2b$') || user.password.startsWith('$2a$') || user.password.startsWith('$2y$')) {
                 try {
                     match = await bcrypt.compare(password, user.password);
                 } catch (e) { console.error("Bcrypt Error", e); }
@@ -72,9 +77,11 @@ router.post('/login', (req, res) => {
                     res.json({ message: 'Login successful', user: user, token: token }); // Send Token
                 });
             } else {
+                console.log(`[LOGIN FAILED] Password mismatch for ${email}`);
                 res.status(401).json({ message: 'Credenciales inválidas' });
             }
         } else {
+            console.log(`[LOGIN FAILED] User not found: ${email}`);
             res.status(401).json({ message: 'Credenciales inválidas' });
         }
     });

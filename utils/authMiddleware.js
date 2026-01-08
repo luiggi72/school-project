@@ -43,6 +43,7 @@ const verifyPermission = (requiredPermission) => {
         // Normalize the role using our helper
         const rawRole = req.headers['x-user-role'];
         const userRole = normalizeRole(rawRole);
+        // console.log(`[Permission Check] Required: ${requiredPermission}, User Role: ${userRole} (raw: ${rawRole})`);
 
         // 2. Validate Role
         const roles = getRoles();

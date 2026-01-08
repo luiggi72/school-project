@@ -3305,17 +3305,23 @@ function initCalendar() {
         },
         locale: 'es',
         selectable: true, // Allow clicking days
-        validRange: {
-            start: new Date().toISOString().split('T')[0] // Disable past dates
-        },
+
 
         dateClick: function (info) {
+            // Calculate Start Date (Tomorrow)
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(0, 0, 0, 0);
+
+            const isPastOrToday = info.date < tomorrow;
             const day = info.date.getDay();
-            if (!globalAgendaConfig.days.includes(day)) {
+
+            if (isPastOrToday || !globalAgendaConfig.days.includes(day)) {
                 return;
             }
 
             // Highlight selection
+            // Highlight selection - Only clear previous selection (or all, but CSS !important protects disabled)
             document.querySelectorAll('.fc-daygrid-day').forEach(el => el.style.backgroundColor = '');
             info.dayEl.style.backgroundColor = '#bfdbfe'; // Stronger blue for selection
 
@@ -3324,12 +3330,21 @@ function initCalendar() {
         },
         dayCellDidMount: function (info) {
             const day = info.date.getDay();
-            // console.log(`DEBUG: Rendering day ${day}. Config days:`, globalAgendaConfig.days);
-            if (globalAgendaConfig.days && !globalAgendaConfig.days.includes(day)) {
-                info.el.classList.add('day-disabled-cell');
+
+            // Calculate Start Date (Tomorrow)
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(0, 0, 0, 0);
+
+            const isPastOrToday = info.date < tomorrow;
+            const isConfigDisabled = globalAgendaConfig.days && !globalAgendaConfig.days.includes(day);
+
+            // Disable if Past/Today OR Not in Config Days
+            if (isPastOrToday || isConfigDisabled) {
+                info.el.classList.add('day-disabled'); // Match CSS class
                 info.el.style.pointerEvents = 'none';
-                info.el.style.backgroundColor = '#f1f5f9'; // Gray out
-                info.el.style.opacity = '0.6';
+                // info.el.style.backgroundColor = '#f1f5f9'; // Handled by CSS !important
+                // info.el.style.color = '#94a3b8'; // Handled by CSS !important
             } else {
                 // Available Day -> Green
                 info.el.style.backgroundColor = '#dcfce7';
@@ -4613,9 +4628,56 @@ if (marketingSourceSelect) {
 }
 
 if (inquiryForm) {
+    const emailInput = document.getElementById('inquiry-email');
+    const emailConfirmInput = document.getElementById('inquiry-email-confirm');
+
+    // Clear error style on typing
+    [emailInput, emailConfirmInput].forEach(input => {
+        if (input) {
+            input.addEventListener('input', () => {
+                input.style.borderColor = '';
+            });
+        }
+    });
+
+    // Immediate validation on blur
+    if (emailConfirmInput) {
+        emailConfirmInput.addEventListener('blur', () => {
+            const email = emailInput.value.trim();
+            const confirm = emailConfirmInput.value.trim();
+
+            // Only validate if both have values (don't annoy if just tabbed through empty)
+            if (email && confirm && email !== confirm) {
+                emailInput.style.borderColor = '#ef4444';
+                emailConfirmInput.style.borderColor = '#ef4444';
+                showConfirmModal({
+                    title: 'Correos no coinciden',
+                    message: 'Los correos ingresados son diferentes. Por favor corrígelos antes de continuar.',
+                    isAlert: true,
+                    isDestructive: true,
+                    confirmText: 'Corregir'
+                });
+            }
+        });
+    }
+
     inquiryForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        const email = emailInput.value.trim();
+        const emailConfirm = emailConfirmInput.value.trim();
 
+        if (email !== emailConfirm) {
+            emailInput.style.borderColor = '#ef4444';
+            emailConfirmInput.style.borderColor = '#ef4444';
+
+            return showConfirmModal({
+                title: 'Correos no coinciden',
+                message: 'Por favor verifica que el correo electrónico y su confirmación sean idénticos.',
+                isAlert: true,
+                isDestructive: true,
+                confirmText: 'Entendido'
+            });
+        }
         const payload = {
             parent_name: document.getElementById('inquiry-parent-name').value,
             email: document.getElementById('inquiry-email').value,
@@ -5623,7 +5685,9 @@ async function loadEmailTemplates() {
     select.innerHTML = '<option value="">Cargando...</option>';
 
     try {
+        console.log('Fetching templates from API...');
         const templates = await apiFetch('/config/templates') || [];
+        console.log('Templates received:', templates);
 
         select.innerHTML = '<option value="">-- Seleccionar --</option>';
         templates.forEach(name => {
@@ -5652,8 +5716,14 @@ if (templateSelect) {
         }
 
         try {
-            // Fetch raw HTML content
-            const response = await fetch(`${API_URL}/config/templates/${templateName}`);
+            // Fetch raw HTML content with Auth Header
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(`${API_URL}/config/templates/${templateName}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
             if (!response.ok) throw new Error('Failed to load template');
             const html = await response.text();
 
