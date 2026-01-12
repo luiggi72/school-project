@@ -126,7 +126,52 @@ router.post('/templates', (req, res) => {
         return res.status(400).json({ error: 'Template already exists' });
     }
 
-    const initialContent = content || '<html><body><h1>Nueva Plantilla</h1><p>Contenido...</p></body></html>';
+    const initialContent = content || `<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nueva Plantilla</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f6f6f6; font-family: Arial, sans-serif; color: #555555;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f6f6f6;">
+        <tr>
+            <td align="center" style="padding: 20px 0;">
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #ffffff; max-width: 600px; margin: 0 auto; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-collapse: collapse;">
+                    <!-- Header -->
+                    <tr>
+                        <td align="center" style="padding: 30px 20px; border-bottom: 3px solid #E31E25; background-color: #ffffff;">
+                            <img src="cid:school_logo" alt="Logo Colegio" style="display: block; max-height: 150px; border: 0; outline: none; text-decoration: none;" />
+                        </td>
+                    </tr>
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px 30px; background-color: #ffffff; text-align: left;">
+                            <h2 style="font-size: 20px; color: #000000; margin: 0 0 20px 0; font-weight: bold;">
+                                Título del Mensaje
+                            </h2>
+                            <p style="font-size: 16px; line-height: 24px; color: #555555; margin: 0 0 25px 0;">
+                                Escribe aquí el contenido de tu correo...
+                            </p>
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 20px; text-align: center; color: #9C9E9D; border-top: 3px solid #E31E25; background-color: #ffffff;">
+                            <p style="margin: 0 0 5px 0; font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">
+                                Colegio Cultural Terranova
+                            </p>
+                            <p style="margin: 5px 0; font-size: 12px;">
+                                <a href="https://www.culturalterranova.edu.mx" style="color: #E31E25; text-decoration: none; font-weight: bold;">www.culturalterranova.edu.mx</a>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
 
     try {
         fs.writeFileSync(templatePath, initialContent, 'utf8');

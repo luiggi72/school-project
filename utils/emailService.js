@@ -76,7 +76,7 @@ async function getSmartAttachments(templateName, context = {}) {
 
 async function sendParentWelcomeEmail(to, username, password, studentContext = {}) {
     try {
-        const templateName = 'parent_welcome';
+        const templateName = 'Credenciales (Padres)';
         const templatePath = path.join(__dirname, `../templates/${templateName}.html`);
         let html = fs.readFileSync(templatePath, 'utf8');
 

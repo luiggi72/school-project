@@ -16,7 +16,7 @@ let activeParentStudent = null; // Track selected student in parents portal
 
 // --- Generic Confirmation Modal Helper ---
 // --- Generic Confirmation Modal Helper ---
-window.showConfirmModal = function ({ title, message, onConfirm, confirmText = 'Confirmar', cancelText = 'Cancelar', isDestructive = true, isAlert = false, isSuccess = false }) {
+window.showConfirmModal = function ({ title, message, onConfirm, onCancel, confirmText = 'Confirmar', cancelText = 'Cancelar', isDestructive = true, isAlert = false, isSuccess = false }) {
     const modal = document.getElementById('generic-confirm-modal');
     if (!modal) {
         // Fallback if modal not present in DOM
@@ -26,6 +26,8 @@ window.showConfirmModal = function ({ title, message, onConfirm, confirmText = '
         } else {
             if (confirm(message || title)) {
                 if (onConfirm) onConfirm();
+            } else {
+                if (onCancel) onCancel();
             }
         }
         return;
@@ -94,6 +96,7 @@ window.showConfirmModal = function ({ title, message, onConfirm, confirmText = '
     if (cancelBtn) { // cancelBtn is present in DOM even if hidden
         newCancelBtn.addEventListener('click', () => {
             modal.classList.add('hidden');
+            if (onCancel) onCancel();
         });
     }
 
@@ -104,6 +107,34 @@ window.showConfirmModal = function ({ title, message, onConfirm, confirmText = '
         document.body.appendChild(modal);
     }
     modal.style.display = 'flex';
+};
+
+// --- Helper for Alert Modal (Simpler wrapper) ---
+window.showAlertModal = function (title, message, isError = false) {
+    return new Promise(resolve => {
+        showConfirmModal({
+            title: title || (isError ? 'Error' : 'Aviso'),
+            message: message,
+            isDestructive: isError,
+            isSuccess: !isError, // Default to green check for general info, red for error
+            isAlert: true,
+            confirmText: 'Entendido',
+            onConfirm: resolve // Resolve promise on close
+        });
+    });
+};
+
+// --- Helper for Async Confirm (Wrapper for await) ---
+window.showConfirmAsync = function (title, message, isDestructive = false) {
+    return new Promise(resolve => {
+        showConfirmModal({
+            title: title,
+            message: message,
+            isDestructive: isDestructive,
+            onConfirm: () => resolve(true),
+            onCancel: () => resolve(false)
+        });
+    });
 };
 
 let isEditingUser = false;
@@ -391,7 +422,7 @@ async function apiFetch(endpoint, options = {}) {
         // Actually, if we return null above, we don't catch.
         // If we throw, we catch. 
         // Let's alert only if it's NOT a reload
-        if (error.message !== 'Failed to fetch') alert(error.message);
+        if (error.message !== 'Failed to fetch') showAlertModal('Error', error.message, true);
         return null;
     }
 }
@@ -559,7 +590,7 @@ if (userForm) {
 
         // Basic validation
         if (!userData.username || !userData.email || !userData.role) {
-            return alert('Por favor completa los campos requeridos.');
+            return showAlertModal('Aviso', 'Por favor completa los campos requeridos.', true);
         }
 
         const url = isEditingUser ? `/users/${editingUserId}` : '/users';
@@ -588,7 +619,7 @@ if (userForm) {
 
         } catch (error) {
             console.error(error);
-            alert('Error al guardar perfil: ' + error.message);
+            showAlertModal('Error', 'Error al guardar perfil: ' + error.message, true);
         }
     });
 }
@@ -834,10 +865,47 @@ if (notifForm) {
             btn.disabled = true;
             btn.innerHTML = '<span class="material-icons-outlined spin">refresh</span> Enviando...';
 
-            const response = await apiFetch('/notifications/dispatch', {
+            const fileInput = document.getElementById('notif-attachment');
+            let body;
+            let headers = {};
+
+            if (fileInput && fileInput.files.length > 0) {
+                const formData = new FormData();
+                // Append JSON data as strings
+                formData.append('title', payload.title);
+                formData.append('message', payload.message);
+                formData.append('target', JSON.stringify(payload.target));
+                formData.append('data', JSON.stringify(payload.data));
+                formData.append('attachment', fileInput.files[0]);
+                body = formData;
+                // Don't set Content-Type header manually for FormData, let browser set boundary
+            } else {
+                body = JSON.stringify(payload);
+                headers['Content-Type'] = 'application/json';
+            }
+
+            // Custom fetch wrapper usually sets JSON content type, so we might need to bypass it or adjust it.
+            // Assuming apiFetch handles FormData if body is FormData object or we'll assume standard fetch for upload.
+            // Let's rely on standard fetch to be safe with FormData boundary handling
+
+            const token = localStorage.getItem('authToken'); // Assuming token storage key
+
+            const response = await fetch(`${API_URL}/notifications/dispatch`, {
                 method: 'POST',
-                body: JSON.stringify(payload)
+                headers: {
+                    ...headers,
+                    'Authorization': `Bearer ${token}`
+                },
+                body: body
             });
+
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.error || 'Error al enviar');
+            }
+
+            const result = await response.json();
+
             if (response) {
                 showConfirmModal({
                     title: '¡Éxito!',
@@ -969,7 +1037,7 @@ window.editUser = async (id) => {
 
         if (!user) {
             console.error('DEBUG: User NOT found in global array!');
-            alert('Error: Datos de usuario no encontrados en memoria local.');
+            showAlertModal('Error', 'Datos de usuario no encontrados en memoria local.', true);
             return;
         }
 
@@ -1020,7 +1088,7 @@ window.editUser = async (id) => {
         console.log('DEBUG: editUser successful, modal opened.');
     } catch (e) {
         console.error('Error in editUser:', e);
-        alert('Error al abrir editor: ' + e.message);
+        showAlertModal('Error', 'Error al abrir editor: ' + e.message, true);
     }
 };
 
@@ -1077,7 +1145,7 @@ window.handleUserAction = (selectElement, id) => {
         else if (action === 'delete') deleteUser(id);
     } catch (e) {
         console.error('Error in handleUserAction:', e);
-        alert('Error al ejecutar acción: ' + e.message);
+        showAlertModal('Error', 'Error al ejecutar acción: ' + e.message, true);
     }
 };
 
@@ -1124,7 +1192,7 @@ function renderUsers() {
 
 window.deleteUser = async (id) => {
     if (!checkPermission(PERMISSIONS.USERS_DELETE_BTN)) {
-        return alert('No tienes permiso para eliminar usuarios.');
+        return showAlertModal('Permiso Denegado', 'No tienes permiso para eliminar usuarios.', true);
     }
 
     showConfirmModal({
@@ -1136,11 +1204,11 @@ window.deleteUser = async (id) => {
         onConfirm: async () => {
             try {
                 await apiFetch(`/users/${id}`, { method: 'DELETE' });
-                alert('Usuario eliminado correctamente');
+                showAlertModal('Éxito', 'Usuario eliminado correctamente');
                 await loadUsers();
             } catch (error) {
                 console.error('Error deleting user:', error);
-                alert('Error al eliminar usuario');
+                showAlertModal('Error', 'Error al eliminar usuario', true);
             }
         }
     });
@@ -1206,7 +1274,7 @@ window.editStudent = (id) => {
         const student = students.find(s => s.id == id);
         if (!student) {
             console.error('Student NOT found for ID:', id);
-            alert('Error: Alumno no encontrado en memoria.');
+            showAlertModal('Error', 'Alumno no encontrado en memoria.', true);
             return;
         }
 
@@ -1256,13 +1324,13 @@ window.editStudent = (id) => {
 
     } catch (e) {
         console.error('Error in editStudent:', e);
-        alert('Error al abrir editor de alumno: ' + e.message);
+        showAlertModal('Error', 'Error al abrir editor de alumno: ' + e.message, true);
     }
 };
 
 window.deleteStudent = async (id) => {
     if (!checkPermission(PERMISSIONS.STUDENTS_DELETE)) {
-        return alert('No tienes permiso para eliminar alumnos.');
+        return showAlertModal('Permiso Denegado', 'No tienes permiso para eliminar alumnos.', true);
     }
     showConfirmModal({
         title: '¿Eliminar Alumno?',
@@ -1514,7 +1582,7 @@ window.viewStudentDetails = async (id) => {
         }
     } catch (e) {
         console.error(e);
-        alert('Error cargando información de padres');
+        showAlertModal('Error', 'Error cargando información de padres', true);
     }
 };
 
@@ -1584,7 +1652,7 @@ if (generalForm) {
                 const formFamilyId = entry.querySelector('.student-family-id').value; // Read from form
 
                 if (!name || !lastnameP) {
-                    alert('Nombre y Apellido Paterno son obligatorios para todos los alumnos.');
+                    showAlertModal('Aviso', 'Nombre y Apellido Paterno son obligatorios para todos los alumnos.', true);
                     if (submitBtn) {
                         submitBtn.disabled = false;
                         submitBtn.textContent = 'Guardar / Registrar Ficha';
@@ -1684,7 +1752,7 @@ if (generalForm) {
 
         } catch (err) {
             console.error(err);
-            alert('Hubo un error al guardar algunos alumnos: ' + err.message);
+            showAlertModal('Error', 'Hubo un error al guardar algunos alumnos: ' + err.message, true);
         } finally {
             if (submitBtn) {
                 submitBtn.disabled = false;
@@ -2050,7 +2118,7 @@ async function loadMedicalData(studentId) {
 document.getElementById('medical-data-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const studentId = document.getElementById('medical-student-id').value;
-    if (!studentId) return alert('Error: ID de alumno no encontrado');
+    if (!studentId) return showAlertModal('Error', 'ID de alumno no encontrado', true);
 
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData.entries());
@@ -2072,7 +2140,7 @@ document.getElementById('medical-data-form')?.addEventListener('submit', async (
         // Optional: reload to refresh
     } catch (error) {
         console.error('Error saving medical data:', error);
-        alert('Error al guardar ficha médica');
+        showAlertModal('Error', 'Error al guardar ficha médica', true);
     }
 });
 
@@ -2133,7 +2201,7 @@ function renderStudents(filters = { text: '', grade: '', subgrade: '', group: ''
             section.style.display = 'block';
             // alert('DEBUG: Forced students-section display: block');
         } else {
-            alert('CRITICAL: students-section NOT FOUND');
+            console.error('CRITICAL: students-section NOT FOUND');
         }
 
         // Remove Test Row (Cleanup)
@@ -3428,7 +3496,7 @@ if (agendaConfigForm) {
             }
         } catch (error) {
             console.error(error);
-            alert('Error al guardar configuración');
+            showAlertModal('Error', 'Error al guardar configuración', true);
         }
     });
 }
@@ -3802,11 +3870,11 @@ if (btnDeleteAppointment) {
 
         try {
             const res = await fetch(`/api/calendar/${id}`, { method: 'DELETE' });
-            if (res.ok) {
-                closeAppointmentModal();
-                calendar.refetchEvents();
+            if (response.ok) {
+                showAlertModal('Éxito', 'Usuario eliminado correctamente');
+                loadUsers(); // Refresh list
             } else {
-                alert('Error al eliminar');
+                showAlertModal('Error', 'Error al eliminar usuario', true);
             }
         } catch (error) {
             console.error(error);
@@ -4062,7 +4130,7 @@ if (cajaStudentSearch) {
 if (cajaSearchBtn) {
     cajaSearchBtn.addEventListener('click', async () => {
         const term = cajaStudentSearch.value.trim().toLowerCase();
-        if (!term) return alert('Por favor ingresa un término de búsqueda');
+        if (!term) return showAlertModal('Aviso', 'Por favor ingresa un término de búsqueda', true);
 
         const foundStudent = students.find(s =>
             (s.unique_id && s.unique_id.toLowerCase() === term) ||
@@ -4073,7 +4141,7 @@ if (cajaSearchBtn) {
         if (foundStudent) {
             selectStudentForPayment(foundStudent);
         } else {
-            alert('Alumno no encontrado');
+            showAlertModal('Aviso', 'Alumno no encontrado', true);
             cajaPaymentInterface.classList.add('hidden');
         }
     });
@@ -4404,11 +4472,11 @@ if (btnAddItem) {
         const amount = parseCurrency(amountInput.value);
 
         if (!concept) {
-            alert('Por favor selecciona un concepto');
+            showAlertModal('Aviso', 'Por favor selecciona un concepto', true);
             return;
         }
         if (isNaN(amount) || amount <= 0) {
-            alert('Por favor ingresa un monto válido');
+            showAlertModal('Aviso', 'Por favor ingresa un monto válido', true);
             return;
         }
 
@@ -4462,7 +4530,7 @@ if (btnSubmitPayment) {
                 if (!targetId && currentActiveStudent) targetId = currentActiveStudent.id;
 
                 if (!targetId) {
-                    alert('Error: No se ha seleccionado un alumno.');
+                    showAlertModal('Error', 'No se ha seleccionado un alumno.', true);
                     return;
                 }
 
@@ -4473,18 +4541,18 @@ if (btnSubmitPayment) {
                     student_name: currentActiveStudent ? `${currentActiveStudent.name} ${currentActiveStudent.lastnameP}` : 'Actual'
                 });
             } else {
-                alert('Agrega items al pago o llena los campos concepto y monto.');
+                showAlertModal('Aviso', 'Agrega items al pago o llena los campos concepto y monto.', true);
                 return;
             }
         }
 
         // --- 2. Common Validation ---
         if (currentPaymentItems.length === 0) {
-            alert('No hay items para cobrar.');
+            showAlertModal('Aviso', 'No hay items para cobrar.', true);
             return;
         }
         if (!methodSelect.value || !paymentDate) {
-            alert('Selecciona método y fecha de pago.');
+            showAlertModal('Aviso', 'Selecciona método y fecha de pago.', true);
             return;
         }
 
@@ -4512,7 +4580,7 @@ if (btnSubmitPayment) {
             btnSend.onclick = async () => {
                 const phone = phoneInput.value.trim();
                 if (phone.length !== 10) {
-                    alert('Ingresa un número celular válido (10 dígitos)');
+                    showAlertModal('Aviso', 'Ingresa un número celular válido (10 dígitos)', true);
                     return;
                 }
 
@@ -4544,12 +4612,12 @@ if (btnSubmitPayment) {
                         document.getElementById('caja-student-search').value = '';
                         // Optionally refresh history if visible
                     } else {
-                        alert('Error al enviar solicitud: ' + (response.error || 'Desconocido'));
+                        showAlertModal('Error', 'Error al enviar solicitud: ' + (response.error || 'Desconocido'), true);
                     }
 
                 } catch (error) {
                     console.error('CoDi Error:', error);
-                    alert('Error de conexión con el servicio de pagos.');
+                    showAlertModal('Error', 'Error de conexión con el servicio de pagos.', true);
                 } finally {
                     btnSend.disabled = false;
                     btnSend.innerHTML = '<span class="material-icons-outlined">send_to_mobile</span> Enviar Solicitud';
@@ -4567,7 +4635,7 @@ if (btnSubmitPayment) {
         confirmationMsg += `\nTotal: $${formatCurrency(totalAmount)}`;
         confirmationMsg += `\nMétodo: ${method}`;
 
-        if (!confirm(confirmationMsg)) return;
+        if (!await showConfirmAsync('Confirmación', confirmationMsg)) return;
 
         const payload = {
             student_id: currentPaymentItems[0].student_id, // Fallback, backend uses items array primarily if present?
@@ -4586,7 +4654,7 @@ if (btnSubmitPayment) {
                 body: JSON.stringify(payload)
             });
 
-            alert('Pago registrado exitosamente');
+            showAlertModal('Éxito', 'Pago registrado exitosamente');
 
             // Cleanup
             document.getElementById('payment-concept').value = '';
@@ -4610,7 +4678,7 @@ if (btnSubmitPayment) {
 
         } catch (error) {
             console.error('Submission error:', error);
-            alert('Error al registrar pago: ' + error.message);
+            showAlertModal('Error', 'Error al registrar pago: ' + error.message, true);
         } finally {
             btnSubmitPayment.disabled = false;
             btnSubmitPayment.textContent = 'Registrar Pago';
@@ -4778,7 +4846,7 @@ async function generateIncomeReport() {
 
     } catch (error) {
         console.error('Error generating report:', error);
-        alert('Error al generar reporte: ' + error.message);
+        showAlertModal('Error', 'Error al generar reporte: ' + error.message, true);
     }
 }
 
@@ -4906,7 +4974,7 @@ if (inquiryForm) {
                 method: 'POST',
                 body: JSON.stringify(payload)
             });
-            alert('Solicitud guardada correctamente.');
+            showAlertModal('Éxito', 'Solicitud guardada correctamente.');
             inquiryForm.reset();
             // Manually reset grade select options since reset() doesn't remove dynamic elements
             if (inquiryGradeSelect) {
@@ -4917,7 +4985,7 @@ if (inquiryForm) {
             marketingOtherContainer.classList.add('hidden');
         } catch (error) {
             console.error('Error saving inquiry:', error);
-            alert('Error al guardar solicitud: ' + error.message);
+            showAlertModal('Error', 'Error al guardar solicitud: ' + error.message, true);
         }
     });
 }
@@ -4930,7 +4998,7 @@ async function loadInquiries() {
         renderInquiries(inquiries);
     } catch (error) {
         console.error('Error loading inquiries:', error);
-        alert('Error al cargar la lista de informes.');
+        showAlertModal('Error', 'Error al cargar la lista de informes.', true);
     }
 }
 
@@ -5001,41 +5069,40 @@ function renderInquiries(list) {
             
             <div style="flex: 2; border-left: 1px solid var(--border); padding-left: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
                 <label style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-light); font-weight: 600; display: block;">Seguimiento</label>
-                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
                     ${[
                 { label: 'Información Enviada', key: 'flag_info_sent' },
-                { label: 'Informes', key: 'flag_scheduled' },
+                { label: 'Cita', key: 'flag_scheduled' },
                 { label: 'Evaluación', key: 'flag_evaluation' },
                 { label: 'Finalizado', key: 'flag_finished' }
             ].map(step => {
                 const isDone = item[step.key] === 1 || item[step.key] === true;
                 const isSystemOnly = step.key === 'flag_info_sent';
 
-                // "Verde cuando realizada, rojo cuando no"
-                const bg = isDone ? '#10b981' : '#fee2e2'; // Green or Light Red
-                const color = isDone ? 'white' : '#ef4444'; // White or Red Text
-                const border = isDone ? '#10b981' : '#fca5a5'; // Green or Red Border
+                // Red circle (incomplete) -> Green circle (complete)
+                const bg = isDone ? '#22c55e' : '#ef4444'; // Green-500 or Red-500
+                const isLast = step.key === 'flag_finished';
 
                 return `
-                            <button
-                                ${isSystemOnly ? '' : `onclick="toggleInquiryFlag(${item.id}, '${step.key}', ${!isDone})"`}
-                                style="
-                                    background: ${bg};
-                                    color: ${color};
-                                    border: 1px solid ${border};
-                                    padding: 0.25rem 0.6rem;
-                                    border-radius: 999px;
-                                    font-size: 0.7rem;
-                                    white-space: nowrap;
-                                    cursor: ${isSystemOnly ? 'default' : 'pointer'};
-                                    transition: all 0.2s;
-                                    opacity: ${isSystemOnly && !isDone ? '0.7' : '1'};
-                                "
-                                ${isSystemOnly ? '' : `onmouseover="this.style.opacity='1'; this.style.transform='scale(1.05)'"`}
-                                ${isSystemOnly ? '' : `onmouseout="this.style.opacity='${isDone ? '1' : '0.8'}'; this.style.transform='scale(1)'"`}
-                            >
-                                ${step.label}
-                            </button>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <div
+                                    ${isSystemOnly ? '' : `onclick="toggleInquiryFlag(${item.id}, '${step.key}', ${!isDone})"`}
+                                    title="${step.label}${isDone ? ' (Completado)' : ' (Pendiente)'}"
+                                    style="
+                                        width: 24px;
+                                        height: 24px;
+                                        background: ${bg};
+                                        border-radius: 50%;
+                                        cursor: ${isSystemOnly ? 'default' : 'pointer'};
+                                        transition: all 0.2s;
+                                        opacity: ${isSystemOnly && !isDone ? '0.5' : '1'};
+                                        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+                                    "
+                                    onmouseover="this.style.transform='scale(1.2)'"
+                                    onmouseout="this.style.transform='scale(1)'"
+                                ></div>
+                                ${!isLast ? '<span class="material-icons-outlined" style="font-size: 16px; color: #cbd5e1; user-select: none;">arrow_forward</span>' : ''}
+                            </div>
                         `;
             }).join('')}
                 </div>
@@ -5194,7 +5261,7 @@ if (btnDeleteSelected) {
         const ids = Array.from(checkboxes).map(cb => cb.value);
 
         if (ids.length === 0) {
-            alert('Selecciona al menos una solicitud para eliminar.');
+            showAlertModal('Aviso', 'Selecciona al menos una solicitud para eliminar.', true);
             return;
         }
 
@@ -5212,7 +5279,7 @@ if (btnDeleteSelected) {
                     loadInquiries();
                 } catch (error) {
                     console.error('Error deleting inquiries:', error);
-                    alert('Error al eliminar solicitudes.');
+                    showAlertModal('Error', 'Error al eliminar solicitudes.', true);
                 }
             }
         });
@@ -6036,7 +6103,7 @@ if (templateSelect) {
             templateSelect.value = name;
             templateSelect.dispatchEvent(new Event('change'));
         } catch (error) {
-            alert(error.message);
+            showAlertModal('Error', error.message, true);
         }
     });
 
@@ -6057,7 +6124,7 @@ if (templateSelect) {
             templateSelect.value = newName;
             templateSelect.dispatchEvent(new Event('change'));
         } catch (error) {
-            alert(error.message);
+            showAlertModal('Error', error.message, true);
         }
     });
 
@@ -6066,7 +6133,7 @@ if (templateSelect) {
         const currentName = templateSelect.value;
         if (!currentName) return;
 
-        if (!confirm(`¿Eliminar plantilla "${currentName}"?`)) return;
+        if (!await showConfirmAsync('¿Eliminar Plantilla?', `¿Eliminar plantilla "${currentName}"?`, true)) return;
 
         try {
             await apiFetch(`/config/templates/${encodeURIComponent(currentName)}`, {
@@ -6077,7 +6144,7 @@ if (templateSelect) {
             btnRename.classList.add('hidden');
             btnDelete.classList.add('hidden');
         } catch (error) {
-            alert(error.message);
+            showAlertModal('Error', error.message, true);
         }
     });
 
@@ -6177,7 +6244,7 @@ if (templateSelect) {
                 });
 
                 // Success
-                alert('Plantilla guardada correctamente');
+                showAlertModal('Éxito', 'Plantilla guardada correctamente');
                 toggleEditor(false);
 
                 // Refresh Preview
@@ -6185,7 +6252,7 @@ if (templateSelect) {
 
             } catch (error) {
                 console.error('Save error:', error);
-                alert('Error al guardar: ' + error.message);
+                showAlertModal('Error', 'Error al guardar: ' + error.message, true);
             } finally {
                 btnSave.disabled = false;
                 btnSave.innerHTML = btnOriginalText;
@@ -6229,12 +6296,12 @@ if (btnSendTestEmail) {
         const btn = btnSendTestEmail;
 
         if (!email) {
-            alert('Por favor, ingresa un correo de prueba.');
+            showAlertModal('Aviso', 'Por favor, ingresa un correo de prueba.', true);
             return;
         }
 
         if (!template) {
-            alert('Por favor, selecciona una plantilla.');
+            showAlertModal('Aviso', 'Por favor, selecciona una plantilla.', true);
             return;
         }
 
@@ -6256,10 +6323,10 @@ if (btnSendTestEmail) {
                 method: 'POST',
                 body: formData
             });
-            alert(`Correo de prueba enviado a ${email}`);
+            showAlertModal('Éxito', `Correo de prueba enviado a ${email}`);
         } catch (error) {
             console.error('Error sending test email:', error);
-            alert('Error al enviar el correo: ' + error.message);
+            showAlertModal('Error', 'Error al enviar el correo: ' + error.message, true);
         } finally {
             btn.disabled = false;
             btn.innerHTML = originalText;
@@ -6282,7 +6349,7 @@ function initSmartAttachments() {
         // Helper for Success Modals (Re-uses generic modal)
         function showSuccessModal({ title, message, onClose }) {
             const modal = document.getElementById('generic-confirm-modal');
-            if (!modal) return alert(message);
+            if (!modal) return showAlertModal('Error', message, true);
 
             const titleEl = document.getElementById('generic-confirm-title');
             const msgEl = document.getElementById('generic-confirm-message');
@@ -6704,7 +6771,7 @@ function initPermissionsUI() {
                 renderManageRolesList();
             } catch (e) {
                 console.error('Render Roles Error:', e);
-                alert('Error al mostrar lista de roles: ' + e.message);
+                showAlertModal('Error', 'Error al mostrar lista de roles: ' + e.message, true);
             }
             if (inputManageNewRoleName) {
                 inputManageNewRoleName.value = '';
@@ -6722,7 +6789,7 @@ function initPermissionsUI() {
         if (btnManageAddRole) {
             btnManageAddRole.addEventListener('click', async () => {
                 const roleName = inputManageNewRoleName.value.trim();
-                if (!roleName) return alert('Ingresa un nombre para el rol.');
+                if (!roleName) return showAlertModal('Aviso', 'Ingresa un nombre para el rol.', true);
 
                 // Generate key
                 const roleKey = roleName.toLowerCase()
@@ -6730,7 +6797,7 @@ function initPermissionsUI() {
                     .replace(/[^a-z0-9]/g, '_');
 
                 if (window.currentRolesConfig && window.currentRolesConfig[roleKey]) {
-                    return alert('Este rol ya existe (clave interna: ' + roleKey + ').');
+                    return showAlertModal('Error', 'Este rol ya existe (clave interna: ' + roleKey + ').', true);
                 }
 
                 // Add new role
@@ -7173,7 +7240,7 @@ function initPermissionsUI() {
             });
         } catch (e) {
             console.error('Error saving roles:', e);
-            alert('Error al guardar: ' + e.message);
+            showAlertModal('Error', 'Error al guardar: ' + e.message, true);
             throw e;
         }
     }
@@ -7188,11 +7255,11 @@ window.savePermissions = async () => {
     const modal = document.getElementById('permission-modal');
 
     if (!roleSelect || !container) {
-        return alert('Error de interfaz: Elementos no encontrados.');
+        return showAlertModal('Error', 'Error de interfaz: Elementos no encontrados.', true);
     }
 
     const roleKey = roleSelect.value;
-    if (!roleKey) return alert('Selecciona un rol primero.');
+    if (!roleKey) return showAlertModal('Aviso', 'Selecciona un rol primero.', true);
 
     // alert('DEBUG: Guardando permisos para ' + roleKey);
 
@@ -7203,7 +7270,7 @@ window.savePermissions = async () => {
     // Update Config Object
     if (!currentRolesConfig[roleKey]) {
         // Should not happen if select is populated from it
-        return alert('Error: Rol no encontrado en configuración.');
+        return showAlertModal('Error', 'Error: Rol no encontrado en configuración.', true);
     }
     currentRolesConfig[roleKey].permissions = newPermissions;
 
@@ -7213,12 +7280,12 @@ window.savePermissions = async () => {
             body: JSON.stringify(currentRolesConfig)
         });
 
-        alert('Permisos guardados correctamente.');
+        showAlertModal('Éxito', 'Permisos guardados correctamente.');
         modal.classList.add('hidden');
         applyPermissions(); // Auto-refresh UI
     } catch (e) {
         console.error(e);
-        alert('Error al guardar permisos: ' + e.message);
+        showAlertModal('Error', 'Error al guardar permisos: ' + e.message, true);
     }
 };
 
@@ -7867,7 +7934,7 @@ window.openCodiWebModal = async (studentId) => {
 
     } catch (e) {
         console.error('CoDi Init Error:', e);
-        alert('Error al inicializar CoDi: ' + e.message);
+        showAlertModal('Error', 'Error al inicializar CoDi: ' + e.message, true);
         modal.classList.add('hidden');
     }
 };
@@ -8019,7 +8086,7 @@ function renderCodiMonthGrid(payments) {
 }
 
 function selectCodiMonth(month, payments) {
-    if (!codiWebState.concept) return alert('No se encontró el costo de colegiatura para este alumno.');
+    if (!codiWebState.concept) return showAlertModal('Error', 'No se encontró el costo de colegiatura para este alumno.', true);
 
     // Toggle Selection
     const index = codiWebState.months.indexOf(month);
@@ -8098,7 +8165,7 @@ async function sendWebCodiRequest() {
     const phoneInput = document.getElementById('codi-phone-input');
     const phoneNumber = phoneInput.value.replace(/\D/g, '');
 
-    if (phoneNumber.length !== 10) return alert('Por favor ingresa un número celular válido de 10 dígitos.');
+    if (phoneNumber.length !== 10) return showAlertModal('Aviso', 'Por favor ingresa un número celular válido de 10 dígitos.', true);
 
     const btn = document.getElementById('btn-generate-codi-web');
     btn.disabled = true;
@@ -8138,7 +8205,7 @@ async function sendWebCodiRequest() {
 
     } catch (e) {
         console.error(e);
-        alert('Error al enviar solicitud: ' + e.message);
+        showAlertModal('Error', 'Error al enviar solicitud: ' + e.message, true);
         btn.disabled = false;
         btn.innerHTML = '<span class="material-icons-outlined">send_to_mobile</span> Reintentar';
         validateCodiPhone();
@@ -8687,14 +8754,14 @@ function initPasswordChange() {
         btnSavePassword.addEventListener('click', async () => {
             const newPass = newPasswordInput.value;
             if (!newPass || newPass.length < 4) {
-                alert('La contraseña debe tener al menos 6 caracteres.');
+                showAlertModal('Aviso', 'La contraseña debe tener al menos 6 caracteres.', true);
                 return;
             }
 
             try {
                 const currentUser = JSON.parse(localStorage.getItem('user'));
                 if (!currentUser || !currentUser.id) {
-                    alert('Error de sesión. Por favor recarga la página.');
+                    showAlertModal('Error', 'Error de sesión. Por favor recarga la página.', true);
                     return;
                 }
 
@@ -8711,14 +8778,14 @@ function initPasswordChange() {
                 const result = await response.json();
 
                 if (response.ok) {
-                    alert('Contraseña actualizada correctamente.');
+                    showAlertModal('Éxito', 'Contraseña actualizada correctamente.');
                     passwordModal.classList.add('hidden');
                 } else {
-                    alert('Error: ' + (result.error || 'No se pudo actualizar'));
+                    showAlertModal('Error', 'Error: ' + (result.error || 'No se pudo actualizar'), true);
                 }
             } catch (e) {
                 console.error(e);
-                alert('Error de conexión');
+                showAlertModal('Error', 'Error de conexión', true);
             } finally {
                 btnSavePassword.textContent = 'Guardando';
                 btnSavePassword.disabled = false;
@@ -8854,7 +8921,7 @@ if (medicalForm) {
         const data = Object.fromEntries(formData.entries());
 
         if (!data.student_id) {
-            alert('Error: No se ha seleccionado un alumno válido.');
+            showAlertModal('Error', 'Error: No se ha seleccionado un alumno válido.', true);
             return;
         }
 
@@ -8865,10 +8932,10 @@ if (medicalForm) {
                 headers: { 'Content-Type': 'application/json' }
             });
 
-            alert('Ficha médica guardada exitosamente.');
+            showAlertModal('Éxito', 'Ficha médica guardada exitosamente.');
         } catch (error) {
             console.error('Error saving medical record:', error);
-            alert('Error al guardar la ficha médica: ' + error.message);
+            showAlertModal('Error', 'Error al guardar la ficha médica: ' + error.message, true);
         }
     });
 }
@@ -8988,7 +9055,7 @@ async function loadChatbotConfig() {
         }
     } catch (e) {
         console.error('Error loading chatbot config:', e);
-        alert('Error al cargar configuración del asistente.');
+        showAlertModal('Error', 'Error al cargar configuración del asistente.', true);
     }
 }
 
@@ -9004,10 +9071,10 @@ if (chatbotForm) {
                 method: 'PUT',
                 body: JSON.stringify({ apiKey, context })
             });
-            alert('Configuración guardada exitosamente.');
+            showAlertModal('Éxito', 'Configuración guardada exitosamente.');
         } catch (error) {
             console.error(error);
-            alert('Error al guardar configuración: ' + error.message);
+            showAlertModal('Error', 'Error al guardar configuración: ' + error.message, true);
         }
     });
 }

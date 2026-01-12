@@ -26,18 +26,66 @@ router.post('/register-token', async (req, res) => {
     }
 });
 
+// Configure multer for attachment uploads
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+const uploadDir = path.join(__dirname, '../public/uploads/notifications');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, 'notif-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const upload = multer({ storage: storage });
+
 // Dispatch Notification (Admin only ideally)
-router.post('/dispatch', async (req, res) => {
+router.post('/dispatch', upload.single('attachment'), async (req, res) => {
     // Body: { title, message, target: { type, value }, data }
-    const { title, message, target, data } = req.body;
-    console.log('DEBUG: Dispatch Request:', { title, message, target });
+    // Note: When using multer, req.body is populated after multer processes the file
+    // Also, target might come as a JSON string if sent via FormData, so we need to parse it if string
+
+    let { title, message, target, data } = req.body;
+
+    // Parse target if it's a string (FormData sends objects as strings)
+    if (typeof target === 'string') {
+        try {
+            target = JSON.parse(target);
+        } catch (e) {
+            return res.status(400).json({ error: 'Invalid target format' });
+        }
+    }
+
+    // Parse data if it's a string
+    if (typeof data === 'string') {
+        try {
+            data = JSON.parse(data || '{}');
+        } catch (e) {
+            data = {};
+        }
+    }
+
+    const attachmentUrl = req.file ? `/uploads/notifications/${req.file.filename}` : null;
+
+    console.log('DEBUG: Dispatch Request:', { title, message, target, attachment: attachmentUrl });
 
     if (!title || !message || !target) {
         return res.status(400).json({ error: 'Missing title, message, or target' });
     }
 
     try {
-        const result = await dispatchNotification(target, title, message, data);
+        // Pass attachmentUrl to dispatchNotification service
+        // We'll need to update dispatchNotification signature or pass in data/context
+        const result = await dispatchNotification(target, title, message, data, attachmentUrl);
         res.json({ success: true, result });
     } catch (error) {
         console.error('Dispatch Error:', error);

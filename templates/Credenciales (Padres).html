@@ -7,15 +7,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light">
     <meta name="supported-color-schemes" content="light">
+    <meta name="x-apple-disable-message-reformatting">
     <title>Bienvenido al Portal de Padres</title>
     <style type="text/css">
-        /* Force Light Mode */
+        /* Force Light Mode in Apple Mail / iOS - These cannot be inlined easily so we keep them as backup/override */
         :root {
             color-scheme: light;
             supported-color-schemes: light;
         }
 
-        /* Responsive */
+        /* Responsive overrides */
         @media only screen and (max-width: 600px) {
             .email-container {
                 width: 100% !important;
@@ -24,14 +25,35 @@
             }
         }
 
-        /* Branding Colors */
-        .text-red {
-            color: #E31E25 !important;
-        }
+        /* Dark Mode Support: Keep container white, let background go dark */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #222222 !important;
+            }
 
-        .bg-red {
-            background-color: #E31E25 !important;
-            color: #ffffff !important;
+            .email-container {
+                background-color: #ffffff !important;
+                color: #555555 !important;
+            }
+
+            /* Force black text inside the white card in dark mode */
+            h1,
+            h2,
+            h3,
+            p,
+            span,
+            strong {
+                color: #000000 !important;
+            }
+
+            .text-gray {
+                color: #555555 !important;
+            }
+
+            /* Keep brand red elements red */
+            .text-red {
+                color: #E31E25 !important;
+            }
         }
 
         .btn-primary {
@@ -46,7 +68,8 @@
     </style>
 </head>
 
-<body style="margin: 0; padding: 0; background-color: #f6f6f6; color: #555555; font-family: Arial, sans-serif;">
+<body
+    style="margin: 0; padding: 0; background-color: #f6f6f6; color: #555555; font-family: Arial, sans-serif; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">
     <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f6f6f6;">
         <tr>
             <td align="center" style="padding: 20px 0;">
@@ -59,7 +82,7 @@
                         <td align="center" bgcolor="#ffffff" class="text-red"
                             style="padding: 30px 20px; border-bottom: 3px solid #E31E25;">
                             <img src="cid:school_logo" alt="Logo Colegio"
-                                style="display: block; margin-bottom: 10px; max-height: 150px; border: 0;" />
+                                style="display: block; margin-bottom: 10px; max-height: 150px; border: 0; outline: none; text-decoration: none;" />
                         </td>
                     </tr>
 
@@ -70,32 +93,38 @@
                                 style="font-size: 20px; color: #000000; margin: 0 0 20px 0; font-family: Arial, sans-serif; font-weight: bold;">
                                 ¡Bienvenido al Portal de Padres!
                             </h2>
-                            <p style="font-size: 16px; line-height: 24px; color: #555555; margin: 0 0 25px 0;">
+                            <p
+                                style="font-size: 16px; line-height: 24px; color: #555555; margin: 0 0 25px 0; font-family: Arial, sans-serif;">
                                 Estimado padre/madre de familia,
                             </p>
-                            <p style="font-size: 16px; line-height: 24px; color: #555555; margin: 0 0 25px 0;">
+                            <p
+                                style="font-size: 16px; line-height: 24px; color: #555555; margin: 0 0 25px 0; font-family: Arial, sans-serif;">
                                 Se ha generado exitosamente su cuenta de acceso. A través de este portal podrá consultar
                                 el progreso académico, estados de cuenta, trámites administrativos etc.
                             </p>
 
                             <!-- Credentials Box -->
                             <table border="0" cellpadding="0" cellspacing="0" width="100%" class="text-red"
-                                style="background-color: #edefee; border-left: 4px solid #E31E25; margin: 25px 0;">
+                                style="background-color: #edefee; border-left: 2px solid #E31E25; margin: 25px 0;">
                                 <tr>
                                     <td style="padding: 20px;">
-                                        <h3 style="margin: 0 0 15px 0; color: #E31E25; font-size: 16px;">Sus
-                                            Credenciales de Acceso:</h3>
-                                        <p style="margin: 5px 0; font-size: 15px; color: #555555;">
+                                        <h3
+                                            style="margin: 0 0 15px 0; color: #E31E25; font-size: 16px; font-family: Arial, sans-serif;">
+                                            Sus Credenciales de Acceso:</h3>
+                                        <p
+                                            style="margin: 5px 0; font-size: 15px; color: #555555; font-family: Arial, sans-serif;">
                                             <strong style="color: #333;">Usuario:</strong> {{username}}
                                         </p>
-                                        <p style="margin: 5px 0; font-size: 15px; color: #555555;">
+                                        <p
+                                            style="margin: 5px 0; font-size: 15px; color: #555555; font-family: Arial, sans-serif;">
                                             <strong style="color: #333;">Contraseña Temporal:</strong> {{password}}
                                         </p>
                                     </td>
                                 </tr>
                             </table>
 
-                            <p style="font-size: 14px; color: #E31E25; margin: 0 0 25px 0;">
+                            <p
+                                style="font-size: 14px; color: #E31E25; margin: 0 0 25px 0; font-family: Arial, sans-serif;">
                                 <em>Importante: Por seguridad, le recomendamos cambiar su contraseña al iniciar sesión
                                     por primera vez.</em>
                             </p>
@@ -113,10 +142,15 @@
                     <tr>
                         <td bgcolor="#ffffff" class="text-red"
                             style="padding: 20px; text-align: center; color: #9C9E9D; border-top: 3px solid #E31E25;">
-                            <p style="margin: 0 0 5px 0; font-size: 10px; color: #9C9E9D; text-transform: uppercase;">
-                                Este mensaje fue enviado automáticamente. No responda a este correo.
+                            <p
+                                style="margin: 0 0 5px 0; font-size: 10px; color: #9C9E9D; text-transform: uppercase; letter-spacing: 1px; font-family: Arial, sans-serif;">
+                                Este correo fue generado automáticamente por el sistema de admisiones.
                             </p>
-                            <p style="margin: 5px 0; font-size: 12px;">
+                            <p
+                                style="margin: 5px 0 15px 0; font-size: 11px; color: #9C9E9D; font-style: italic; font-family: Arial, sans-serif;">
+                                Nota: Por favor no responda a este correo, es solo para fines informativos.
+                            </p>
+                            <p style="margin: 5px 0; font-size: 12px; font-family: Arial, sans-serif;">
                                 <a href="https://www.culturalterranova.edu.mx" class="text-red"
                                     style="color: #E31E25; text-decoration: none; font-weight: bold;">www.culturalterranova.edu.mx</a>
                             </p>

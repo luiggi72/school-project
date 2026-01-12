@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitud de Informes - Instituto Terranova</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    <!-- Main Style (Reused) -->
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        /* Specific overrides for standalone page background */
+        body {
+            background-color: #f1f5f9;
+            /* match generic light bg */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow-y: auto;
+            /* Allow scroll if height is small */
+        }
+
+        /* Ensure container fits nicely */
+        #public-inquiry-container {
+            width: 100%;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="public-inquiry-container">
+        <!-- Exact Copy of #informes-section content -->
+
+        <!-- We don't need the outer #informes-section helper div, just the card content -->
+        <div class="card" style="margin: 0 auto; padding: 2rem; max-width: 650px; width: 100%;">
+
+            <!-- Header for context (Optional, but good for public page) -->
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <h2 style="color: var(--primary); margin-bottom: 0.5rem;">Solicitud de Informes</h2>
+                <p style="color: var(--text-light);">Complete el formulario para recibir información sobre nuestro
+                    colegio.</p>
+            </div>
+
+            <form id="inquiry-form">
+                <div class="form-group">
+                    <label>Nombre del Padre, Madre o Tutor</label>
+                    <input type="text" id="inquiry-parent-name" placeholder="Nombre completo" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Correo Electrónico</label>
+                        <input type="email" id="inquiry-email" placeholder="correo@ejemplo.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Confirmar Correo Electrónico</label>
+                        <input type="email" id="inquiry-email-confirm" placeholder="Confirma tu correo" required
+                            onpaste="return false;">
+                        <small id="email-mismatch-error" style="color: #ef4444; display: none; margin-top: 0.25rem;">Los
+                            correos no coinciden</small>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Teléfono de Contacto</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <select id="inquiry-phone-code"
+                            style="width: 100px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 0.25rem;">
+                            <option value="+52">🇲🇽 +52</option>
+                            <option value="+1">🇺🇸 +1</option>
+                            <option value="+34">🇪🇸 +34</option>
+                            <option value="+54">🇦🇷 +54</option>
+                            <option value="+57">🇨🇴 +57</option>
+                            <option value="">🏳️ Otro</option>
+                        </select>
+                        <input type="tel" id="inquiry-phone" placeholder="10 dígitos" required maxlength="10"
+                            pattern="\d{10}" title="Ingresa 10 dígitos numéricos" style="flex: 1;"
+                            oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 1.5rem;">
+                    <label>Nombre Completo del Hijo(a)</label>
+                    <input type="text" id="inquiry-child-name" placeholder="Nombre del alumno" required>
+                </div>
+                <div class="form-group">
+                    <label>Fecha de Nacimiento</label>
+                    <input type="date" id="inquiry-birth-date" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nivel Académico</label>
+                        <select id="inquiry-level" required>
+                            <option value="" disabled selected>Selecciona nivel</option>
+                            <option value="Maternal">Maternal</option>
+                            <option value="Preescolar">Preescolar</option>
+                            <option value="Primaria">Primaria</option>
+                            <option value="Secundaria">Secundaria</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Grado Solicitado</label>
+                        <select id="inquiry-grade" required disabled>
+                            <option value="" disabled selected>Selecciona nivel primero</option>
+                            <!-- Populated by JS -->
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Escuela de Procedencia</label>
+                    <div class="search-input-wrapper" style="position: relative;">
+                        <input type="text" id="inquiry-previous-school" placeholder="Nombre de escuela anterior"
+                            autocomplete="off">
+                        <!-- Suggestions list removed for public form simplicity/security, can add back if needed -->
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 1.5rem;">
+                    <label>¿Por cuál medio se enteró de nosotros?</label>
+                    <select id="inquiry-marketing-source" required>
+                        <option value="" disabled selected>Seleccionar opción</option>
+                        <option value="Recomendación">Recomendación</option>
+                        <option value="Redes Sociales">Redes Sociales (Facebook, Instagram)</option>
+                        <option value="Google">Google</option>
+                        <option value="Ubicación">Ubicación</option>
+                        <option value="Otros">Otros</option>
+                    </select>
+                </div>
+                <!-- Hidden input for 'Otros' -->
+                <div class="form-group hidden" id="inquiry-marketing-other-container">
+                    <label>Especifique el medio</label>
+                    <input type="text" id="inquiry-marketing-other">
+                </div>
+
+
+                <div style="display: flex; justify-content: center; margin-top: 2rem;">
+                    <button type="submit" id="btn-submit" class="btn-primary">Guardar Solicitud</button>
+                    <p id="form-error"
+                        style="color: #ef4444; font-size: 0.9rem; margin-top: 1rem; display: none; text-align: center;">
+                    </p>
+                </div>
+            </form>
+
+            <!-- Success Message (Hidden by default) -->
+            <div id="success-screen" style="display: none; text-align: center; padding: 2rem 0;">
+                <span class="material-icons-outlined"
+                    style="font-size: 4rem; color: #10b981; margin-bottom: 1rem;">check_circle</span>
+                <h3 style="margin-bottom: 0.5rem; font-size: 1.5rem;">¡Solicitud Enviada con Exito!</h3>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Logic (Extracted from app.js) -->
+    <script>
+        const ACADEMIC_LEVELS = {
+            'Maternal': ['Maternal 1', 'Maternal 2'],
+            'Preescolar': ['Preescolar 1', 'Preescolar 2', 'Preescolar 3'],
+            'Primaria': ['1º Primaria', '2º Primaria', '3º Primaria', '4º Primaria', '5º Primaria', '6º Primaria'],
+            'Secundaria': ['1º Secundaria', '2º Secundaria', '3º Secundaria']
+        };
+
+        const inquiryForm = document.getElementById('inquiry-form');
+        const marketingSourceSelect = document.getElementById('inquiry-marketing-source');
+        const marketingOtherContainer = document.getElementById('inquiry-marketing-other-container');
+        const inquiryLevelSelect = document.getElementById('inquiry-level');
+        const inquiryGradeSelect = document.getElementById('inquiry-grade');
+        const successScreen = document.getElementById('success-screen');
+        const submitBtn = document.getElementById('btn-submit');
+        const errorMsg = document.getElementById('form-error');
+
+        // Logic for Grade Dropdown
+        if (inquiryLevelSelect && inquiryGradeSelect) {
+            inquiryLevelSelect.addEventListener('change', (e) => {
+                const level = e.target.value;
+                const grades = ACADEMIC_LEVELS[level] || [];
+
+                inquiryGradeSelect.innerHTML = '<option value="" disabled selected>Seleccionar grado</option>';
+
+                if (grades.length > 0) {
+                    inquiryGradeSelect.disabled = false;
+                    grades.forEach(grade => {
+                        const option = document.createElement('option');
+                        option.value = grade;
+                        option.textContent = grade;
+                        inquiryGradeSelect.appendChild(option);
+                    });
+                } else {
+                    inquiryGradeSelect.disabled = true;
+                    inquiryGradeSelect.innerHTML = '<option value="" disabled selected>Selecciona nivel primero</option>';
+                }
+            });
+        }
+
+        // Logic for "Otros" source
+        if (marketingSourceSelect) {
+            marketingSourceSelect.addEventListener('change', (e) => {
+                if (e.target.value === 'Otros') {
+                    marketingOtherContainer.classList.remove('hidden');
+                    document.getElementById('inquiry-marketing-other').setAttribute('required', 'true');
+                } else {
+                    marketingOtherContainer.classList.add('hidden');
+                    document.getElementById('inquiry-marketing-other').removeAttribute('required');
+                    document.getElementById('inquiry-marketing-other').value = '';
+                }
+            });
+        }
+
+        // Validation & Styles
+        const emailInput = document.getElementById('inquiry-email');
+        const emailConfirmInput = document.getElementById('inquiry-email-confirm');
+
+        [emailInput, emailConfirmInput].forEach(input => {
+            if (input) {
+                input.addEventListener('input', () => {
+                    input.style.borderColor = '';
+                    const errorSpan = document.getElementById('email-mismatch-error');
+                    if (errorSpan) errorSpan.style.display = 'none';
+                });
+            }
+        });
+
+        if (emailConfirmInput) {
+            emailConfirmInput.addEventListener('blur', () => {
+                const email = emailInput.value.trim();
+                const confirm = emailConfirmInput.value.trim();
+
+                if (email && confirm && email !== confirm) {
+                    emailInput.style.borderColor = '#ef4444';
+                    emailConfirmInput.style.borderColor = '#ef4444';
+                    document.getElementById('email-mismatch-error').style.display = 'block';
+                }
+            });
+        }
+
+        // Submit Handler
+        inquiryForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorMsg.style.display = 'none';
+
+            // Validate Emails match
+            const email = emailInput.value.trim();
+            const emailConfirm = emailConfirmInput.value.trim();
+
+            if (email !== emailConfirm) {
+                emailInput.style.borderColor = '#ef4444';
+                emailConfirmInput.style.borderColor = '#ef4444';
+                document.getElementById('email-mismatch-error').style.display = 'block';
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Enviando...';
+
+            const payload = {
+                parent_name: document.getElementById('inquiry-parent-name').value,
+                email: document.getElementById('inquiry-email').value,
+                phone: document.getElementById('inquiry-phone-code').value + ' ' + document.getElementById('inquiry-phone').value,
+                child_name: document.getElementById('inquiry-child-name').value,
+                birth_date: document.getElementById('inquiry-birth-date').value,
+                requested_grade: document.getElementById('inquiry-grade').value,
+                previous_school: document.getElementById('inquiry-previous-school').value,
+                marketing_source: marketingSourceSelect.value,
+                marketing_source_other: document.getElementById('inquiry-marketing-other').value
+            };
+
+            try {
+                const response = await fetch('/api/inquiries', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    inquiryForm.style.display = 'none';
+                    successScreen.style.display = 'block';
+                    // Hide Header too for cleanliness
+                    const header = document.querySelector('h2');
+                    if (header) header.parentElement.style.display = 'none';
+
+                } else {
+                    const errorText = await response.text();
+                    throw new Error(errorText || 'Error al guardar');
+                }
+            } catch (error) {
+                console.error(error);
+                errorMsg.textContent = 'Error: ' + error.message;
+                errorMsg.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Guardar Solicitud';
+            }
+        });
+    </script>
+</body>
+
+</html>

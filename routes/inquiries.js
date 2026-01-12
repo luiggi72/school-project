@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
+const checkAuth = require('../middleware/auth');
 
 // GET /api/inquiries/schools (Autocomplete suggestions)
-router.get('/schools', (req, res) => {
+router.get('/schools', checkAuth, (req, res) => {
     const query = `
         SELECT DISTINCT previous_school 
         FROM inquiries 
@@ -17,7 +18,7 @@ router.get('/schools', (req, res) => {
 });
 
 // GET /api/inquiries
-router.get('/', (req, res) => {
+router.get('/', checkAuth, (req, res) => {
     db.query('SELECT * FROM inquiries ORDER BY created_at DESC', (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results);
@@ -63,7 +64,7 @@ router.post('/', (req, res) => {
                 const subject = 'Confirmación de Solicitud - Instituto Cultural Terranova';
                 const text = `Hola ${parent_name},\n\nHemos recibido su solicitud de informes para el alumno(a) ${child_name}.\n\nNos pondremos en contacto con usted a la brevedad.\n\nAtentamente,\nInstituto Cultural Terranova`;
 
-                const html = loadTemplate('inquiry_confirmation', {
+                const html = loadTemplate('Confirmación (Informes)', {
                     parent_name: parent_name,
                     child_name: child_name,
                     requested_grade: requested_grade
@@ -146,7 +147,7 @@ router.post('/', (req, res) => {
 });
 
 // PUT /api/inquiries/:id/checklist
-router.put('/:id/checklist', (req, res) => {
+router.put('/:id/checklist', checkAuth, (req, res) => {
     const { id } = req.params;
     const { flag, value } = req.body;
 
@@ -168,7 +169,7 @@ router.put('/:id/checklist', (req, res) => {
 });
 
 // DELETE /api/inquiries/:id
-router.delete('/:id', (req, res) => {
+router.delete('/:id', checkAuth, (req, res) => {
     const { id } = req.params;
     db.query('DELETE FROM inquiries WHERE id = ?', [id], (err, result) => {
         if (err) return res.status(500).json({ error: err.message });

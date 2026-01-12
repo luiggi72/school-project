@@ -44,7 +44,7 @@ app.use('/api/concepts', checkAuth, conceptsRoutes);
 app.use('/api/users', checkAuth, userRoutes);
 app.use('/api/school-info', checkAuth, schoolRoutes);
 app.use('/api/reports', checkAuth, reportsRoutes);
-app.use('/api/inquiries', checkAuth, inquiriesRoutes);
+app.use('/api/inquiries', inquiriesRoutes); // Public POST, Protected others
 app.use('/api/academic', checkAuth, academicRoutes);
 app.use('/api/administrative', checkAuth, administrativeRoutes);
 app.use('/api/config', checkAuth, configRoutes);

@@ -61,7 +61,7 @@ const sendPushNotification = async (recipients, title, message, data = {}) => {
 };
 
 // Advanced Dispatch Logic
-const dispatchNotification = (target, title, message, data) => {
+const dispatchNotification = (target, title, message, data, attachmentUrl = null) => {
     return new Promise((resolve, reject) => {
         let query = '';
         let params = [];
@@ -141,8 +141,8 @@ const dispatchNotification = (target, title, message, data) => {
 
             // Bulk Insert for Web Notifications (All Users)
             if (userIds.length > 0) {
-                const values = userIds.map(uid => [uid, title, message, category, 0]); // 0 = is_read
-                const insertQuery = 'INSERT INTO user_notifications (user_id, title, message, category, is_read) VALUES ?';
+                const values = userIds.map(uid => [uid, title, message, category, 0, attachmentUrl]); // Added attachmentUrl
+                const insertQuery = 'INSERT INTO user_notifications (user_id, title, message, category, is_read, attachment_url) VALUES ?';
                 db.query(insertQuery, [values], (err) => {
                     if (err) console.error('Error persisting notifications:', err);
                     else console.log(`Persisted ${userIds.length} notifications.`);

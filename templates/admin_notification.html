@@ -10,12 +10,18 @@
     <meta name="x-apple-disable-message-reformatting">
     <title>Nueva Solicitud</title>
     <style type="text/css">
+        /* Force Light Mode in Apple Mail / iOS */
         :root {
+            color-scheme: light;
+            supported-color-schemes: light;
+        }
 
-            button,
-            a {
-                color: inherit;
-                text-decoration: none;
+        /* Responsive overrides */
+        @media only screen and (max-width: 600px) {
+            .email-container {
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 10px !important;
             }
         }
 
@@ -30,68 +36,43 @@
                 color: #555555 !important;
             }
 
+            /* Force black text inside the white card in dark mode */
             h1,
             h2,
             h3,
-            h4,
-            strong,
-            span {
+            p,
+            span,
+            strong {
                 color: #000000 !important;
             }
 
-            p {
-                color: #555555 !important;
-            }
-        }
-
-        body {
-            background-color: #ffffff !important;
-            color: #555555 !important;
-            margin: 0;
-            padding: 0;
-            width: 100% !important;
-            -webkit-text-size-adjust: 100%;
-            -ms-text-size-adjust: 100%;
-        }
-
-        img {
-            border: 0;
-            height: auto;
-            line-height: 100%;
-            outline: none;
-            text-decoration: none;
-        }
-
-        .email-container {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        @media only screen and (max-width: 600px) {
-            .email-container {
-                width: 100% !important;
-                max-width: 100% !important;
-                padding: 10px !important;
+            /* Keep brand red elements red */
+            .text-red {
+                color: #E31E25 !important;
             }
         }
     </style>
 </head>
 
-<body style="margin: 0; padding: 0; background-color: #f6f6f6; font-family: Arial, sans-serif;">
+<body
+    style="margin: 0; padding: 0; background-color: #f6f6f6; color: #555555; font-family: Arial, sans-serif; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">
     <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f6f6f6;">
         <tr>
             <td align="center" style="padding: 20px 0;">
+                <!-- Main Container -->
                 <table border="0" cellpadding="0" cellspacing="0" width="100%" class="email-container"
-                    style="border-collapse: collapse; background-color: #ffffff; border-radius: 8px; overflow: hidden; max-width: 600px;">
+                    style="border-collapse: collapse; background-color: #ffffff; border-radius: 8px; overflow: hidden; max-width: 600px; margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+
                     <!-- Header -->
                     <tr>
-                        <td align="center" bgcolor="#ffffff"
-                            style="padding: 30px 20px; border-bottom: 3px solid #c0392b;">
-
+                        <td align="center" bgcolor="#ffffff" class="text-red"
+                            style="padding: 30px 20px; border-bottom: 3px solid #E31E25;">
                             <img src="cid:school_logo" alt="Logo Colegio"
-                                style="display: block; margin-bottom: 10px; max-height: 150px;" />
+                                style="display: block; margin-bottom: 10px; max-height: 150px; border: 0; outline: none; text-decoration: none;" />
+                            <h2 style="font-size: 18px; margin: 0; color: #E31E25;">Nueva Solicitud de Informes</h2>
                         </td>
                     </tr>
+
                     <!-- Content -->
                     <tr>
                         <td bgcolor="#ffffff" style="padding: 30px;">
@@ -129,7 +110,7 @@
                                     <td valign="top"
                                         style="padding: 12px; border-bottom: 1px solid #eee; color: #9C9E9D; font-size: 15px; font-family: Arial, sans-serif;">
                                         <a href="mailto:{{email}}"
-                                            style="color: #c0392b; text-decoration: none;">{{email}}</a>
+                                            style="color: #E31E25; text-decoration: none;">{{email}}</a>
                                     </td>
                                 </tr>
                                 <tr>
@@ -167,17 +148,14 @@
                             </table>
                         </td>
                     </tr>
+
                     <!-- Footer -->
                     <tr>
-                        <td bgcolor="#ffffff"
-                            style="padding: 15px; text-align: center; color: #555555; border-top: 1px solid #eeeeee;">
+                        <td bgcolor="#ffffff" class="text-red"
+                            style="padding: 20px; text-align: center; color: #9C9E9D; border-top: 3px solid #E31E25;">
                             <p
                                 style="margin: 0 0 5px 0; font-size: 10px; color: #9C9E9D; text-transform: uppercase; letter-spacing: 1px; font-family: Arial, sans-serif;">
-                                Este correo fue generado automáticamente por el sistema de admisiones.
-                            </p>
-                            <p
-                                style="margin: 5px 0 15px 0; font-size: 11px; color: #9C9E9D; font-style: italic; font-family: Arial, sans-serif;">
-                                Nota: Por favor no responda a este correo, es solo para fines informativos.
+                                Notificación del Sistema de Admisiones
                             </p>
                         </td>
                     </tr>
