@@ -54,6 +54,8 @@ app.use('/api/medical', checkAuth, require('./routes/medical'));
 app.use('/api/notifications', checkAuth, require('./routes/notifications'));
 app.use('/api/chat', checkAuth, require('./routes/chat'));
 app.use('/api/attachments', checkAuth, attachmentsRoutes);
+app.use('/api/public/agenda', require('./routes/public_agenda')); // Public Access
+
 
 
 // Start Server

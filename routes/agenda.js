@@ -75,14 +75,14 @@ router.get('/slots', async (req, res) => {
 
         // 3. Get Existing Appointments
         // Assuming 'appointments' table exists or equivalent. Based on app.js, events come from /api/calendar
-        // We probably need to check the actual table. Let's assume standard structure or check schema.
         // Waiting to see schema... assuming table is 'calendar_events' or similar based on log?
         // Actually, the user didn't show 'calendar_events' in schema.sql, but app.js calls /api/calendar.
         // I'll check /routes/calendar.js to see what table it uses.
 
         // 3. Get Existing Appointments
+        // Use DATE_FORMAT to compare literally what is stored in DB, bypassing Node.js/Timezone Date parsing issues.
         const [events] = await db.query(`
-            SELECT start_time, end_time FROM appointments 
+            SELECT DATE_FORMAT(start_time, '%H:%i') as time_str FROM appointments 
             WHERE DATE(start_time) = ?`, [date]
         );
 
@@ -92,26 +92,14 @@ router.get('/slots', async (req, res) => {
         if (config.slots && Array.isArray(config.slots) && config.slots.length > 0) {
             slots = config.slots.map(slot => {
                 const slotTime = slot.time; // "10:00"
-                const matches = events.filter(e => {
-                    const d = new Date(e.start_time);
-
-                    // Fix: Convert to Mexico City time explicitly to match slot times (e.g. "09:00")
-                    // This handles the UTC offset (e.g. 15:00 UTC -> 09:00 CST)
-                    const mexicoDateStr = d.toLocaleString("en-US", { timeZone: "America/Mexico_City" });
-                    const mexicoDate = new Date(mexicoDateStr);
-
-                    const h = String(mexicoDate.getHours()).padStart(2, '0');
-                    const m = String(mexicoDate.getMinutes()).padStart(2, '0');
-
-                    return `${h}:${m}` === slotTime;
-                }).length;
+                const matches = events.filter(e => e.time_str === slotTime).length;
 
                 return {
                     time: slot.time,
                     label: slot.label,
                     total_capacity: slot.capacity,
                     duration: slot.duration || 60, // Pass duration
-                    available: Math.max(0, slot.capacity - matches)
+                    available: Math.max(0, (slot.capacity || 1) - matches)
                 };
             });
         } else {

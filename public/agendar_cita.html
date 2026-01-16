@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agendar Cita - Instituto Terranova</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .booking-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            max-width: 500px;
+            /* Slightly narrower for nicer calendar */
+            overflow: hidden;
+            animation: slideUp 0.5s ease-out;
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header-bg {
+            background: linear-gradient(135deg, #E31E25 0%, #b91c1c 100%);
+            padding: 1.5rem;
+            text-align: center;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .header-bg h2 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .content {
+            padding: 1.5rem;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .summary-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.25rem;
+            font-size: 0.85rem;
+        }
+
+        .summary-label {
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .summary-val {
+            color: #1e293b;
+            font-weight: 600;
+            text-align: right;
+        }
+
+        /* Custom Calendar Styles */
+        .calendar-container {
+            margin-bottom: 1.5rem;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .month-label {
+            font-weight: 700;
+            color: #1e293b;
+            text-transform: capitalize;
+        }
+
+        .nav-btn {
+            background: none;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            cursor: pointer;
+            padding: 4px;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-btn:hover {
+            background: #f1f5f9;
+            color: #334155;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            text-align: center;
+        }
+
+        .day-name {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #94a3b8;
+            padding-bottom: 0.5rem;
+        }
+
+        .day-cell {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            border-radius: 50%;
+            /* Circle */
+            cursor: pointer;
+            color: #334155;
+            position: relative;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        /* Available Day */
+        .day-available {
+            background-color: #dcfce7;
+            /* Green-100 */
+            color: #166534;
+            /* Green-800 */
+            font-weight: 600;
+        }
+
+        .day-available:hover {
+            background-color: #bbf7d0;
+            /* Green-200 */
+            transform: scale(1.1);
+        }
+
+        /* Selected Day */
+        .day-selected {
+            background-color: #22c55e !important;
+            /* Green-500 */
+            color: white !important;
+            box-shadow: 0 4px 6px rgba(34, 197, 94, 0.4);
+            transform: scale(1.1);
+        }
+
+        .day-disabled {
+            color: #cbd5e1;
+            cursor: default;
+        }
+
+        .day-full {
+            background-color: #fee2e2;
+            color: #ef4444;
+            cursor: not-allowed;
+            text-decoration: none;
+        }
+
+        /* Slots */
+        .slots-container {
+            margin-top: 1rem;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 1rem;
+        }
+
+        .slots-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            /* 2 columns */
+            gap: 8px;
+        }
+
+        .slot-btn {
+            padding: 0.75rem;
+            border: 1px solid #cbd5e1;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slot-time {
+            font-weight: 600;
+            color: #334155;
+            font-size: 1rem;
+        }
+
+        .slot-capacity {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        .slot-btn:hover:not(:disabled) {
+            border-color: #E31E25;
+            background: #fff1f2;
+        }
+
+        .slot-btn.selected {
+            background: #E31E25;
+            border-color: #E31E25;
+        }
+
+        .slot-btn.selected .slot-time,
+        .slot-btn.selected .slot-capacity {
+            color: white;
+        }
+
+        .slot-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #f1f5f9;
+        }
+
+        .submit-btn {
+            width: 100%;
+            background: #1e293b;
+            color: white;
+            padding: 1rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 2rem;
+            transition: background 0.2s;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            background: #0f172a;
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="booking-card" id="booking-card">
+        <div class="header-bg">
+            <img src="logo.png" alt="Logo Instituto Terranova"
+                style="height: 60px; margin-bottom: 1rem; filter: brightness(0) invert(1);">
+            <h2 id="card-title">Selecciona tu Fecha</h2>
+        </div>
+
+        <div class="content" id="form-content">
+            <!-- Hidden Inputs -->
+            <!-- Hidden Inputs -->
+            <input type="hidden" id="p_name">
+            <input type="hidden" id="p_email">
+            <input type="hidden" id="p_phone">
+            <input type="hidden" id="p_child">
+            <input type="hidden" id="p_birth_date">
+            <input type="hidden" id="p_grade">
+            <input type="hidden" id="p_prev_school">
+            <input type="hidden" id="p_marketing_source">
+
+            <div class="summary-box">
+                <div class="summary-row">
+                    <span class="summary-label">Padre/Madre:</span>
+                    <span class="summary-val" id="disp_name">...</span>
+                </div>
+                <!-- Divider -->
+                <div style="border-bottom: 1px dashed #cbd5e1; margin: 8px 0;"></div>
+                <div class="summary-row">
+                    <span class="summary-label">Alumno:</span>
+                    <span class="summary-val" id="disp_child">...</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Interés:</span>
+                    <span class="summary-val" id="disp_grade">...</span>
+                </div>
+            </div>
+
+            <div class="calendar-container">
+                <div class="calendar-header">
+                    <button class="nav-btn" id="prev-month"><span
+                            class="material-icons-outlined">chevron_left</span></button>
+                    <div class="month-label" id="current-month-label">Enero 2026</div>
+                    <button class="nav-btn" id="next-month"><span
+                            class="material-icons-outlined">chevron_right</span></button>
+                </div>
+                <div class="calendar-grid" id="calendar-grid">
+                    <!-- Days injected JS -->
+                </div>
+            </div>
+
+            <div id="slots-area" class="slots-container hidden">
+                <div style="margin-bottom: 0.75rem; font-weight: 600; color: #334155; font-size:0.9rem;">
+                    Horarios para el <span id="selected-date-display" style="color:#E31E25;"></span>
+                </div>
+                <div class="slots-grid" id="slots-grid"></div>
+            </div>
+
+            <button id="book-btn" class="submit-btn" disabled>Confirmar Cita</button>
+            <p id="error-msg" style="color: #ef4444; margin-top: 1rem; text-align: center; font-size: 0.9rem;"
+                class="hidden"></p>
+        </div>
+
+        <div class="content hidden" id="success-content" style="text-align: center;">
+            <div style="padding: 2rem 0;">
+                <span class="material-icons-outlined"
+                    style="font-size: 4rem; color: #22c55e; margin-bottom: 1rem;">check_circle</span>
+                <h3 style="color: #1e293b; margin-bottom: 0.5rem; font-size: 1.5rem;">¡Cita Confirmada!</h3>
+                <p style="color: #64748b;">Hemos enviado los detalles a tu correo.</p>
+                <div style="margin-top: 2rem; border-top: 1px solid #e2e8f0; padding-top: 1rem;">
+                    <p style="color: #E31E25; font-size: 1.25rem; font-weight: 700;" id="success-datetime"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api/public/agenda';
+
+        // --- State ---
+        let currentDate = new Date(); // Tracks calendar view month
+        let selectedDate = null;      // Selected 'YYYY-MM-DD'
+        let selectedTime = null;      // Selected time slot
+        let availabilityMap = {};     // { '2026-01-15': { status: 'available', count: 5 } }
+
+        // --- Init ---
+        // Parse params
+        // Parse params
+        const params = new URLSearchParams(window.location.search);
+        let bookingData = {};
+
+        // Decode Base64 'data' param if present
+        if (params.has('data')) {
+            try {
+                const base64Str = params.get('data');
+                // Fix for UTF-8 characters (accents, ñ, etc.)
+                // atob() alone decoding UTF-8 bytes string results in latin1 interpretations (mojibake)
+                const jsonStr = decodeURIComponent(Array.prototype.map.call(atob(base64Str), function (c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+
+                bookingData = JSON.parse(jsonStr);
+            } catch (e) {
+                console.error("Error decoding booking data", e);
+            }
+        }
+
+        // Helper to get value from either encoded object or direct param (fallback)
+        const getVal = (key) => bookingData[key] || params.get(key) || '';
+
+        // Hidden inputs
+        document.getElementById('p_name').value = getVal('parent_name');
+        document.getElementById('p_email').value = getVal('email');
+        document.getElementById('p_phone').value = getVal('phone');
+        document.getElementById('p_child').value = getVal('child_name');
+        document.getElementById('p_birth_date').value = getVal('birth_date');
+        document.getElementById('p_grade').value = getVal('grade');
+        document.getElementById('p_prev_school').value = getVal('previous_school');
+        document.getElementById('p_marketing_source').value = getVal('marketing_source');
+
+        // Display
+        document.getElementById('disp_name').textContent = getVal('parent_name') || 'Visitante';
+        const phoneVal = getVal('phone');
+        const emailVal = getVal('email');
+        // document.getElementById('disp_email').textContent = emailVal || '-'; // Removed from UI
+        // document.getElementById('disp_phone').textContent = phoneVal || '-'; // Removed from UI
+        document.getElementById('disp_child').textContent = getVal('child_name') || 'Pendiente';
+        // document.getElementById('disp_birth_date').textContent = getVal('birth_date') || '-'; // Removed from UI
+
+        const rawGrade = getVal('grade');
+        const rawLevel = getVal('level');
+        document.getElementById('disp_grade').textContent = (rawLevel && rawGrade) ? `${rawLevel} - ${rawGrade}` : (rawGrade || rawLevel || 'General');
+
+        // --- Calendar Logic ---
+        const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+        const dayNames = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+
+        const grid = document.getElementById('calendar-grid');
+        const monthLabel = document.getElementById('current-month-label');
+
+        function renderCalendarHeader() {
+            grid.innerHTML = '';
+            dayNames.forEach(d => {
+                const el = document.createElement('div');
+                el.className = 'day-name';
+                el.textContent = d;
+                grid.appendChild(el);
+            });
+        }
+
+        async function updateCalendar() {
+            monthLabel.textContent = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+
+            // Fetch Availability for this month
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+
+            const startStr = new Date(year, month, 1).toISOString();
+            const endStr = new Date(year, month + 1, 0).toISOString(); // Last day of month
+
+            // Reset Map
+            availabilityMap = {};
+
+            try {
+                // Fetch range (expand explicit range slightly to cover edges if needed)
+                // Actually need YYYY-MM-DD format mostly
+                const s = new Date(year, month, 1).toISOString().split('T')[0];
+                const e = new Date(year, month + 1, 0).toISOString().split('T')[0];
+
+                const res = await fetch(`${API_URL}/availability?start=${s}&end=${e}`);
+                const data = await res.json();
+
+                // Populate Map
+                data.forEach(item => {
+                    availabilityMap[item.date] = item;
+                });
+
+            } catch (err) {
+                console.error("Error fetching availability", err);
+            }
+
+            renderDays();
+        }
+
+        function renderDays() {
+            // Re-render grid content (keeping header)
+            // Clear only day cells? No, clear all and re-add header is easier
+            grid.innerHTML = '';
+            dayNames.forEach(d => {
+                const el = document.createElement('div');
+                el.className = 'day-name';
+                el.textContent = d;
+                grid.appendChild(el);
+            });
+
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+
+            const firstDayIndex = new Date(year, month, 1).getDay();
+            const lastDay = new Date(year, month + 1, 0).getDate();
+
+            // Padding Days
+            for (let i = 0; i < firstDayIndex; i++) {
+                const empty = document.createElement('div');
+                grid.appendChild(empty);
+            }
+
+            // Real Days
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            for (let d = 1; d <= lastDay; d++) {
+                const cell = document.createElement('div');
+                cell.className = 'day-cell';
+                cell.textContent = d;
+
+                const checkDate = new Date(year, month, d);
+                // ISO String for Map key
+                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+
+                // Past check
+                if (checkDate < today) {
+                    cell.classList.add('day-disabled');
+                } else {
+                    // Check availability
+                    const avail = availabilityMap[dateKey];
+                    if (avail && avail.status === 'available') {
+                        cell.classList.add('day-available');
+                        cell.onclick = () => selectDate(dateKey, cell);
+                    } else if (avail && avail.status === 'full') {
+                        cell.classList.add('day-full');
+                        cell.title = "Agotado";
+                    } else {
+                        // Not in configured days or no info
+                        cell.classList.add('day-disabled');
+                    }
+                }
+
+                // Restore Selection
+                if (selectedDate === dateKey) {
+                    cell.classList.add('day-selected');
+                }
+
+                grid.appendChild(cell);
+            }
+        }
+
+        async function selectDate(dateKey, cellEl) {
+            // Visual Update
+            document.querySelectorAll('.day-cell').forEach(c => c.classList.remove('day-selected'));
+            cellEl.classList.add('day-selected');
+
+            selectedDate = dateKey;
+            selectedTime = null;
+            document.getElementById('book-btn').disabled = true;
+            document.getElementById('book-btn').textContent = "Confirmar Cita";
+
+            // Update Display
+            const dObjs = dateKey.split('-');
+            const pretty = `${dObjs[2]} de ${monthNames[parseInt(dObjs[1]) - 1]}`;
+            document.getElementById('selected-date-display').textContent = pretty;
+
+            // Load Slots
+            loadSlots(dateKey);
+        }
+
+        async function loadSlots(dateStr) {
+            const container = document.getElementById('slots-area');
+            const grid = document.getElementById('slots-grid');
+
+            container.classList.remove('hidden');
+            grid.innerHTML = '<p style="color:#64748b; font-size:0.9rem; grid-column:1/-1; text-align:center;">Cargando...</p>';
+
+            try {
+                // Use getVal helper if available in scope, otherwise re-parse
+                // Better: Move getVal to outer scope or re-implement simple check
+
+                // Re-parsing logic for safety inside this scope
+                const params = new URLSearchParams(window.location.search);
+                let levelParam = params.get('level') || '';
+
+                if (params.has('data')) {
+                    try {
+                        const json = JSON.parse(atob(params.get('data')));
+                        if (json.level) levelParam = json.level;
+                    } catch (e) { }
+                }
+
+                const res = await fetch(`${API_URL}/slots?date=${dateStr}&level=${levelParam}`);
+                const slots = await res.json();
+                grid.innerHTML = '';
+
+                if (slots.length === 0) {
+                    grid.innerHTML = '<p style="color:#ef4444; grid-column:1/-1;">Sin disponibilidad.</p>';
+                    return;
+                }
+
+                slots.forEach(slot => {
+                    const btn = document.createElement('button'); // Changed to button for native disabled support
+                    btn.type = 'button';
+                    btn.className = 'slot-btn';
+
+                    const timeSpan = document.createElement('span');
+                    timeSpan.className = 'slot-time';
+                    timeSpan.textContent = slot.time;
+                    btn.appendChild(timeSpan);
+
+                    const capSpan = document.createElement('span');
+                    capSpan.className = 'slot-capacity';
+
+                    if (slot.available > 0) {
+                        const label = slot.available === 1 ? 'lugar disponible' : 'lugares disponibles';
+                        capSpan.textContent = `${slot.available} ${label}`;
+                        capSpan.style.color = '#16a34a'; // Green-600
+                    } else {
+                        // Check if it's inactive/past or just full
+                        capSpan.textContent = (slot.is_past) ? 'No disponible' : 'Agotado';
+                        capSpan.style.color = '#ef4444'; // Red-500
+                    }
+                    btn.appendChild(capSpan);
+
+                    if (slot.available <= 0) {
+                        btn.disabled = true;
+                        btn.classList.add('disabled'); // visual
+                    } else {
+                        btn.onclick = () => {
+                            document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
+                            btn.classList.add('selected');
+                            selectedTime = slot.time;
+
+                            const btnSubmit = document.getElementById('book-btn');
+                            btnSubmit.disabled = false;
+                            btnSubmit.textContent = `Confirmar: ${slot.time}`;
+                        };
+                    }
+
+                    grid.appendChild(btn);
+                });
+
+            } catch (e) {
+                grid.innerHTML = '<p>Error.</p>';
+            }
+        }
+
+
+
+        // --- Nav ---
+        document.getElementById('prev-month').onclick = () => {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            updateCalendar();
+        };
+        document.getElementById('next-month').onclick = () => {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            updateCalendar();
+        };
+
+        // --- Execute Init ---
+        updateCalendar();
+
+        // --- Submit Logic (Same as before) ---
+        document.getElementById('book-btn').onclick = async () => {
+            if (!selectedDate || !selectedTime) return;
+            const btn = document.getElementById('book-btn');
+            btn.disabled = true;
+            btn.textContent = "Procesando...";
+
+            const payload = {
+                parent_name: document.getElementById('p_name').value,
+                email: document.getElementById('p_email').value,
+                phone: document.getElementById('p_phone').value,
+                child_name: document.getElementById('p_child').value,
+                birth_date: document.getElementById('p_birth_date').value,
+                grade: document.getElementById('p_grade').value,
+                previous_school: document.getElementById('p_prev_school').value,
+                marketing_source: document.getElementById('p_marketing_source').value,
+                date: selectedDate,
+                time: selectedTime
+            };
+
+            try {
+                const res = await fetch(`${API_URL}/book`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    // Format Date: DD-MM-YY
+                    const [y, m, d] = selectedDate.split('-');
+                    const shortYear = y.substring(2);
+                    const formattedDate = `${d}-${m}-${shortYear}`;
+
+                    // Format Time: 12h AM/PM
+                    const [hh, mm] = selectedTime.split(':');
+                    const hVal = parseInt(hh, 10);
+                    const ampm = hVal >= 12 ? 'PM' : 'AM';
+                    const h12 = hVal % 12 || 12;
+                    const formattedTime = `${h12}:${mm} ${ampm}`;
+
+                    document.getElementById('form-content').classList.add('hidden');
+                    document.getElementById('card-title').textContent = "¡Listo!";
+                    document.getElementById('success-datetime').textContent = `${formattedDate} - ${formattedTime}`;
+                    document.getElementById('success-content').classList.remove('hidden');
+                } else {
+                    throw new Error('Error al agendar.');
+                }
+            } catch (e) {
+                document.getElementById('error-msg').textContent = e.message;
+                document.getElementById('error-msg').classList.remove('hidden');
+                btn.disabled = false;
+            }
+        };
+
+    </script>
+</body>
+
+</html>

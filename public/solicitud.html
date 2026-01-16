@@ -44,6 +44,7 @@
 
             <!-- Header for context (Optional, but good for public page) -->
             <div style="text-align: center; margin-bottom: 2rem;">
+                <img src="logo.png" alt="Logo Instituto Terranova" style="height: 80px; margin-bottom: 1rem;">
                 <h2 style="color: var(--primary); margin-bottom: 0.5rem;">Solicitud de Informes</h2>
                 <p style="color: var(--text-light);">Complete el formulario para recibir información sobre nuestro
                     colegio.</p>
@@ -283,6 +284,11 @@
                     // Hide Header too for cleanliness
                     const header = document.querySelector('h2');
                     if (header) header.parentElement.style.display = 'none';
+
+                    // Redirect after 3 seconds
+                    setTimeout(() => {
+                        window.location.href = 'https://www.culturalterranova.edu.mx/home';
+                    }, 3000);
 
                 } else {
                     const errorText = await response.text();

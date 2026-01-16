@@ -331,6 +331,7 @@ select.input-control option,
     width: 100%;
     max-width: 600px;
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    position: relative; /* For absolute positioning of close button */
 }
 
 .modal-header {
@@ -359,9 +360,18 @@ select.input-control option,
 .close-modal-user {
     background: none;
     border: none;
-    font-size: 1.5rem;
+    font-size: 2rem;
+    line-height: 1;
     cursor: pointer;
-    color: var(--text-light);
+    color: #94a3b8;
+    position: absolute;
+    top: 1rem;
+    right: 1.5rem;
+    transition: color 0.2s;
+}
+
+.close-modal:hover, .close-modal-user:hover {
+    color: var(--primary);
 }
 
 .modal-actions {

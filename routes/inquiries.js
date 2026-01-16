@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const checkAuth = require('../middleware/auth');
+const path = require('path');
 
 // GET /api/inquiries/schools (Autocomplete suggestions)
 router.get('/schools', checkAuth, (req, res) => {
@@ -27,8 +28,6 @@ router.get('/', checkAuth, (req, res) => {
 
 const { sendEmail } = require('../utils/emailService');
 const { loadTemplate } = require('../utils/templateService');
-
-// ... (existing code)
 
 // POST /api/inquiries
 router.post('/', (req, res) => {
@@ -77,28 +76,113 @@ router.post('/', (req, res) => {
                 setTimeout(() => {
                     console.log(`Processing scheduled info email for ${email} requesting ${requested_grade}`);
 
-                    let templateName = null;
-                    let infoSubject = '';
+                    let templateName = '';
+                    let infoSubject = 'Información Instituto Cultural Terranova';
+                    let attachmentFilename = '';
+                    let inquiryLevel = 'General'; // Default
 
                     // Determine template based on grade/level
-                    // STRICTLY ONLY PREESCOLAR as requested
-                    if (requested_grade && requested_grade.toLowerCase().includes('preescolar')) {
+                    const grade = requested_grade ? requested_grade.toLowerCase() : '';
+
+                    if (grade.includes('maternal')) {
+                        templateName = 'maternal_info';
+                        infoSubject = 'Información Maternal - Instituto Cultural Terranova';
+                        attachmentFilename = 'PRE_Y_MAT_26-27_HOJAS_DE_INFORMES-1768501599612.pdf';
+                        inquiryLevel = 'Maternal';
+                    } else if (grade.includes('kinder') || grade.includes('preescolar') || grade.includes('kínder')) {
                         templateName = 'kinder_info';
-                        infoSubject = 'Información Kinder 2025-2026 - Instituto Cultural Terranova';
+                        infoSubject = 'Información Preescolar - Instituto Cultural Terranova';
+                        attachmentFilename = 'KINDER_26-27_HOJAS_DE_INFORMES-1768501488233.pdf';
+                        inquiryLevel = 'Preescolar';
+                    } else if (grade.includes('primaria')) {
+                        templateName = 'primaria_info';
+                        infoSubject = 'Información Primaria - Instituto Cultural Terranova';
+                        attachmentFilename = 'PRIMARIA_26-27_HOJA_DE_INFORMES-1768501619015.pdf';
+                        inquiryLevel = 'Primaria';
+                    } else if (grade.includes('secundaria')) {
+                        templateName = 'secundaria_info';
+                        infoSubject = 'Información Secundaria - Instituto Cultural Terranova';
+                        attachmentFilename = 'SECUNDARIA_26-27_HOJAS_DE_INFORMES-1768501632803.pdf';
+                        inquiryLevel = 'Secundaria';
+                    } else if (grade.includes('preparatoria') || grade.includes('bachillerato')) {
+                        templateName = 'preparatoria_info';
+                        infoSubject = 'Información Preparatoria - Instituto Cultural Terranova';
+                        // No specific PDF found for Preparatoria yet
+                        inquiryLevel = 'Preparatoria';
                     }
-                    // Future: Add conditions for Primaria, Secundaria, etc.
 
                     if (templateName) {
+                        const publicUrl = process.env.PUBLIC_URL || 'http://localhost:3000';
+                        let attachmentButton = '';
+
+                        if (attachmentFilename) {
+                            const url = `${publicUrl}/uploads/${attachmentFilename}`;
+                            // Call to Action: Download (Simple Text Link)
+                            attachmentButton = `
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 10px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="${url}" target="_blank" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 14px; color: #64748b; text-decoration: underline;">
+                                        Información Adjunta
+                                    </a>
+                                    </td>
+                                </tr>
+                            </table>`;
+                        }
+
+                        // NEW: Generate Booking Button - Obfuscated
+                        const bookingData = {
+                            parent_name: parent_name,
+                            email: email,
+                            phone: phone,
+                            child_name: child_name,
+                            grade: requested_grade,
+                            level: inquiryLevel,
+                            birth_date: birth_date || '',
+                            previous_school: previous_school || '',
+                            marketing_source: marketing_source || ''
+                        };
+
+                        const base64Data = Buffer.from(JSON.stringify(bookingData)).toString('base64');
+                        const bookingUrl = `${publicUrl}/agendar_cita.html?data=${base64Data}`;
+
+                        // Call to Action: Book Appointment (Simple Red Text Link)
+                        const bookingButton = `
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 10px 0 30px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="${bookingUrl}" target="_blank" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 16px; color: #E31E25; text-decoration: none; font-weight: bold;">
+                                            Agendar Cita de Visita
+                                        </a>
+                                        <p style="text-align: center; margin-top: 5px; font-family: sans-serif; font-size: 12px; color: #94a3b8;">
+                                            Clic aquí para seleccionar fecha.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>`;
+
                         const infoText = 'Adjuntamos la información solicitada.';
                         const infoHtml = loadTemplate(templateName, {
                             parent_name: parent_name,
                             child_name: child_name,
-                            requested_grade: requested_grade
+                            requested_grade: requested_grade,
+                            attachment_button: attachmentButton,
+                            booking_button: bookingButton // Inject new button
                         });
 
+                        // const attachments = [];
+                        // if (attachmentFilename) {
+                        //     attachments.push({
+                        //         filename: 'Información_Admisiones.pdf',
+                        //         path: path.join(__dirname, '../public/uploads', attachmentFilename)
+                        //     });
+                        // }
+
                         if (infoHtml) {
-                            console.log(`Sending ${templateName} to ${email}`);
-                            sendEmail(email, infoSubject, infoText, infoHtml);
+                            console.log(`Sending ${templateName} to ${email} with download button: ${attachmentFilename}`);
+                            // Pass empty attachments array (or rely on default logo in emailService)
+                            // We do NOT attach the PDF file itself anymore
+                            sendEmail(email, infoSubject, infoText, infoHtml, []);
 
                             // UPDATE DATABASE: Mark 'flag_info_sent' as true
                             const updateQuery = 'UPDATE inquiries SET flag_info_sent = 1 WHERE id = ?';

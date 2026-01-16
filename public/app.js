@@ -2421,12 +2421,13 @@ function startInquiryPolling() {
     // Call immediately
     loadInquiries();
     // Then every 10 seconds
-    inquiryInterval = setInterval(() => {
-        const inquiriesSection = document.getElementById('inquiries-list-section');
-        if (inquiriesSection && !inquiriesSection.classList.contains('hidden')) {
-            loadInquiries(true); // true = silent update (no loading spinner if implemented)
-        }
-    }, 10000);
+    // LEGACY POLLING - DISABLED (Unified in startInquiryPolling below)
+    // inquiryInterval = setInterval(() => {
+    //     const inquiriesSection = document.getElementById('inquiries-list-section');
+    //     if (inquiriesSection && !inquiriesSection.classList.contains('hidden')) {
+    //         loadInquiries(true); // true = silent update (no loading spinner if implemented)
+    //     }
+    // }, 10000);
 }
 
 function stopInquiryPolling() {
@@ -3380,7 +3381,15 @@ function addSlotRow(slot = {}) {
 
     row.innerHTML = `
             <input type="time" class="slot-time input" value="${slot.time || '09:00'}" required>
-            <input type="text" class="slot-label input" value="${slot.label || ''}" placeholder="Ej. Informes" required>
+            <select class="slot-label input" required>
+                <option value="" disabled ${!slot.label ? 'selected' : ''}>Seleccionar Nivel</option>
+                <option value="Maternal" ${slot.label === 'Maternal' ? 'selected' : ''}>Maternal</option>
+                <option value="Preescolar" ${slot.label === 'Preescolar' ? 'selected' : ''}>Preescolar</option>
+                <option value="Primaria" ${slot.label === 'Primaria' ? 'selected' : ''}>Primaria</option>
+                <option value="Secundaria" ${slot.label === 'Secundaria' ? 'selected' : ''}>Secundaria</option>
+                <option value="Preparatoria" ${slot.label === 'Preparatoria' ? 'selected' : ''}>Preparatoria</option>
+                <option value="General" ${slot.label === 'General' ? 'selected' : ''}>General</option>
+            </select>
             <input type="number" class="slot-capacity input" value="${slot.capacity || 1}" min="1" required>
             <input type="number" class="slot-duration input" value="${slot.duration || 60}" min="15" step="15" required placeholder="Min">
             <button type="button" class="btn-remove-slot" style="color: #ef4444; background: none; border: none; cursor: pointer;">
@@ -3528,31 +3537,41 @@ async function loadTimeSlots(date) {
             const btn = document.createElement('button');
             btn.className = 'time-slot-btn';
 
-            // Show Label + Avail
+            // detailed label
             const labelText = slot.label ? ` ${slot.label}` : '';
-            const availText = slot.available > 1 ? ` (${slot.available})` : '';
+
+            // Availability text 
+            // e.g. "(3 lugares)" or "(Agotado)"
+            let availText = '';
+
+            if (slot.available > 0) {
+                const unit = slot.available === 1 ? 'lugar' : 'lugares';
+                availText = ` (${slot.available} ${unit})`;
+
+                btn.onclick = () => {
+                    openAppointmentModal({
+                        start: `${date}T${slot.time}:00`,
+                        label: slot.label,
+                        duration: slot.duration
+                    });
+                };
+            } else {
+                availText = ' (Agotado)';
+                btn.style.backgroundColor = '#fee2e2'; // Red-100
+                btn.style.color = '#991b1b'; // Red-800
+                btn.style.cursor = 'not-allowed';
+                btn.disabled = true;
+            }
 
             btn.textContent = `${slot.time}${labelText}${availText}`;
+
             if (labelText) {
-                btn.style.width = '100%'; // Full width if it has text
+                btn.style.width = '100%';
                 btn.style.textAlign = 'left';
                 btn.style.paddingLeft = '1rem';
             } else {
                 btn.style.textAlign = 'center';
             }
-
-            btn.onclick = () => {
-                if (slot.available > 0) {
-                    // Open Booking Modal
-                    openAppointmentModal({
-                        start: `${date}T${slot.time}:00`,
-                        label: slot.label, // Pass label for title
-                        duration: slot.duration // Pass configured duration
-                    });
-                } else {
-                    alert('Horario agotado');
-                }
-            };
             container.appendChild(btn);
         });
 
@@ -5930,12 +5949,13 @@ let inquiryPollInterval = null;
 function startInquiryPolling() {
     if (inquiryPollInterval) clearInterval(inquiryPollInterval);
     // Poll every 30 seconds
+    // Poll every 5 seconds for real-time updates
     inquiryPollInterval = setInterval(() => {
         const section = document.getElementById('inquiries-list-section');
         if (section && !section.classList.contains('hidden')) {
             loadInquiriesList();
         }
-    }, 30000);
+    }, 5000);
 }
 
 // Call this when loading the app or switching to the section
@@ -5943,14 +5963,14 @@ startInquiryPolling();
 
 
 async function loadInquiriesList() {
-    const listBody = document.getElementById('inquiries-list-body');
+    const listBody = document.getElementById('inquiries-container');
     if (!listBody) return;
 
     // Show loading state implicitly or keep current data while fetching
     // listBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Cargando...</td></tr>';
 
     const inquiries = await apiFetch('/inquiries') || [];
-    renderInquiriesList(inquiries);
+    renderInquiries(inquiries);
 }
 
 // --- Email Templates Logic ---
