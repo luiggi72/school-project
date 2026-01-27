@@ -26,6 +26,128 @@ router.get('/', checkAuth, (req, res) => {
     });
 });
 
+const PDFDocument = require('pdfkit-table');
+
+// GET /api/inquiries/export-pdf
+router.get('/export-pdf', checkAuth, (req, res) => {
+    // Advanced query to try and link inquiries to appointments based on email match in description or just email
+    // Since we don't have a direct FK, we'll try to match by email which is stored in the appointment description or potentially just assume linkage by email if unique enough.
+    // Better yet, let's look for appointments where the description LIKE '%Email: <email>%'.
+
+    // NOTE: Matching strings in JSON or Description is slow but acceptable for reports.
+    // A cleaner way is: "(SELECT start_time FROM appointments WHERE description LIKE CONCAT('%', inquiries.email, '%') ORDER BY start_time DESC LIMIT 1) as appointment_date"
+
+    const { level, status } = req.query;
+
+    let whereClauses = [];
+    let params = [];
+    let subtitleExtras = [];
+
+    // Filter by Level (Grade)
+    if (level && level !== 'All') {
+        whereClauses.push("requested_grade LIKE ?");
+        params.push(`%${level}%`);
+        subtitleExtras.push(`Nivel: ${level}`);
+    }
+
+    // Filter by Status (Confirmed)
+    // We check flag_scheduled = 1 which implies an appointment was booked
+    if (status === 'confirmed') {
+        whereClauses.push("flag_scheduled = 1");
+        subtitleExtras.push("Solo Citas Confirmadas");
+    }
+
+    const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+    const query = `
+        SELECT 
+            inquiries.*,
+            (
+                SELECT start_time 
+                FROM appointments 
+                WHERE description LIKE CONCAT('%', inquiries.email, '%') 
+                ORDER BY start_time DESC 
+                LIMIT 1
+            ) as appointment_date
+        FROM inquiries 
+        ${whereSql}
+        ORDER BY created_at DESC
+    `;
+
+    db.query(query, params, (err, results) => {
+        if (err) return res.status(500).send(err.message);
+
+        const doc = new PDFDocument({ margin: 30, size: 'A4', layout: 'landscape' });
+
+        // Set response headers
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'inline; filename=reporte_informes.pdf');
+
+        doc.pipe(res);
+
+        // Title
+        doc.fontSize(16).text('Reporte de Solicitudes de Informes', { align: 'center' });
+        doc.moveDown();
+
+        // Table
+        const table = {
+            title: "Listado Completo",
+            subtitle: "Generado el: " + (() => {
+                const now = new Date();
+                const d = String(now.getDate()).padStart(2, '0');
+                const m = String(now.getMonth() + 1).padStart(2, '0');
+                const y = String(now.getFullYear()).slice(-2);
+                const time = now.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+                let t = `Generado el: ${d}/${m}/${y} ${time}`;
+                if (subtitleExtras.length > 0) {
+                    t += `\nFiltros: ${subtitleExtras.join(' | ')}`;
+                }
+                return t;
+            })(),
+            headers: [
+                { label: "Fecha Solicitud", property: "date", width: 65 },
+                { label: "Alumno", property: "child_name", width: 130 },
+                { label: "Grado", property: "grade", width: 80 },
+                { label: "Padre/Tutor", property: "parent", width: 120 },
+                { label: "Teléfono", property: "phone", width: 80 },
+                { label: "Email", property: "email", width: 140 },
+                { label: "Fuente", property: "source", width: 80 },
+                { label: "Fecha Cita", property: "appointment", width: 85 }
+            ],
+            datas: results.map(row => ({
+                date: (() => {
+                    const dObj = new Date(row.created_at);
+                    const d = String(dObj.getDate()).padStart(2, '0');
+                    const m = String(dObj.getMonth() + 1).padStart(2, '0');
+                    const y = String(dObj.getFullYear()).slice(-2);
+                    return `${d}/${m}/${y}`;
+                })(),
+                child_name: row.child_name,
+                grade: row.requested_grade,
+                parent: row.parent_name,
+                phone: row.phone,
+                email: row.email,
+                source: row.marketing_source,
+                appointment: row.appointment_date ? (() => {
+                    const dObj = new Date(row.appointment_date);
+                    const d = String(dObj.getDate()).padStart(2, '0');
+                    const m = String(dObj.getMonth() + 1).padStart(2, '0');
+                    const y = String(dObj.getFullYear()).slice(-2);
+                    const time = dObj.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+                    return `${d}/${m}/${y} ${time}`;
+                })() : 'Sin Cita'
+            })),
+        };
+
+        doc.table(table, {
+            prepareHeader: () => doc.font("Helvetica-Bold").fontSize(9),
+            prepareRow: (row, i) => doc.font("Helvetica").fontSize(8)
+        });
+
+        doc.end();
+    });
+});
+
 const { sendEmail } = require('../utils/emailService');
 const { loadTemplate } = require('../utils/templateService');
 
@@ -115,20 +237,6 @@ router.post('/', (req, res) => {
                         const publicUrl = process.env.PUBLIC_URL || 'http://localhost:3000';
                         let attachmentButton = '';
 
-                        if (attachmentFilename) {
-                            const url = `${publicUrl}/uploads/${attachmentFilename}`;
-                            // Call to Action: Download (Simple Text Link)
-                            attachmentButton = `
-                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 10px 0;">
-                                <tr>
-                                    <td align="center">
-                                        <a href="${url}" target="_blank" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 14px; color: #64748b; text-decoration: underline;">
-                                        Información Adjunta
-                                    </a>
-                                    </td>
-                                </tr>
-                            </table>`;
-                        }
 
                         // NEW: Generate Booking Button - Obfuscated
                         const bookingData = {
@@ -146,20 +254,42 @@ router.post('/', (req, res) => {
                         const base64Data = Buffer.from(JSON.stringify(bookingData)).toString('base64');
                         const bookingUrl = `${publicUrl}/agendar_cita.html?data=${base64Data}`;
 
-                        // Call to Action: Book Appointment (Simple Red Text Link)
-                        const bookingButton = `
-                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 10px 0 30px 0;">
+                        // combinedButtons logic
+                        let combinedButtons = '';
+
+                        // Define Booking Button (Primary)
+                        const bookingBtnHtml = `
+                                <a href="${bookingUrl}" target="_blank" style="display: inline-block; background-color: #E31E25; color: #ffffff; padding: 14px 20px; border-radius: 6px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 15px; text-decoration: none; font-weight: bold; box-shadow: 0 4px 6px rgba(227, 30, 37, 0.2); width: 100%; box-sizing: border-box; text-align: center;">
+                                    Agendar Visita
+                                </a>`;
+
+                        // Define Attachment Button (Secondary)
+                        let attachmentBtnHtml = '';
+                        if (attachmentFilename) {
+                            const url = `${publicUrl}/uploads/${attachmentFilename}`;
+                            attachmentBtnHtml = `
+                                <a href="${url}" target="_blank" style="display: inline-block; background-color: #f3f4f6; border: 1px solid #e5e7eb; color: #374151; padding: 14px 20px; border-radius: 6px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 15px; text-decoration: none; font-weight: 500; width: 100%; box-sizing: border-box; text-align: center;">
+                                    Descargar Info
+                                </a>`;
+                        }
+
+                        // Construct Horizontal Layout Table
+                        combinedButtons = `
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 20px 0 30px 0;">
                                 <tr>
-                                    <td align="center">
-                                        <a href="${bookingUrl}" target="_blank" style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 16px; color: #E31E25; text-decoration: none; font-weight: bold;">
-                                            Agendar Cita de Visita
-                                        </a>
-                                        <p style="text-align: center; margin-top: 5px; font-family: sans-serif; font-size: 12px; color: #94a3b8;">
-                                            Clic aquí para seleccionar fecha.
-                                        </p>
+                                    ${attachmentBtnHtml ? `
+                                    <td width="48%" valign="top" style="padding-right: 2%;">
+                                        ${attachmentBtnHtml}
+                                    </td>` : ''}
+                                    <td width="${attachmentBtnHtml ? '48%' : '100%'}" valign="top" style="${attachmentBtnHtml ? 'padding-left: 2%;' : ''}">
+                                        ${bookingBtnHtml}
                                     </td>
                                 </tr>
                             </table>`;
+
+                        // Hack: Set attachmentButton to empty string, pass everything in bookingButton
+                        attachmentButton = '';
+                        const bookingButton = combinedButtons;
 
                         const infoText = 'Adjuntamos la información solicitada.';
                         const infoHtml = loadTemplate(templateName, {
@@ -216,7 +346,10 @@ router.post('/', (req, res) => {
                     parent_name: parent_name,
                     email: email,
                     phone: phone,
-                    birth_date: birth_date,
+                    birth_date: birth_date ? (() => {
+                        const [y, m, d] = birth_date.split('-');
+                        return y && m && d ? `${d}/${m}/${y.substring(2)}` : birth_date;
+                    })() : '',
                     previous_school: previous_school,
                     marketing_source: marketing_source,
                     marketing_source_other: marketing_source_other ? `(${marketing_source_other})` : ''

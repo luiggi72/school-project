@@ -39,9 +39,13 @@ const normalizeRole = (role) => {
 const verifyPermission = (requiredPermission) => {
     return (req, res, next) => {
         // 1. Get User Role
-        // Strategy: Look for 'x-user-role' header
-        // Normalize the role using our helper
-        const rawRole = req.headers['x-user-role'];
+        // Strategy: First check req.user (from JWT), then fallback to 'x-user-role' header
+        let rawRole = req.headers['x-user-role'];
+
+        if (req.user && req.user.role) {
+            rawRole = req.user.role;
+        }
+
         const userRole = normalizeRole(rawRole);
         // console.log(`[Permission Check] Required: ${requiredPermission}, User Role: ${userRole} (raw: ${rawRole})`);
 
@@ -64,8 +68,8 @@ const verifyPermission = (requiredPermission) => {
         if (hasPermission) {
             next();
         } else {
-            console.warn(`Access Denied: Missing permission(s) ${permissionsToCheck.join(' OR ')}`);
-            return res.status(403).json({ error: `Access Denied: Missing required permission` });
+            console.warn(`[AccesoDenegado] Usuario: ${userRole} | Req: ${req.method} ${req.originalUrl} | Faltante: ${permissionsToCheck.join(' OR ')}`);
+            return res.status(403).json({ error: `Acceso denegado: No tienes permiso para realizar esta acción.` });
         }
     };
 };

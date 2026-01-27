@@ -18,6 +18,7 @@ let activeParentStudent = null; // Track selected student in parents portal
 // --- Generic Confirmation Modal Helper ---
 window.showConfirmModal = function ({ title, message, onConfirm, onCancel, confirmText = 'Confirmar', cancelText = 'Cancelar', isDestructive = true, isAlert = false, isSuccess = false }) {
     const modal = document.getElementById('generic-confirm-modal');
+
     if (!modal) {
         // Fallback if modal not present in DOM
         if (isAlert) {
@@ -32,6 +33,10 @@ window.showConfirmModal = function ({ title, message, onConfirm, onCancel, confi
         }
         return;
     }
+
+    // Modal Exists - Reset Display (Fix for hard-hidden)
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
 
     // Set Content
     const titleEl = document.getElementById('generic-confirm-title');
@@ -299,7 +304,16 @@ async function checkLoginStatus() {
         // 1. Fetch dynamic roles
         try {
             const roles = await apiFetch('/config/roles');
-            if (roles) currentRolesConfig = roles;
+            if (roles) {
+                currentRolesConfig = roles;
+                // Init attachments only after roles are confirmed
+                // Use silent catch to prevent flash on reload if transient 403 occurs
+                if (typeof initSmartAttachments === 'function') {
+                    try {
+                        initSmartAttachments();
+                    } catch (err) { console.warn('SmartAttachments init suppressed:', err); }
+                }
+            }
         } catch (e) {
             console.warn('Failed to load dynamic roles:', e);
         }
@@ -352,8 +366,9 @@ async function checkLoginStatus() {
             }, 5000);
         }
 
-        // Initialize Smart Attachments (Requires Auth)
-        if (typeof initSmartAttachments === 'function') initSmartAttachments();
+        // Initialize Smart Attachments (Requires Auth & Roles)
+        // Moved inside the role fetch logic to ensure permissions are ready
+        // if (typeof initSmartAttachments === 'function') initSmartAttachments();
 
     } else {
         if (window.notificationPollInterval) clearInterval(window.notificationPollInterval);
@@ -404,13 +419,21 @@ async function apiFetch(endpoint, options = {}) {
 
         const response = await fetch(`${API_URL}${endpoint}`, {
             ...options,
-            headers: headers
+            headers: headers,
+            cache: 'no-store'
         });
         if (!response.ok) {
             if (response.status === 401) {
                 console.warn('Sesión expirada o inválida. Cerrando sesión...');
                 handleLogout(); // Graceful logout instead of reload
                 return null;
+            }
+            if (response.status === 403) {
+                console.warn('403 Forbidden:', endpoint);
+                // Return null to caller instead of throwing, so caller decides to alert or not
+                // But existing code expects throw for error handling usually.
+                // Let's keep throw but maybe identifying it.
+                throw new Error('ACCESO_DENEGADO');
             }
             const errorData = await response.json().catch(() => ({}));
             throw new Error(errorData.error || errorData.message || `API Error: ${response.statusText}`);
@@ -5016,14 +5039,92 @@ async function loadInquiries() {
         const inquiries = await apiFetch('/inquiries');
         renderInquiries(inquiries);
     } catch (error) {
-        console.error('Error loading inquiries:', error);
-        showAlertModal('Error', 'Error al cargar la lista de informes.', true);
+        console.warn('Suppressing loadInquiries error alert on load:', error);
+        // showAlertModal('Error', 'Error al cargar la lista de informes.', true);
     }
 }
 
 function renderInquiries(list) {
     const container = document.getElementById('inquiries-container');
     if (!container) return;
+
+    // INJECT FILTERS (Dynamic) - NOW IN HEADER
+    const filtersContainer = document.getElementById('inquiries-header-filters-container');
+
+    // Only inject if empty to prevent duplicates
+    if (filtersContainer && filtersContainer.innerHTML.trim().length < 10) {
+        filtersContainer.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <select id="report-filter-level" style="padding: 0.4rem 0.6rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; background: #f8fafc;">
+                    <option value="">Nivel: Todos</option>
+                    <option value="Maternal">Maternal</option>
+                    <option value="Preescolar">Preescolar</option>
+                    <option value="Primaria">Primaria</option>
+                    <option value="Secundaria">Secundaria</option>
+                    <option value="Preparatoria">Preparatoria</option>
+                </select>
+
+                <select id="report-filter-status" style="padding: 0.4rem 0.6rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; background: #f8fafc;">
+                    <option value="">Estatus: Todos</option>
+                    <option value="confirmed">Confirmados</option>
+                </select>
+                
+                 <button id="btn-export-pdf" style="display: flex; align-items: center; gap: 0.4rem; background: #fff; color: #ef4444; border: 1px solid #ef4444; padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.8rem; transition: all 0.2s;">
+                    <span class="material-icons-outlined" style="font-size: 1.1rem;">picture_as_pdf</span>
+                    PDF
+                </button>
+            </div>
+        `;
+
+        // Bind Events
+        document.getElementById('report-filter-level').addEventListener('change', () => loadInquiries());
+        document.getElementById('report-filter-status').addEventListener('change', () => loadInquiries());
+
+        // Bind PDF Button
+        document.getElementById('btn-export-pdf').addEventListener('click', async () => {
+            const btn = document.getElementById('btn-export-pdf');
+            const originalContent = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-icons-outlined spin">sync</span> Generando...';
+
+            try {
+                const lvl = document.getElementById('report-filter-level').value;
+                const sts = document.getElementById('report-filter-status').value;
+
+                // Construct Headers manually since we need blob(), not json()
+                const headers = {};
+                const token = localStorage.getItem('authToken');
+                if (token) headers['Authorization'] = `Bearer ${token}`;
+                if (currentUser && currentUser.role) headers['x-user-role'] = normalizeRole(currentUser.role);
+
+                const response = await fetch(`${API_URL}/inquiries/export-pdf?level=${encodeURIComponent(lvl)}&status=${encodeURIComponent(sts)}`, {
+                    method: 'GET',
+                    headers: headers
+                });
+
+                if (!response.ok) {
+                    const errText = await response.text();
+                    throw new Error(errText || 'Error al generar PDF');
+                }
+
+                // Create Blob URL and Open
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                window.open(url, '_blank');
+
+                // Optional: Revoke URL after some time (handling new tab)
+                setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+
+            } catch (error) {
+                console.error('PDF Export Error:', error);
+                alert('Error al descargar reporte: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            }
+        });
+    }
+
     container.innerHTML = '';
 
     if (!list || list.length === 0) {
@@ -5126,7 +5227,7 @@ function renderInquiries(list) {
             }).join('')}
                 </div>
             </div>
-        `;
+            `;
         container.appendChild(card);
     });
 }
@@ -5191,13 +5292,13 @@ window.viewFamily = async (studentId) => {
         row.style.fontSize = '0.85rem'; // Smaller font as requested
 
         row.innerHTML = `
-            <td>${sib.id}</td>
+                < td > ${sib.id}</td >
             <td>${sib.name} ${sib.lastnameP} ${sib.lastnameM} ${isCurrent ? ' (Seleccionado)' : ''}</td>
             <td>${sib.curp || '-'}</td>
             <td>${sib.grade || '-'}</td>
             <td>${sib.subgrade || '-'}</td>
             <td>${sib.group_name || '-'}</td>
-        `;
+            `;
         siblingsBody.appendChild(row);
     });
 
@@ -5211,10 +5312,10 @@ window.viewFamily = async (studentId) => {
         // Fetch parents for the current student (simplification: assuming synced)
         // Or better: Iterate siblings and fetch? No, too many requests.
         // Let's rely on the student_parents table being populated correctly for each student.
-        // Or if the backend supported `GET /parents?family_id=...` that would be best.
+        // Or if the backend supported `GET / parents ? family_id =...` that would be best.
         // For now, let's fetch for the current student.
 
-        const parents = await apiFetch(`/students/${studentId}/parents`);
+        const parents = await apiFetch(`/ students / ${studentId} / parents`);
         parentsBody.innerHTML = '';
 
         if (!parents || parents.length === 0) {
@@ -5223,9 +5324,9 @@ window.viewFamily = async (studentId) => {
             parents.forEach(p => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${p.type === 'MOTHER' ? 'Madre' :
+        < td > ${p.type === 'MOTHER' ? 'Madre' :
                         p.type === 'FATHER' ? 'Padre' : 'Tutor'
-                    }</td>
+                    }</td >
                     <td>${p.name} ${p.lastnameP} ${p.lastnameM}</td>
                     <td>${p.phone || '-'}</td>
                     <td>${p.email || '-'}</td>
@@ -5245,7 +5346,7 @@ window.viewFamily = async (studentId) => {
 
 window.updateInquiryStatus = async (id, status) => {
     try {
-        await apiFetch(`/inquiries/${id}/status`, {
+        await apiFetch(`/ inquiries / ${id} / status`, {
             method: 'PUT',
             body: JSON.stringify({ status })
         });
@@ -5259,7 +5360,7 @@ window.updateInquiryStatus = async (id, status) => {
 
 window.toggleInquiryFlag = async (id, flag, value) => {
     try {
-        await apiFetch(`/inquiries/${id}/checklist`, {
+        await apiFetch(`/ inquiries / ${id} / checklist`, {
             method: 'PUT',
             body: JSON.stringify({ flag, value })
         });
@@ -5286,14 +5387,14 @@ if (btnDeleteSelected) {
 
         showConfirmModal({
             title: '¿Eliminar Solicitudes?',
-            message: `¿Estás seguro de eliminar ${ids.length} solicitud(es)?`,
+            message: `¿Estás seguro de eliminar ${ids.length} solicitud(es) ? `,
             confirmText: 'Eliminar',
             isDestructive: true,
             onConfirm: async () => {
                 try {
                     // Execute sequentially to avoid overwhelming server or handle errors individually
                     for (const id of ids) {
-                        await apiFetch(`/inquiries/${id}`, { method: 'DELETE' });
+                        await apiFetch(`/ inquiries / ${id}`, { method: 'DELETE' });
                     }
                     loadInquiries();
                 } catch (error) {
@@ -5302,6 +5403,35 @@ if (btnDeleteSelected) {
                 }
             }
         });
+    });
+}
+
+// Export PDF Handler
+const btnExportPdf = document.getElementById('btn-export-pdf-inquiries');
+if (btnExportPdf) {
+    btnExportPdf.addEventListener('click', async () => {
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(`${API_URL} / inquiries /export -pdf`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Error al generar el reporte.');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+
+            // Open in new tab
+            window.open(url, '_blank');
+
+            // Cleanup after a delay to ensure it loads
+            setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+        } catch (error) {
+            console.error('Export error:', error);
+            showAlertModal('Error', 'No se pudo generar el reporte PDF.', true);
+        }
     });
 }
 
@@ -5350,8 +5480,8 @@ function createAcademicItem(id, name, type, onDelete, onEdit) {
     // Edit Button
     const editBtn = document.createElement('button');
     editBtn.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-    `;
+        < svg xmlns = "http://www.w3.org/2000/svg" width = "14" height = "14" viewBox = "0 0 24 24" fill = "none" stroke = "currentColor" stroke - width="2" stroke - linecap="round" stroke - linejoin="round" ><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg >
+        `;
     editBtn.style.color = '#3b82f6';
     editBtn.style.background = 'none';
     editBtn.style.border = 'none';
@@ -5363,8 +5493,8 @@ function createAcademicItem(id, name, type, onDelete, onEdit) {
     // Delete Button
     const deleteBtn = document.createElement('button');
     deleteBtn.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-    `;
+        < svg xmlns = "http://www.w3.org/2000/svg" width = "14" height = "14" viewBox = "0 0 24 24" fill = "none" stroke = "currentColor" stroke - width="2" stroke - linecap="round" stroke - linejoin="round" ><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg >
+        `;
     deleteBtn.style.color = '#ef4444';
     deleteBtn.style.background = 'none';
     deleteBtn.style.border = 'none';
@@ -5392,7 +5522,7 @@ function renderLevelsList(levels) {
                     confirmText: 'Eliminar',
                     isDestructive: true,
                     onConfirm: async () => {
-                        await apiFetch(`/academic/levels/${id}`, { method: 'DELETE' });
+                        await apiFetch(`/ academic / levels / ${id}`, { method: 'DELETE' });
                         loadAcademicStructure();
                     }
                 });
@@ -5400,7 +5530,7 @@ function renderLevelsList(levels) {
             async (id, currentName) => {
                 const newName = prompt('Editar nombre del nivel:', currentName);
                 if (newName && newName !== currentName) {
-                    await apiFetch(`/academic/levels/${id}`, { method: 'PUT', body: JSON.stringify({ name: newName }) });
+                    await apiFetch(`/ academic / levels / ${id}`, { method: 'PUT', body: JSON.stringify({ name: newName }) });
                     loadAcademicStructure();
                 }
             }
@@ -5459,7 +5589,7 @@ async function loadGradesForLevel(levelId) {
 
     if (!levelId) return;
 
-    const grades = await apiFetch(`/academic/grades?level_id=${levelId}`) || [];
+    const grades = await apiFetch(`/ academic / grades ? level_id = ${levelId}`) || [];
     grades.forEach(g => {
         const item = createAcademicItem(
             g.id, g.name, 'grade',
@@ -5470,7 +5600,7 @@ async function loadGradesForLevel(levelId) {
                     confirmText: 'Eliminar',
                     isDestructive: true,
                     onConfirm: async () => {
-                        await apiFetch(`/academic/grades/${id}`, { method: 'DELETE' });
+                        await apiFetch(`/ academic / grades / ${id}`, { method: 'DELETE' });
                         loadGradesForLevel(levelId);
                     }
                 });
@@ -5478,7 +5608,7 @@ async function loadGradesForLevel(levelId) {
             async (id, currentName) => {
                 const newName = prompt('Editar nombre del grado:', currentName);
                 if (newName && newName !== currentName) {
-                    await apiFetch(`/academic/grades/${id}`, { method: 'PUT', body: JSON.stringify({ name: newName }) });
+                    await apiFetch(`/ academic / grades / ${id}`, { method: 'PUT', body: JSON.stringify({ name: newName }) });
                     loadGradesForLevel(levelId);
                 }
             }
@@ -5541,7 +5671,7 @@ async function loadGroupsForGrade(gradeId) {
 
     if (!gradeId) return;
 
-    const groups = await apiFetch(`/academic/groups?grade_id=${gradeId}`);
+    const groups = await apiFetch(`/ academic / groups ? grade_id = ${gradeId}`);
     if (!groups) return;
 
     groups.forEach(g => {
@@ -5555,7 +5685,7 @@ async function loadGroupsForGrade(gradeId) {
                     confirmText: 'Eliminar',
                     isDestructive: true,
                     onConfirm: async () => {
-                        await apiFetch(`/academic/groups/${id}`, { method: 'DELETE' });
+                        await apiFetch(`/ academic / groups / ${id}`, { method: 'DELETE' });
                         loadGroupsForGrade(gradeId);
                     }
                 });
@@ -5563,7 +5693,7 @@ async function loadGroupsForGrade(gradeId) {
             async (id, currentName) => {
                 const newName = prompt('Editar nombre del grupo:', currentName);
                 if (newName && newName !== currentName) {
-                    await apiFetch(`/academic/groups/${id}`, { method: 'PUT', body: JSON.stringify({ name: newName }) });
+                    await apiFetch(`/ academic / groups / ${id}`, { method: 'PUT', body: JSON.stringify({ name: newName }) });
                     loadGroupsForGrade(gradeId);
                 }
             }
@@ -5627,7 +5757,7 @@ function renderAreasList(areas) {
                     confirmText: 'Eliminar',
                     isDestructive: true,
                     onConfirm: async () => {
-                        await apiFetch(`/administrative/areas/${id}`, { method: 'DELETE' });
+                        await apiFetch(`/ administrative / areas / ${id}`, { method: 'DELETE' });
                         loadAdministrativeStructure();
                     }
                 });
@@ -5635,7 +5765,7 @@ function renderAreasList(areas) {
             async (id, currentName) => {
                 const newName = prompt('Editar nombre del área:', currentName);
                 if (newName && newName !== currentName) {
-                    await apiFetch(`/administrative/areas/${id}`, { method: 'PUT', body: JSON.stringify({ name: newName }) });
+                    await apiFetch(`/ administrative / areas / ${id}`, { method: 'PUT', body: JSON.stringify({ name: newName }) });
                     loadAdministrativeStructure();
                 }
             }
@@ -5697,7 +5827,7 @@ async function loadSubareasForArea(areaId) {
 
     if (!areaId) return;
 
-    const subareas = await apiFetch(`/administrative/subareas?area_id=${areaId}`) || [];
+    const subareas = await apiFetch(`/ administrative / subareas ? area_id = ${areaId}`) || [];
     subareas.forEach(s => {
         const item = createAcademicItem( // Reusing helper
             s.id, s.name, 'subarea',
@@ -5708,7 +5838,7 @@ async function loadSubareasForArea(areaId) {
                     confirmText: 'Eliminar',
                     isDestructive: true,
                     onConfirm: async () => {
-                        await apiFetch(`/administrative/subareas/${id}`, { method: 'DELETE' });
+                        await apiFetch(`/ administrative / subareas / ${id}`, { method: 'DELETE' });
                         loadSubareasForArea(areaId);
                     }
                 });
@@ -5716,7 +5846,7 @@ async function loadSubareasForArea(areaId) {
             async (id, currentName) => {
                 const newName = prompt('Editar nombre de la subárea:', currentName);
                 if (newName && newName !== currentName) {
-                    await apiFetch(`/administrative/subareas/${id}`, { method: 'PUT', body: JSON.stringify({ name: newName }) });
+                    await apiFetch(`/ administrative / subareas / ${id}`, { method: 'PUT', body: JSON.stringify({ name: newName }) });
                     loadSubareasForArea(areaId);
                 }
             }
@@ -5763,7 +5893,7 @@ async function loadPositionsForSubarea(subareaId) {
     list.innerHTML = '';
 
     // subareaId is optional or null now
-    const url = subareaId ? `/administrative/positions?subarea_id=${subareaId}` : '/administrative/positions';
+    const url = subareaId ? `/ administrative / positions ? subarea_id = ${subareaId}` : '/administrative/positions';
     const positions = await apiFetch(url) || [];
     positions.forEach(p => {
         const item = createAcademicItem( // Reusing helper
@@ -5775,7 +5905,7 @@ async function loadPositionsForSubarea(subareaId) {
                     confirmText: 'Eliminar',
                     isDestructive: true,
                     onConfirm: async () => {
-                        await apiFetch(`/administrative/positions/${id}`, { method: 'DELETE' });
+                        await apiFetch(`/ administrative / positions / ${id}`, { method: 'DELETE' });
                         loadPositionsForSubarea(subareaId);
                     }
                 });
@@ -5783,7 +5913,7 @@ async function loadPositionsForSubarea(subareaId) {
             async (id, currentName) => {
                 const newName = prompt('Editar nombre del puesto:', currentName);
                 if (newName && newName !== currentName) {
-                    await apiFetch(`/administrative/positions/${id}`, { method: 'PUT', body: JSON.stringify({ name: newName }) });
+                    await apiFetch(`/ administrative / positions / ${id}`, { method: 'PUT', body: JSON.stringify({ name: newName }) });
                     loadPositionsForSubarea(subareaId);
                 }
             }
@@ -6062,10 +6192,10 @@ if (templateSelect) {
             if (bgColor === null) return;
 
             const boxHtml = `
-                <div style="background-color: ${bgColor}; border: 1px solid #e9ecef; border-left: 4px solid ${borderColor}; padding: 12px; margin: 10px 0; border-radius: 4px;">
-                    <p style="margin: 0; color: #334155;"><strong>Destacado:</strong> Escribe aquí tu información.</p>
-                </div><br>
-            `;
+        < div style = "background-color: ${bgColor}; border: 1px solid #e9ecef; border-left: 4px solid ${borderColor}; padding: 12px; margin: 10px 0; border-radius: 4px;" >
+        <p style="margin: 0; color: #334155;"><strong>Destacado:</strong> Escribe aquí tu información.</p>
+                </div > <br>
+                `;
             iframe.contentDocument.execCommand('insertHTML', false, boxHtml);
             iframe.contentWindow.focus();
         }
@@ -6402,6 +6532,7 @@ function initSmartAttachments() {
             }
 
             modal.classList.remove('hidden');
+            modal.style.display = 'flex'; // Force display reset if hard-hidden
         }
 
         // Initial Load
@@ -6523,18 +6654,18 @@ function initSmartAttachments() {
                     const link = `${window.location.protocol}//${window.location.host}/uploads/${file}`; // Construct public link
 
                     li.innerHTML = `
-                    <div style="display:flex; align-items:center; gap:0.5rem; overflow:hidden;">
-                        <span class="material-icons-outlined" style="font-size:18px; color:#64748b;">description</span>
-                        <span title="${file}" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 150px;">${file}</span>
-                    </div>
-                    <div style="display:flex; gap:0.25rem;">
-                        <button class="btn-icon-small btn-copy-link" data-link="${link}" title="Copiar Link" style="background:none; border:none; cursor:pointer; color:#3b82f6;">
-                            <span class="material-icons-outlined" style="font-size:18px;">content_copy</span>
-                        </button>
-                        <button class="btn-icon-small btn-delete-file" data-name="${file}" title="Eliminar" style="background:none; border:none; cursor:pointer; color:#ef4444;">
-                            <span class="material-icons-outlined" style="font-size:18px;">delete</span>
-                        </button>
-                    </div>
+                <div style="display:flex; align-items:center; gap:0.5rem; overflow:hidden;">
+                    <span class="material-icons-outlined" style="font-size:18px; color:#64748b;">description</span>
+                    <span title="${file}" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 150px;">${file}</span>
+                </div>
+                <div style="display:flex; gap:0.25rem;">
+                    <button class="btn-icon-small btn-copy-link" data-link="${link}" title="Copiar Link" style="background:none; border:none; cursor:pointer; color:#3b82f6;">
+                        <span class="material-icons-outlined" style="font-size:18px;">content_copy</span>
+                    </button>
+                    <button class="btn-icon-small btn-delete-file" data-name="${file}" title="Eliminar" style="background:none; border:none; cursor:pointer; color:#ef4444;">
+                        <span class="material-icons-outlined" style="font-size:18px;">delete</span>
+                    </button>
+                </div>
                 `;
                     fileListEl.appendChild(li);
                 });
@@ -6586,8 +6717,10 @@ function initSmartAttachments() {
                 });
 
             } catch (e) {
-                console.error(e);
+                // Broad suppression for initial load to prevent flash
+                console.warn('Silent suppress of error in loadAttachmentLibrary:', e);
                 fileListEl.innerHTML = '<li style="color:red; padding:1rem;">Error cargando archivos.</li>';
+                return;
             }
         }
 
@@ -6601,14 +6734,14 @@ function initSmartAttachments() {
                 rules.forEach(rule => {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                    <td style="padding:0.5rem; border-bottom:1px solid #f1f5f9;">${rule.template_name}</td>
-                    <td style="padding:0.5rem; border-bottom:1px solid #f1f5f9;">${rule.grade_condition || '<span style="color:#94a3b8; font-style:italic;">Todos</span>'}</td>
-                    <td style="padding:0.5rem; border-bottom:1px solid #f1f5f9; color:#3b82f6;">${rule.file_name}</td>
-                    <td style="padding:0.5rem; border-bottom:1px solid #f1f5f9;">
-                        <button class="btn-delete-rule" data-id="${rule.id}" style="border:none; background:none; cursor:pointer; color:#ef4444;">
-                            <span class="material-icons-outlined" style="font-size:16px;">close</span>
-                        </button>
-                    </td>
+                <td style="padding:0.5rem; border-bottom:1px solid #f1f5f9;">${rule.template_name}</td>
+                <td style="padding:0.5rem; border-bottom:1px solid #f1f5f9;">${rule.grade_condition || '<span style="color:#94a3b8; font-style:italic;">Todos</span>'}</td>
+                <td style="padding:0.5rem; border-bottom:1px solid #f1f5f9; color:#3b82f6;">${rule.file_name}</td>
+                <td style="padding:0.5rem; border-bottom:1px solid #f1f5f9;">
+                    <button class="btn-delete-rule" data-id="${rule.id}" style="border:none; background:none; cursor:pointer; color:#ef4444;">
+                        <span class="material-icons-outlined" style="font-size:16px;">close</span>
+                    </button>
+                </td>
                 `;
                     rulesListEl.appendChild(tr);
                 });
@@ -6640,7 +6773,9 @@ function initSmartAttachments() {
                 });
 
             } catch (e) {
-                console.error(e);
+                // Broad suppression for initial load to prevent flash
+                console.warn('Silent suppress of error in loadAttachmentRules:', e);
+                return;
             }
         }
 
@@ -7497,18 +7632,18 @@ function renderStudentCards(students, container) {
         card.className = 'parent-student-card';
         // Add click cursor and hover effect possibility - Move styles to CSS in future, keeping inline for now but cleaner
         card.style.cssText = `
-            background: white;
-            border-radius: 12px;
-            padding: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            border: 1px solid transparent;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            min-width: 260px; /* Ensure good width in horizontal scroll */
-            flex-shrink: 0;   /* Prevent squashing */
-        `;
+                background: white;
+                border-radius: 12px;
+                padding: 1rem;
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                border: 1px solid transparent;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                min-width: 260px; /* Ensure good width in horizontal scroll */
+                flex-shrink: 0;   /* Prevent squashing */
+                `;
 
         if (index === 0) {
             // select first one by default visual style applied later by function or here
@@ -7537,7 +7672,7 @@ function renderStudentCards(students, container) {
         const initial = student.name.charAt(0).toUpperCase();
 
         card.innerHTML = `
-            <div style="
+                <div style="
                 width: 42px; 
                 height: 42px; 
                 background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); 
@@ -7550,13 +7685,13 @@ function renderStudentCards(students, container) {
                 font-weight: 600;
                 flex-shrink: 0;
             ">
-                ${initial}
-            </div>
-            <div style="flex: 1; overflow: hidden;">
-                <h4 style="margin:0; font-size: 0.95rem; color: #334155; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${student.name}</h4>
-                 <div style="color: #64748b; font-size: 0.8rem; margin-top: 2px;">${student.grade} ${student.group_name || ''}</div>
-            </div>
-        `;
+                    ${initial}
+                </div>
+                <div style="flex: 1; overflow: hidden;">
+                    <h4 style="margin:0; font-size: 0.95rem; color: #334155; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${student.name}</h4>
+                    <div style="color: #64748b; font-size: 0.8rem; margin-top: 2px;">${student.grade} ${student.group_name || ''}</div>
+                </div>
+                `;
         container.appendChild(card);
     });
 }
@@ -7610,10 +7745,10 @@ function renderStudentDetail(student) {
         const genderText = student.gender === 'M' ? 'Masculino' : student.gender === 'F' ? 'Femenino' : '-';
 
         container.innerHTML = `
-            <div style="padding: 2rem;">
-                <!-- Header -->
-                <div style="text-align: center; margin-bottom: 2rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 2rem;">
-                    <div style="
+                <div style="padding: 2rem;">
+                    <!-- Header -->
+                    <div style="text-align: center; margin-bottom: 2rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 2rem;">
+                        <div style="
                         width: 100px; height: 100px; 
                         background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
                         color: white; 
@@ -7623,13 +7758,13 @@ function renderStudentDetail(student) {
                         font-size: 3rem; font-weight: 700;
                         box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
                     ">
-                        ${initial}
-                    </div>
-                    <h2 style="margin: 0; color: #1e293b; font-size: 1.75rem;">${name} ${lastnameP} ${lastnameM}</h2>
-                    <p style="color: #64748b; margin-top: 0.25rem;">${student.unique_id || 'ID: ' + student.id}</p>
-                    
-                    <div style="margin-top: 1rem;">
-                        <span style="
+                            ${initial}
+                        </div>
+                        <h2 style="margin: 0; color: #1e293b; font-size: 1.75rem;">${name} ${lastnameP} ${lastnameM}</h2>
+                        <p style="color: #64748b; margin-top: 0.25rem;">${student.unique_id || 'ID: ' + student.id}</p>
+
+                        <div style="margin-top: 1rem;">
+                            <span style="
                             display: inline-block;
                             padding: 0.35rem 1rem;
                             background: #dcfce7;
@@ -7638,68 +7773,68 @@ function renderStudentDetail(student) {
                             font-weight: 600;
                             font-size: 0.85rem;
                         ">${student.status || 'Activo'}</span>
-                    </div>
-                </div>
-
-                <!-- Content Grid -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
-                    
-                    <!-- Academic Card -->
-                    <div style="background: #f8fafc; border-radius: 12px; padding: 1.5rem; border: 1px solid #e2e8f0;">
-                        <h4 style="margin-top: 0; display: flex; align-items: center; gap: 0.5rem; color: #334155;">
-                            <span class="material-icons-outlined">school</span>
-                            Información Académica
-                        </h4>
-                        <div style="margin-top: 1rem; display: grid; gap: 1rem;">
-                            <div>
-                                <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em;">Nivel Educativo</div>
-                                <div style="font-size: 1.1rem; font-weight: 500; color: #0f172a;">${displayLevel || 'No registrado'}</div>
-                            </div>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                                <div>
-                                    <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em;">Grado</div>
-                                    <div style="font-size: 1.1rem; font-weight: 500; color: #0f172a;">${displayGrade || '-'}</div>
-                                </div>
-                                <div>
-                                    <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em;">Grupo</div>
-                                    <div style="font-size: 1.1rem; font-weight: 500; color: #0f172a;">${student.group_name || '-'}</div>
-                                </div>
-                            </div>
                         </div>
                     </div>
 
-                    <!-- Personal Card -->
-                    <div style="background: #f8fafc; border-radius: 12px; padding: 1.5rem; border: 1px solid #e2e8f0;">
-                         <h4 style="margin-top: 0; display: flex; align-items: center; gap: 0.5rem; color: #334155;">
-                            <span class="material-icons-outlined">person</span>
-                            Datos Personales
-                        </h4>
-                        <div style="margin-top: 1rem; display: grid; gap: 1rem;">
-                            <div>
-                                <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em;">CURP</div>
-                                <div style="font-size: 1rem; font-weight: 500; color: #0f172a; font-family: monospace;">${student.curp || 'No registrada'}</div>
-                            </div>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                                 <div>
-                                    <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em;">Fecha Nacimiento</div>
-                                    <div style="font-size: 1rem; font-weight: 500; color: #0f172a;">${formattedDOB}</div>
-                                </div>
+                    <!-- Content Grid -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+
+                        <!-- Academic Card -->
+                        <div style="background: #f8fafc; border-radius: 12px; padding: 1.5rem; border: 1px solid #e2e8f0;">
+                            <h4 style="margin-top: 0; display: flex; align-items: center; gap: 0.5rem; color: #334155;">
+                                <span class="material-icons-outlined">school</span>
+                                Información Académica
+                            </h4>
+                            <div style="margin-top: 1rem; display: grid; gap: 1rem;">
                                 <div>
-                                    <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em;">Edad</div>
-                                    <div style="font-size: 1rem; font-weight: 500; color: #0f172a;">${age}</div>
+                                    <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em;">Nivel Educativo</div>
+                                    <div style="font-size: 1.1rem; font-weight: 500; color: #0f172a;">${displayLevel || 'No registrado'}</div>
                                 </div>
-                            </div>
-                             <!-- Gender if available -->
-                             <div>
-                                <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em;">Género</div>
-                                <div style="font-size: 1rem; font-weight: 500; color: #0f172a;">${genderText}</div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                    <div>
+                                        <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em;">Grado</div>
+                                        <div style="font-size: 1.1rem; font-weight: 500; color: #0f172a;">${displayGrade || '-'}</div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em;">Grupo</div>
+                                        <div style="font-size: 1.1rem; font-weight: 500; color: #0f172a;">${student.group_name || '-'}</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
+                        <!-- Personal Card -->
+                        <div style="background: #f8fafc; border-radius: 12px; padding: 1.5rem; border: 1px solid #e2e8f0;">
+                            <h4 style="margin-top: 0; display: flex; align-items: center; gap: 0.5rem; color: #334155;">
+                                <span class="material-icons-outlined">person</span>
+                                Datos Personales
+                            </h4>
+                            <div style="margin-top: 1rem; display: grid; gap: 1rem;">
+                                <div>
+                                    <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em;">CURP</div>
+                                    <div style="font-size: 1rem; font-weight: 500; color: #0f172a; font-family: monospace;">${student.curp || 'No registrada'}</div>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                    <div>
+                                        <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em;">Fecha Nacimiento</div>
+                                        <div style="font-size: 1rem; font-weight: 500; color: #0f172a;">${formattedDOB}</div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em;">Edad</div>
+                                        <div style="font-size: 1rem; font-weight: 500; color: #0f172a;">${age}</div>
+                                    </div>
+                                </div>
+                                <!-- Gender if available -->
+                                <div>
+                                    <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em;">Género</div>
+                                    <div style="font-size: 1rem; font-weight: 500; color: #0f172a;">${genderText}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
-            </div>
-        `;
+                `;
     } catch (err) {
         console.error('Error rendering student detail inner HTML:', err);
         container.innerHTML = `<div style="color:red; padding:2rem;">Error visualizando: ${err.message}</div>`;
@@ -7722,83 +7857,83 @@ function renderStudentClinical(student) {
     const doctorName = 'No registrado';
 
     container.innerHTML = `
-        <div style="max-width: 900px; margin: 0 auto; animation: fadeIn 0.3s ease;">
-            <!-- Header -->
-            <div style="margin-bottom: 2rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem;">
-                <h2 style="color: #1e293b; margin: 0; display: flex; align-items: center; gap: 0.75rem;">
-                    <span class="material-icons-outlined" style="color: #ef4444;">medical_services</span>
-                    Ficha Clínica
-                </h2>
-                <p style="color: #64748b; margin: 0.5rem 0 0 2.25rem;">Información médica y de emergencia</p>
-            </div>
+                <div style="max-width: 900px; margin: 0 auto; animation: fadeIn 0.3s ease;">
+                    <!-- Header -->
+                    <div style="margin-bottom: 2rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem;">
+                        <h2 style="color: #1e293b; margin: 0; display: flex; align-items: center; gap: 0.75rem;">
+                            <span class="material-icons-outlined" style="color: #ef4444;">medical_services</span>
+                            Ficha Clínica
+                        </h2>
+                        <p style="color: #64748b; margin: 0.5rem 0 0 2.25rem;">Información médica y de emergencia</p>
+                    </div>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
-                
-                <!-- Medical Data -->
-                <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem;">
-                    <h4 style="margin: 0 0 1.5rem; color: #334155; display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem;">
-                        <span class="material-icons-outlined" style="color: #ef4444;">favorite</span>
-                        Datos Médicos
-                    </h4>
-                    <div style="display: grid; gap: 1.25rem;">
-                        <div>
-                            <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Tipo de Sangre</div>
-                            <div style="font-size: 1.1rem; font-weight: 500; color: #0f172a;">${bloodType}</div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+
+                        <!-- Medical Data -->
+                        <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem;">
+                            <h4 style="margin: 0 0 1.5rem; color: #334155; display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem;">
+                                <span class="material-icons-outlined" style="color: #ef4444;">favorite</span>
+                                Datos Médicos
+                            </h4>
+                            <div style="display: grid; gap: 1.25rem;">
+                                <div>
+                                    <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Tipo de Sangre</div>
+                                    <div style="font-size: 1.1rem; font-weight: 500; color: #0f172a;">${bloodType}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Alergias</div>
+                                    <div style="font-size: 1rem; color: #334155; background: #fff1f2; padding: 0.5rem; border-radius: 6px; border: 1px solid #fecdd3;">${allergies}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Condiciones Médicas</div>
+                                    <div style="font-size: 1rem; color: #334155;">${conditions}</div>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Alergias</div>
-                            <div style="font-size: 1rem; color: #334155; background: #fff1f2; padding: 0.5rem; border-radius: 6px; border: 1px solid #fecdd3;">${allergies}</div>
+
+                        <!-- Emergency Contact -->
+                        <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem;">
+                            <h4 style="margin: 0 0 1.5rem; color: #334155; display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem;">
+                                <span class="material-icons-outlined" style="color: #f59e0b;">warning</span>
+                                Emergencia
+                            </h4>
+                            <div style="display: grid; gap: 1.25rem;">
+                                <div>
+                                    <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Contacto Principal</div>
+                                    <div style="font-size: 1.1rem; font-weight: 500; color: #0f172a;">${emergencyName}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Teléfono Emergencia</div>
+                                    <div style="font-size: 1.1rem; color: #0f172a; font-family: monospace;">${emergencyPhone}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Doctor de Cabecera</div>
+                                    <div style="font-size: 1rem; color: #334155;">${doctorName}</div>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Condiciones Médicas</div>
-                            <div style="font-size: 1rem; color: #334155;">${conditions}</div>
+
+                        <!-- Insurance -->
+                        <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem;">
+                            <h4 style="margin: 0 0 1.5rem; color: #334155; display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem;">
+                                <span class="material-icons-outlined" style="color: #3b82f6;">verified_user</span>
+                                Seguro Médico
+                            </h4>
+                            <div style="display: grid; gap: 1.25rem;">
+                                <div>
+                                    <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Aseguradora</div>
+                                    <div style="font-size: 1rem; color: #334155;">No registrada</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; margin-bottom: 0.25rem;">No. Póliza</div>
+                                    <div style="font-size: 1rem; color: #334155; font-family: monospace;">-</div>
+                                </div>
+                            </div>
                         </div>
+
                     </div>
                 </div>
-
-                <!-- Emergency Contact -->
-                <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem;">
-                    <h4 style="margin: 0 0 1.5rem; color: #334155; display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem;">
-                        <span class="material-icons-outlined" style="color: #f59e0b;">warning</span>
-                        Emergencia
-                    </h4>
-                    <div style="display: grid; gap: 1.25rem;">
-                         <div>
-                            <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Contacto Principal</div>
-                            <div style="font-size: 1.1rem; font-weight: 500; color: #0f172a;">${emergencyName}</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Teléfono Emergencia</div>
-                            <div style="font-size: 1.1rem; color: #0f172a; font-family: monospace;">${emergencyPhone}</div>
-                        </div>
-                         <div>
-                            <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Doctor de Cabecera</div>
-                            <div style="font-size: 1rem; color: #334155;">${doctorName}</div>
-                        </div>
-                    </div>
-                </div>
-
-                 <!-- Insurance -->
-                <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem;">
-                    <h4 style="margin: 0 0 1.5rem; color: #334155; display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem;">
-                        <span class="material-icons-outlined" style="color: #3b82f6;">verified_user</span>
-                        Seguro Médico
-                    </h4>
-                    <div style="display: grid; gap: 1.25rem;">
-                         <div>
-                            <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Aseguradora</div>
-                            <div style="font-size: 1rem; color: #334155;">No registrada</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; margin-bottom: 0.25rem;">No. Póliza</div>
-                            <div style="font-size: 1rem; color: #334155; font-family: monospace;">-</div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-    `;
+                `;
 }
 
 // Render Financial Info
@@ -7808,76 +7943,76 @@ async function renderStudentFinancial(student) {
 
     // Show loading state
     container.innerHTML = `
-        <div style="height: 300px; display: flex; align-items: center; justify-content: center; color: #64748b;">
-            <div style="text-align: center;">
-                <span class="material-icons-outlined" style="font-size: 3rem; animation: spin 1s linear infinite;">sync</span>
-                <p style="margin-top: 1rem;">Cargando historial de pagos...</p>
-            </div>
-        </div>
-    `;
+                <div style="height: 300px; display: flex; align-items: center; justify-content: center; color: #64748b;">
+                    <div style="text-align: center;">
+                        <span class="material-icons-outlined" style="font-size: 3rem; animation: spin 1s linear infinite;">sync</span>
+                        <p style="margin-top: 1rem;">Cargando historial de pagos...</p>
+                    </div>
+                </div>
+                `;
 
     try {
         const payments = await apiFetch(`/payments/${student.id}`);
 
         // Render Tables
         container.innerHTML = `
-            <div style="max-width: 900px; margin: 0 auto; animation: fadeIn 0.3s ease;">
-                <!-- Header -->
-                <div style="margin-bottom: 2rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem; display: flex; justify-content: space-between; align-items: flex-end;">
-                    <div>
-                        <h2 style="color: #1e293b; margin: 0; display: flex; align-items: center; gap: 0.75rem;">
-                            <span class="material-icons-outlined" style="color: #22c55e;">account_balance</span>
-                            Información Financiera
-                        </h2>
-                        <p style="color: #64748b; margin: 0.5rem 0 0 2.25rem;">Historial de pagos y estado de cuenta</p>
-                    </div>
-                    <div style="display: flex; gap: 0.5rem;">
-                         <button onclick="window.openCodiWebModal('${student.id}')" 
-                            style="padding: 0.5rem 1rem; background: #0f172a; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: background 0.2s;"
-                            onmouseover="this.style.background='#1e293b'"
-                            onmouseout="this.style.background='#0f172a'">
-                            <span class="material-icons-outlined" style="color: #22d3ee;">qr_code_2</span>
-                            Pagar con CoDi
-                        </button>
-                        <button onclick="window.openAccountStatement('${student.id}')" 
-                            style="padding: 0.5rem 1rem; background: #3b82f6; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: background 0.2s;"
-                            onmouseover="this.style.background='#2563eb'"
-                            onmouseout="this.style.background='#3b82f6'">
-                            <span class="material-icons-outlined" style="font-size: 1.25rem;">assessment</span>
-                            Ver Estado de Cuenta
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Summary Cards (Placeholder for dynamic calculation if needed) -->
-                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
-                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 1rem; border-radius: 8px;">
-                        <div style="color: #166534; font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">Total Pagado</div>
-                        <div style="color: #15803d; font-size: 1.5rem; font-weight: 700;">$${payments.reduce((acc, p) => acc + parseFloat(p.amount), 0).toFixed(2)}</div>
-                    </div>
-                    <!-- Demo Balance Card -->
-                    <div style="background: #fff1f2; border: 1px solid #fecdd3; padding: 1rem; border-radius: 8px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div style="max-width: 900px; margin: 0 auto; animation: fadeIn 0.3s ease;">
+                    <!-- Header -->
+                    <div style="margin-bottom: 2rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem; display: flex; justify-content: space-between; align-items: flex-end;">
                         <div>
-                            <div style="color: #9f1239; font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">Saldo Pendiente (Demo)</div>
-                            <div style="color: #be123c; font-size: 1.5rem; font-weight: 700;">$4,500.00</div>
+                            <h2 style="color: #1e293b; margin: 0; display: flex; align-items: center; gap: 0.75rem;">
+                                <span class="material-icons-outlined" style="color: #22c55e;">account_balance</span>
+                                Información Financiera
+                            </h2>
+                            <p style="color: #64748b; margin: 0.5rem 0 0 2.25rem;">Historial de pagos y estado de cuenta</p>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button onclick="window.openCodiWebModal('${student.id}')"
+                                style="padding: 0.5rem 1rem; background: #0f172a; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: background 0.2s;"
+                                onmouseover="this.style.background='#1e293b'"
+                                onmouseout="this.style.background='#0f172a'">
+                                <span class="material-icons-outlined" style="color: #22d3ee;">qr_code_2</span>
+                                Pagar con CoDi
+                            </button>
+                            <button onclick="window.openAccountStatement('${student.id}')"
+                                style="padding: 0.5rem 1rem; background: #3b82f6; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: background 0.2s;"
+                                onmouseover="this.style.background='#2563eb'"
+                                onmouseout="this.style.background='#3b82f6'">
+                                <span class="material-icons-outlined" style="font-size: 1.25rem;">assessment</span>
+                                Ver Estado de Cuenta
+                            </button>
                         </div>
                     </div>
-                </div>
 
-                <!-- Payments Table -->
-                <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
-                    <div style="overflow-x: auto;">
-                        <table style="width: 100%; border-collapse: collapse; min-width: 600px;">
-                            <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
-                                <tr>
-                                    <th style="padding: 1rem; text-align: left; font-size: 0.8rem; font-weight: 600; color: #64748b; text-transform: uppercase;">Fecha</th>
-                                    <th style="padding: 1rem; text-align: left; font-size: 0.8rem; font-weight: 600; color: #64748b; text-transform: uppercase;">Concepto</th>
-                                    <th style="padding: 1rem; text-align: left; font-size: 0.8rem; font-weight: 600; color: #64748b; text-transform: uppercase;">Método</th>
-                                    <th style="padding: 1rem; text-align: right; font-size: 0.8rem; font-weight: 600; color: #64748b; text-transform: uppercase;">Monto</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${payments.length > 0 ? payments.map(p => `
+                    <!-- Summary Cards (Placeholder for dynamic calculation if needed) -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 1rem; border-radius: 8px;">
+                            <div style="color: #166534; font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">Total Pagado</div>
+                            <div style="color: #15803d; font-size: 1.5rem; font-weight: 700;">$${payments.reduce((acc, p) => acc + parseFloat(p.amount), 0).toFixed(2)}</div>
+                        </div>
+                        <!-- Demo Balance Card -->
+                        <div style="background: #fff1f2; border: 1px solid #fecdd3; padding: 1rem; border-radius: 8px; display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <div style="color: #9f1239; font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">Saldo Pendiente (Demo)</div>
+                                <div style="color: #be123c; font-size: 1.5rem; font-weight: 700;">$4,500.00</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payments Table -->
+                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+                        <div style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; min-width: 600px;">
+                                <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                                    <tr>
+                                        <th style="padding: 1rem; text-align: left; font-size: 0.8rem; font-weight: 600; color: #64748b; text-transform: uppercase;">Fecha</th>
+                                        <th style="padding: 1rem; text-align: left; font-size: 0.8rem; font-weight: 600; color: #64748b; text-transform: uppercase;">Concepto</th>
+                                        <th style="padding: 1rem; text-align: left; font-size: 0.8rem; font-weight: 600; color: #64748b; text-transform: uppercase;">Método</th>
+                                        <th style="padding: 1rem; text-align: right; font-size: 0.8rem; font-weight: 600; color: #64748b; text-transform: uppercase;">Monto</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${payments.length > 0 ? payments.map(p => `
                                     <tr style="border-bottom: 1px solid #f1f5f9;">
                                         <td style="padding: 1rem; color: #334155;">
                                             ${new Date(p.payment_date).toLocaleDateString()}
@@ -7903,21 +8038,21 @@ async function renderStudentFinancial(student) {
                                         </td>
                                     </tr>
                                 `}
-                            </tbody>
-                        </table>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-            </div>
-        `;
+                `;
 
     } catch (e) {
         console.error('Error loading financial info:', e);
         container.innerHTML = `
-            <div style="color: #ef4444; padding: 2rem; text-align: center;">
-                <span class="material-icons-outlined" style="font-size: 2rem;">error_outline</span>
-                <p>Error al cargar la información financiera.</p>
-            </div>
-        `;
+                <div style="color: #ef4444; padding: 2rem; text-align: center;">
+                    <span class="material-icons-outlined" style="font-size: 2rem;">error_outline</span>
+                    <p>Error al cargar la información financiera.</p>
+                </div>
+                `;
     }
 }
 
@@ -7967,10 +8102,10 @@ async function fetchWebTuitionConcept(student) {
 
         // Debug Info
         debugEl.innerHTML = `
-            <strong>Debug Nivel:</strong> ${inferredLevel} <br>
-            <strong>Grado Original:</strong> ${student.grade || student.grado} <br>
-            <strong>Nivel Original:</strong> ${student.educational_level || student.level_id} <br>
-        `;
+                <strong>Debug Nivel:</strong> ${inferredLevel} <br>
+                    <strong>Grado Original:</strong> ${student.grade || student.grado} <br>
+                        <strong>Nivel Original:</strong> ${student.educational_level || student.level_id} <br>
+                            `;
 
         const match = concepts.find(c => {
             const cLevel = (c.academic_level || '').toUpperCase().trim();
@@ -8282,49 +8417,49 @@ function renderStudentEvaluations(student) {
     const average = (evaluations.reduce((a, b) => a + b.grade, 0) / evaluations.length).toFixed(1);
 
     container.innerHTML = `
-        <div style="max-width: 900px; margin: 0 auto; animation: fadeIn 0.3s ease;">
-            <!-- Header -->
-            <div style="margin-bottom: 2rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem; display: flex; justify-content: space-between; align-items: flex-end;">
-                <div>
-                    <h2 style="color: #1e293b; margin: 0; display: flex; align-items: center; gap: 0.75rem;">
-                        <span class="material-icons-outlined" style="color: #8b5cf6;">insights</span>
-                        Evaluaciones
-                    </h2>
-                    <p style="color: #64748b; margin: 0.5rem 0 0 2.25rem;">Boleta de calificaciones actual</p>
-                </div>
-                <div style="text-align: right;">
-                    <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; font-weight: 600;">Promedio General</div>
-                    <div style="font-size: 2rem; font-weight: 700; color: #8b5cf6;">${average}</div>
-                </div>
-            </div>
+                                        <div style="max-width: 900px; margin: 0 auto; animation: fadeIn 0.3s ease;">
+                                            <!-- Header -->
+                                            <div style="margin-bottom: 2rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem; display: flex; justify-content: space-between; align-items: flex-end;">
+                                                <div>
+                                                    <h2 style="color: #1e293b; margin: 0; display: flex; align-items: center; gap: 0.75rem;">
+                                                        <span class="material-icons-outlined" style="color: #8b5cf6;">insights</span>
+                                                        Evaluaciones
+                                                    </h2>
+                                                    <p style="color: #64748b; margin: 0.5rem 0 0 2.25rem;">Boleta de calificaciones actual</p>
+                                                </div>
+                                                <div style="text-align: right;">
+                                                    <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; font-weight: 600;">Promedio General</div>
+                                                    <div style="font-size: 2rem; font-weight: 700; color: #8b5cf6;">${average}</div>
+                                                </div>
+                                            </div>
 
-            <div style="display: grid; gap: 2rem;">
-                
-                <!-- Period Selector (Mock) -->
-                <div style="display: flex; gap: 1rem; overflow-x: auto; padding-bottom: 0.5rem;">
-                    <button style="padding: 0.5rem 1rem; background: #8b5cf6; color: white; border: none; border-radius: 999px; font-weight: 600; cursor: pointer;">1er Bimestre</button>
-                    <button style="padding: 0.5rem 1rem; background: #f1f5f9; color: #64748b; border: none; border-radius: 999px; font-weight: 500; cursor: pointer;">2do Bimestre</button>
-                    <button style="padding: 0.5rem 1rem; background: #f1f5f9; color: #64748b; border: none; border-radius: 999px; font-weight: 500; cursor: pointer;">3er Bimestre</button>
-                    <button style="padding: 0.5rem 1rem; background: #f1f5f9; color: #64748b; border: none; border-radius: 999px; font-weight: 500; cursor: pointer;">Final</button>
-                </div>
+                                            <div style="display: grid; gap: 2rem;">
 
-                <!-- Report Card Table -->
-                <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
-                    <div style="padding: 1rem; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #475569;">
-                        ${currentPeriod}
-                    </div>
-                    <div style="overflow-x: auto;">
-                        <table style="width: 100%; border-collapse: collapse; min-width: 600px;">
-                            <thead>
-                                <tr style="border-bottom: 1px solid #e2e8f0;">
-                                    <th style="padding: 1rem; text-align: left; font-size: 0.75rem; font-weight: 600; color: #94a3b8; text-transform: uppercase;">Materia</th>
-                                    <th style="padding: 1rem; text-align: left; font-size: 0.75rem; font-weight: 600; color: #94a3b8; text-transform: uppercase;">Docente</th>
-                                    <th style="padding: 1rem; text-align: left; font-size: 0.75rem; font-weight: 600; color: #94a3b8; text-transform: uppercase;">Comentarios</th>
-                                    <th style="padding: 1rem; text-align: center; font-size: 0.75rem; font-weight: 600; color: #94a3b8; text-transform: uppercase;">Calificación</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${evaluations.map(ev => `
+                                                <!-- Period Selector (Mock) -->
+                                                <div style="display: flex; gap: 1rem; overflow-x: auto; padding-bottom: 0.5rem;">
+                                                    <button style="padding: 0.5rem 1rem; background: #8b5cf6; color: white; border: none; border-radius: 999px; font-weight: 600; cursor: pointer;">1er Bimestre</button>
+                                                    <button style="padding: 0.5rem 1rem; background: #f1f5f9; color: #64748b; border: none; border-radius: 999px; font-weight: 500; cursor: pointer;">2do Bimestre</button>
+                                                    <button style="padding: 0.5rem 1rem; background: #f1f5f9; color: #64748b; border: none; border-radius: 999px; font-weight: 500; cursor: pointer;">3er Bimestre</button>
+                                                    <button style="padding: 0.5rem 1rem; background: #f1f5f9; color: #64748b; border: none; border-radius: 999px; font-weight: 500; cursor: pointer;">Final</button>
+                                                </div>
+
+                                                <!-- Report Card Table -->
+                                                <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+                                                    <div style="padding: 1rem; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #475569;">
+                                                        ${currentPeriod}
+                                                    </div>
+                                                    <div style="overflow-x: auto;">
+                                                        <table style="width: 100%; border-collapse: collapse; min-width: 600px;">
+                                                            <thead>
+                                                                <tr style="border-bottom: 1px solid #e2e8f0;">
+                                                                    <th style="padding: 1rem; text-align: left; font-size: 0.75rem; font-weight: 600; color: #94a3b8; text-transform: uppercase;">Materia</th>
+                                                                    <th style="padding: 1rem; text-align: left; font-size: 0.75rem; font-weight: 600; color: #94a3b8; text-transform: uppercase;">Docente</th>
+                                                                    <th style="padding: 1rem; text-align: left; font-size: 0.75rem; font-weight: 600; color: #94a3b8; text-transform: uppercase;">Comentarios</th>
+                                                                    <th style="padding: 1rem; text-align: center; font-size: 0.75rem; font-weight: 600; color: #94a3b8; text-transform: uppercase;">Calificación</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                ${evaluations.map(ev => `
                                     <tr style="border-bottom: 1px solid #f1f5f9;">
                                         <td style="padding: 1rem; font-weight: 500; color: #0f172a;">${ev.subject}</td>
                                         <td style="padding: 1rem; color: #64748b;">${ev.teacher}</td>
@@ -8336,21 +8471,21 @@ function renderStudentEvaluations(student) {
                                         </td>
                                     </tr>
                                 `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
 
-                <!-- Download Button -->
-                 <div style="text-align: right;">
-                    <button style="padding: 0.75rem 1.5rem; background: white; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: 600; color: #475569; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem;">
-                        <span class="material-icons-outlined">download</span>
-                        Descargar Boleta PDF
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
+                                                <!-- Download Button -->
+                                                <div style="text-align: right;">
+                                                    <button style="padding: 0.75rem 1.5rem; background: white; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: 600; color: #475569; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem;">
+                                                        <span class="material-icons-outlined">download</span>
+                                                        Descargar Boleta PDF
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        `;
 }
 
 // Render Tasks Info (Mock Data)
@@ -8371,30 +8506,30 @@ function renderStudentTasks(student) {
     ];
 
     container.innerHTML = `
-        <div style="max-width: 900px; margin: 0 auto; animation: fadeIn 0.3s ease;">
-             <!-- Header -->
-            <div style="margin-bottom: 2rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <h2 style="color: #1e293b; margin: 0; display: flex; align-items: center; gap: 0.75rem;">
-                        <span class="material-icons-outlined" style="color: #f59e0b;">assignment</span>
-                        Tareas
-                    </h2>
-                    <p style="color: #64748b; margin: 0.5rem 0 0 2.25rem;">Actividades y proyectos asignados</p>
-                </div>
-                <button style="padding: 0.5rem 1rem; background: #e2e8f0; border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 600; color: #475569; cursor: pointer;">
-                    Ver Calendario
-                </button>
-            </div>
+                                        <div style="max-width: 900px; margin: 0 auto; animation: fadeIn 0.3s ease;">
+                                            <!-- Header -->
+                                            <div style="margin-bottom: 2rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                                                <div>
+                                                    <h2 style="color: #1e293b; margin: 0; display: flex; align-items: center; gap: 0.75rem;">
+                                                        <span class="material-icons-outlined" style="color: #f59e0b;">assignment</span>
+                                                        Tareas
+                                                    </h2>
+                                                    <p style="color: #64748b; margin: 0.5rem 0 0 2.25rem;">Actividades y proyectos asignados</p>
+                                                </div>
+                                                <button style="padding: 0.5rem 1rem; background: #e2e8f0; border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 600; color: #475569; cursor: pointer;">
+                                                    Ver Calendario
+                                                </button>
+                                            </div>
 
-            <div style="display: grid; gap: 2rem;">
-                <!-- Pending -->
-                <div>
-                    <h4 style="margin: 0 0 1rem; color: #334155; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
-                        <span style="display: block; width: 8px; height: 8px; background: #f59e0b; border-radius: 50%;"></span>
-                        Pendientes (${pendingTasks.length})
-                    </h4>
-                    <div style="display: grid; gap: 1rem;">
-                        ${pendingTasks.map(task => `
+                                            <div style="display: grid; gap: 2rem;">
+                                                <!-- Pending -->
+                                                <div>
+                                                    <h4 style="margin: 0 0 1rem; color: #334155; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
+                                                        <span style="display: block; width: 8px; height: 8px; background: #f59e0b; border-radius: 50%;"></span>
+                                                        Pendientes (${pendingTasks.length})
+                                                    </h4>
+                                                    <div style="display: grid; gap: 1rem;">
+                                                        ${pendingTasks.map(task => `
                             <div style="background: white; border: 1px solid #e2e8f0; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 1.25rem; display: flex; justify-content: space-between; align-items: center;">
                                 <div>
                                     <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; margin-bottom: 0.25rem;">${task.subject}</div>
@@ -8411,17 +8546,17 @@ function renderStudentTasks(student) {
                                 </div>
                             </div>
                         `).join('')}
-                    </div>
-                </div>
+                                                    </div>
+                                                </div>
 
-                <!-- Completed (Collapsed by default visually, but rendered for now) -->
-                <div style="opacity: 0.75;">
-                    <h4 style="margin: 0 0 1rem; color: #64748b; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
-                        <span style="display: block; width: 8px; height: 8px; background: #22c55e; border-radius: 50%;"></span>
-                        Completadas Recientemente
-                    </h4>
-                    <div style="display: grid; gap: 1rem;">
-                        ${completedTasks.map(task => `
+                                                <!-- Completed (Collapsed by default visually, but rendered for now) -->
+                                                <div style="opacity: 0.75;">
+                                                    <h4 style="margin: 0 0 1rem; color: #64748b; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
+                                                        <span style="display: block; width: 8px; height: 8px; background: #22c55e; border-radius: 50%;"></span>
+                                                        Completadas Recientemente
+                                                    </h4>
+                                                    <div style="display: grid; gap: 1rem;">
+                                                        ${completedTasks.map(task => `
                             <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; display: flex; justify-content: space-between; align-items: center;">
                                 <div>
                                     <div style="font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; margin-bottom: 0.25rem;">${task.subject}</div>
@@ -8432,12 +8567,12 @@ function renderStudentTasks(student) {
                                 </div>
                             </div>
                         `).join('')}
-                    </div>
-                </div>
+                                                    </div>
+                                                </div>
 
-            </div>
-        </div>
-    `;
+                                            </div>
+                                        </div>
+                                        `;
 
 }
 
@@ -8453,10 +8588,10 @@ function renderParentsConfig() {
     if (!container) return;
 
     container.innerHTML = `
-        <div style="max-width: 500px; margin: 0 auto; animation: fadeIn 0.3s ease;">
-             <!-- Header -->
-            <div style="text-align: center; margin-bottom: 2rem;">
-                <div style="
+                                        <div style="max-width: 500px; margin: 0 auto; animation: fadeIn 0.3s ease;">
+                                            <!-- Header -->
+                                            <div style="text-align: center; margin-bottom: 2rem;">
+                                                <div style="
                     width: 60px; height: 60px; 
                     background: #f1f5f9; 
                     color: #64748b; 
@@ -8464,49 +8599,49 @@ function renderParentsConfig() {
                     margin: 0 auto 1rem; 
                     display: flex; align-items: center; justify-content: center;
                 ">
-                    <span class="material-icons-outlined" style="font-size: 2rem;">lock_reset</span>
-                </div>
-                <h2 style="color: #1e293b; margin: 0;">Cambiar Contraseña</h2>
-                <p style="color: #64748b; margin-top: 0.5rem;">Asegura tu cuenta actualizando tu clave de acceso.</p>
-            </div>
+                                                    <span class="material-icons-outlined" style="font-size: 2rem;">lock_reset</span>
+                                                </div>
+                                                <h2 style="color: #1e293b; margin: 0;">Cambiar Contraseña</h2>
+                                                <p style="color: #64748b; margin-top: 0.5rem;">Asegura tu cuenta actualizando tu clave de acceso.</p>
+                                            </div>
 
-            <!-- Form -->
-            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
-                <form id="parent-change-password-form" onsubmit="event.preventDefault(); handleParentPasswordChange();">
-                    <div style="margin-bottom: 1.5rem;">
-                        <label style="display: block; font-size: 0.9rem; font-weight: 600; color: #334155; margin-bottom: 0.5rem;">Nueva Contraseña</label>
-                        <div style="position: relative;">
-                            <span class="material-icons-outlined" style="position: absolute; left: 12px; top: 10px; color: #94a3b8;">vpn_key</span>
-                            <input type="password" id="parent-new-password" required minlength="4"
-                                style="width: 100%; padding: 0.6rem 0.75rem 0.6rem 2.5rem; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; transition: border-color 0.2s;"
-                                placeholder="Mínimo 4 caracteres"
-                                onfocus="this.style.borderColor = '#3b82f6'"
-                                onblur="this.style.borderColor = '#cbd5e1'">
-                        </div>
-                    </div>
+                                            <!-- Form -->
+                                            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                                                <form id="parent-change-password-form" onsubmit="event.preventDefault(); handleParentPasswordChange();">
+                                                    <div style="margin-bottom: 1.5rem;">
+                                                        <label style="display: block; font-size: 0.9rem; font-weight: 600; color: #334155; margin-bottom: 0.5rem;">Nueva Contraseña</label>
+                                                        <div style="position: relative;">
+                                                            <span class="material-icons-outlined" style="position: absolute; left: 12px; top: 10px; color: #94a3b8;">vpn_key</span>
+                                                            <input type="password" id="parent-new-password" required minlength="4"
+                                                                style="width: 100%; padding: 0.6rem 0.75rem 0.6rem 2.5rem; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; transition: border-color 0.2s;"
+                                                                placeholder="Mínimo 4 caracteres"
+                                                                onfocus="this.style.borderColor = '#3b82f6'"
+                                                                onblur="this.style.borderColor = '#cbd5e1'">
+                                                        </div>
+                                                    </div>
 
-                    <div style="margin-bottom: 2rem;">
-                        <label style="display: block; font-size: 0.9rem; font-weight: 600; color: #334155; margin-bottom: 0.5rem;">Confirmar Nueva Contraseña</label>
-                        <div style="position: relative;">
-                            <span class="material-icons-outlined" style="position: absolute; left: 12px; top: 10px; color: #94a3b8;">check_circle</span>
-                            <input type="password" id="parent-confirm-password" required minlength="4"
-                                style="width: 100%; padding: 0.6rem 0.75rem 0.6rem 2.5rem; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; transition: border-color 0.2s;"
-                                placeholder="Repite tu contraseña"
-                                onfocus="this.style.borderColor = '#3b82f6'"
-                                onblur="this.style.borderColor = '#cbd5e1'">
-                        </div>
-                    </div>
+                                                    <div style="margin-bottom: 2rem;">
+                                                        <label style="display: block; font-size: 0.9rem; font-weight: 600; color: #334155; margin-bottom: 0.5rem;">Confirmar Nueva Contraseña</label>
+                                                        <div style="position: relative;">
+                                                            <span class="material-icons-outlined" style="position: absolute; left: 12px; top: 10px; color: #94a3b8;">check_circle</span>
+                                                            <input type="password" id="parent-confirm-password" required minlength="4"
+                                                                style="width: 100%; padding: 0.6rem 0.75rem 0.6rem 2.5rem; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; transition: border-color 0.2s;"
+                                                                placeholder="Repite tu contraseña"
+                                                                onfocus="this.style.borderColor = '#3b82f6'"
+                                                                onblur="this.style.borderColor = '#cbd5e1'">
+                                                        </div>
+                                                    </div>
 
-                    <div id="parent-password-feedback" style="margin-bottom: 1rem; display: none;"></div>
+                                                    <div id="parent-password-feedback" style="margin-bottom: 1rem; display: none;"></div>
 
-                    <button type="submit" 
-                        style="width: 100%; padding: 0.75rem; background: #0f172a; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">
-                        Actualizar Contraseña
-                    </button>
-                </form>
-            </div>
-        </div>
-    `;
+                                                    <button type="submit"
+                                                        style="width: 100%; padding: 0.75rem; background: #0f172a; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">
+                                                        Actualizar Contraseña
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                        `;
 }
 
 // Logic for Password Change
@@ -8589,13 +8724,13 @@ function renderFinanceSection(payments, container, summaryEl) {
             currentMonth = monthLabel;
             const header = document.createElement('div');
             header.style.cssText = `
-padding: 1rem 0.5rem 0.5rem;
-font - size: 0.85rem;
-font - weight: 700;
-color: #94a3b8;
-text - transform: uppercase;
-letter - spacing: 0.05em;
-`;
+                                        padding: 1rem 0.5rem 0.5rem;
+                                        font - size: 0.85rem;
+                                        font - weight: 700;
+                                        color: #94a3b8;
+                                        text - transform: uppercase;
+                                        letter - spacing: 0.05em;
+                                        `;
             header.textContent = currentMonth;
             container.appendChild(header);
         }
@@ -8606,26 +8741,26 @@ letter - spacing: 0.05em;
         item.className = 'payment-item';
         // Styled row
         item.style.cssText = `
-background: white;
-border - bottom: 1px solid #f1f5f9;
-padding: 1rem;
-display: flex;
-justify - content: space - between;
-align - items: center;
-`;
+                                        background: white;
+                                        border - bottom: 1px solid #f1f5f9;
+                                        padding: 1rem;
+                                        display: flex;
+                                        justify - content: space - between;
+                                        align - items: center;
+                                        `;
         // Last item border radius adjustments could be done via CSS classes eventually
 
         item.innerHTML = `
-    < div style = "display: flex; flex-direction: column; gap: 2px;" >
-                <div style="font-weight: 600; color: #334155; font-size: 0.95rem;">${pay.concept}</div>
-                <div style="font-size: 0.8rem; color: #64748b;">
-                    ${pay.student_name} • ${payDate.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}
-                </div>
-            </div >
-    <div style="font-weight: 700; color: #059669; font-size: 1rem;">
-        ${formattedAmount}
-    </div>
-`;
+                                        < div style="display: flex; flex-direction: column; gap: 2px;" >
+                                            <div style="font-weight: 600; color: #334155; font-size: 0.95rem;">${pay.concept}</div>
+                                            <div style="font-size: 0.8rem; color: #64748b;">
+                                                ${pay.student_name} • ${payDate.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}
+                                            </div>
+                                        </div >
+                                        <div style="font-weight: 700; color: #059669; font-size: 1rem;">
+                                            ${formattedAmount}
+                                        </div>
+                                        `;
         container.appendChild(item);
     });
 }
@@ -9324,15 +9459,15 @@ window.openAccountStatement = async (studentId) => {
             // Render Card
             const card = document.createElement('div');
             card.style.cssText = `
-                display: flex; flex-direction: column; align-items: center; justify-content: center;
-                border: 1px solid ${color}; background-color: ${bg}; color: ${color};
-                padding: 0.5rem; border-radius: 0.5rem; text-align: center;
-            `;
+                                        display: flex; flex-direction: column; align-items: center; justify-content: center;
+                                        border: 1px solid ${color}; background-color: ${bg}; color: ${color};
+                                        padding: 0.5rem; border-radius: 0.5rem; text-align: center;
+                                        `;
 
             card.innerHTML = `
-                <div style="font-weight: bold; font-size: 0.85rem; margin-bottom: 0.25rem;">${item.label.substring(0, 3).toUpperCase()}</div>
-                <div style="font-size: 0.7rem; font-weight: 700;">${statusLabel}</div>
-            `;
+                                        <div style="font-weight: bold; font-size: 0.85rem; margin-bottom: 0.25rem;">${item.label.substring(0, 3).toUpperCase()}</div>
+                                        <div style="font-size: 0.7rem; font-weight: 700;">${statusLabel}</div>
+                                        `;
             tuitionGrid.appendChild(card);
         });
     }
@@ -9358,11 +9493,11 @@ window.openAccountStatement = async (studentId) => {
             totalPaid += amount;
 
             row.innerHTML = `
-                <td style="padding: 0.75rem; border-bottom: 1px solid #e2e8f0;">${dateStr}</td>
-                <td style="padding: 0.75rem; border-bottom: 1px solid #e2e8f0;">${p.concept}</td>
-                <td style="padding: 0.75rem; border-bottom: 1px solid #e2e8f0;">${p.payment_method || '-'}</td>
-                <td style="padding: 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-            `;
+                                        <td style="padding: 0.75rem; border-bottom: 1px solid #e2e8f0;">${dateStr}</td>
+                                        <td style="padding: 0.75rem; border-bottom: 1px solid #e2e8f0;">${p.concept}</td>
+                                        <td style="padding: 0.75rem; border-bottom: 1px solid #e2e8f0;">${p.payment_method || '-'}</td>
+                                        <td style="padding: 0.75rem; border-bottom: 1px solid #e2e8f0; text-align: right;">$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                        `;
             tbody.appendChild(row);
         });
     }
@@ -9382,14 +9517,14 @@ window.printAccountStatement = () => {
 
     printWindow.document.write('<html><head><title>Estado de Cuenta</title>');
     printWindow.document.write('<style>');
-    printWindow.document.write('body { font-family: sans-serif; padding: 20px; }');
-    printWindow.document.write('table { width: 100%; border-collapse: collapse; }');
-    printWindow.document.write('th, td { padding: 8px; border-bottom: 1px solid #ddd; }');
-    printWindow.document.write('th { text-align: left; background-color: #f2f2f2; }');
-    printWindow.document.write('.text-right { text-align: right; }');
+    printWindow.document.write('body {font - family: sans-serif; padding: 20px; }');
+    printWindow.document.write('table {width: 100%; border-collapse: collapse; }');
+    printWindow.document.write('th, td {padding: 8px; border-bottom: 1px solid #ddd; }');
+    printWindow.document.write('th {text - align: left; background-color: #f2f2f2; }');
+    printWindow.document.write('.text-right {text - align: right; }');
     // Simple Grid style for print
-    printWindow.document.write('#statement-tuition-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 20px; }');
-    printWindow.document.write('#statement-tuition-grid > div { border: 1px solid #ddd; padding: 5px; text-align: center; }');
+    printWindow.document.write('#statement-tuition-grid {display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 20px; }');
+    printWindow.document.write('#statement-tuition-grid > div {border: 1px solid #ddd; padding: 5px; text-align: center; }');
     printWindow.document.write('</style>');
     printWindow.document.write('</head><body>');
     printWindow.document.write(printContent);
@@ -9583,14 +9718,14 @@ function renderNotificationList(notifications, container) {
         }
 
         const notifHTML = `
-            <div class="notif-header">
-                <span class="notif-cat">${badgeText}</span>
-                <span class="notif-date">${dateStr}</span>
-            </div>
-            ${targetLabel !== 'Para: Todos' ? `<div style="font-size:0.75rem; color:#64748b; margin-bottom:0.25rem;">${targetLabel}</div>` : ''}
-            <div class="notif-title">${notif.title}</div>
-            <div class="notif-message-preview">${notif.message.substring(0, 100)}${notif.message.length > 100 ? '...' : ''}</div>
-        `;
+                                        <div class="notif-header">
+                                            <span class="notif-cat">${badgeText}</span>
+                                            <span class="notif-date">${dateStr}</span>
+                                        </div>
+                                        ${targetLabel !== 'Para: Todos' ? `<div style="font-size:0.75rem; color:#64748b; margin-bottom:0.25rem;">${targetLabel}</div>` : ''}
+                                        <div class="notif-title">${notif.title}</div>
+                                        <div class="notif-message-preview">${notif.message.substring(0, 100)}${notif.message.length > 100 ? '...' : ''}</div>
+                                        `;
         card.innerHTML = notifHTML;
         card.style.cursor = 'pointer'; // Indicate clickability
 
@@ -9811,21 +9946,21 @@ async function loadManagedAppointments() {
             const timeStr = dateObj.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 
             row.innerHTML = `
-                <div>
-                    <div style="font-weight: 600; color: #0f172a;">${evt.title}</div>
-                    <div style="font-size: 0.85rem; color: #64748b;">
-                        <span style="text-transform: capitalize;">${dateStr}</span> &bull; ${timeStr}
-                    </div>
-                </div>
-                <div style="display: flex; gap: 0.5rem;">
-                    <button class="btn-edit-appt" style="background: none; border: none; cursor: pointer; color: #3b82f6;" title="Editar">
-                        <span class="material-icons-outlined">edit</span>
-                    </button>
-                    <button class="btn-delete-appt" style="background: none; border: none; cursor: pointer; color: #ef4444;" title="Eliminar">
-                        <span class="material-icons-outlined">delete</span>
-                    </button>
-                </div>
-            `;
+                                        <div>
+                                            <div style="font-weight: 600; color: #0f172a;">${evt.title}</div>
+                                            <div style="font-size: 0.85rem; color: #64748b;">
+                                                <span style="text-transform: capitalize;">${dateStr}</span> &bull; ${timeStr}
+                                            </div>
+                                        </div>
+                                        <div style="display: flex; gap: 0.5rem;">
+                                            <button class="btn-edit-appt" style="background: none; border: none; cursor: pointer; color: #3b82f6;" title="Editar">
+                                                <span class="material-icons-outlined">edit</span>
+                                            </button>
+                                            <button class="btn-delete-appt" style="background: none; border: none; cursor: pointer; color: #ef4444;" title="Eliminar">
+                                                <span class="material-icons-outlined">delete</span>
+                                            </button>
+                                        </div>
+                                        `;
 
             // Handlers
             row.querySelector('.btn-edit-appt').onclick = () => {
@@ -9836,7 +9971,7 @@ async function loadManagedAppointments() {
                     id: evt.id,
                     title: evt.title,
                     start: evt.start,
-                    description: evt.description || '' // API usually returns extendedProps flattened or not? 
+                    description: evt.description || '' // API usually returns extendedProps flattened or not?
                     // Let's assume standard API return. If 'extendedProps' wrapper exists, check it.
                     // The /api/calendar endpoint usually returns FullCalendar compliant array.
                     // Let's check safely.

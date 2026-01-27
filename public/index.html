@@ -2103,10 +2103,16 @@
                 <div id="inquiries-list-section" class="section hidden">
                     <div class="section-header">
                         <h3>Lista de Informes (Solicitudes)</h3>
-                        <button id="btn-delete-selected-inquiries" class="btn-primary"
-                            style="background-color: #ef4444; border-color: #ef4444;">
-                            Eliminar Seleccionados
-                        </button>
+                        <div id="inquiries-header-filters-container"
+                            style="display: flex; gap: 0.5rem; align-items: center; margin-left: auto; margin-right: 0.5rem; background: #f1f5f9; padding: 0.35rem 0.75rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+
+                            <button id="btn-delete-selected-inquiries" class="btn-primary"
+                                style="background-color: #ef4444; border-color: #ef4444;">
+                                Eliminar Seleccionados
+                            </button>
+                        </div>
                     </div>
                     <div id="inquiries-container"
                         style="display: flex; flex-direction: column; gap: 1rem; padding: 1.5rem;">
@@ -3536,7 +3542,7 @@
         }
     </style>
     <div id="generic-confirm-modal" class="modal-overlay hidden"
-        style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; background-color: rgba(15, 23, 42, 0.65); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; transition: all 0.3s ease;">
+        style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; background-color: rgba(15, 23, 42, 0.65); backdrop-filter: blur(8px); flex-direction: column; align-items: center; justify-content: center; transition: all 0.3s ease;">
         <div class="modal-content popup-animate"
             style="max-width: 420px; width: 90%; background: white; border-radius: 1.5rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); text-align: center; padding: 2.5rem 2rem; border: 1px solid rgba(255,255,255,0.1);">
             <div id="generic-confirm-icon-container"

@@ -60,7 +60,7 @@ app.use('/api/public/agenda', require('./routes/public_agenda')); // Public Acce
 
 // Start Server
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running on http://localhost:${PORT} and http://192.168.100.3:${PORT}`);
 });
 
 // Force Restart Triggered: 2026-01-08T16:05:00

@@ -7,7 +7,13 @@ Esta guía detalla los pasos para subir tu sistema a tu hosting, aprovechando qu
 ## 1. Preparación de la Base de Datos
 
 1.  **Exportar Localmente**:
-    *   Usa tu herramienta (Workbench, TablePlus, o comando `mysqldump`) para exportar tu base de datos local a un archivo `.sql` (ej. `respaldo_escuela.sql`).
+    *   **Opción A (phpMyAdmin Local):**
+        1. Entra a `http://localhost/phpmyadmin`.
+        2. Selecciona tu base de datos en la izquierda (`school_db` o el nombre que tengas).
+        3. Ve a la pestaña **Exportar** (Export) en el menú superior.
+        4. Deja marcado "Rápido" y formato "SQL".
+        5. Clic en **Continuar** (Go) y guarda el archivo.
+    *   **Opción B (Otras):** Workbench, TablePlus o `mysqldump`.
     *   *Nota: En el ZIP he incluido un archivo `schema.sql` con la estructura básica, pero te recomiendo exportar tu propia base de datos para no perder tu información.*
 2.  **Crear en Hosting**:
     *   Entra al cPanel de tu hosting -> **MySQL Databases**.
@@ -24,7 +30,7 @@ Esta guía detalla los pasos para subir tu sistema a tu hosting, aprovechando qu
 ## 2. Preparación de Archivos (Backend)
 
 1.  **Paquete Listo**:
-    *   He generado un archivo llamado `deployment_package.zip` en la raíz de este proyecto. Este archivo contiene todo tu código, plantillas y archivos públicos.
+    *   He generado un archivo llamado `deployment_package_final.zip` en la raíz de este proyecto. Este archivo contiene todo tu código, plantillas y archivos públicos.
     *   **No incluye** `node_modules` (se instalan allá) ni `.env` (se configura allá).
 
 2.  **Variables de Entorno (.env)**:

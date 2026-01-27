@@ -2,22 +2,35 @@
     "admin": {
         "name": "Administrador",
         "permissions": [
+            "alumnos.view_menu",
             "alumnos.list",
+            "alumnos.edit_btn",
+            "alumnos.delete_btn",
             "alumnos.general_info",
+            "caja.view_menu",
             "caja.pagos",
             "caja.conceptos",
+            "config.view_menu",
             "config.roles",
+            "config.school",
+            "users.edit",
+            "users.delete",
             "config.email_templates",
             "config.permissions",
+            "school.view_menu",
             "school.info",
             "school.structure_academic",
             "school.structure_admin",
-            "config.school",
+            "hr.view_menu",
             "hr.personal",
+            "reports.view_menu",
             "reports.income",
+            "inquiries.view_menu",
             "inquiries.form",
             "inquiries.list",
-            "inquiries.agenda"
+            "inquiries.agenda",
+            "notifications.view_menu",
+            "notifications.send"
         ]
     },
     "director": {

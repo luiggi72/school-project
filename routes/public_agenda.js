@@ -166,6 +166,9 @@ router.post('/book', async (req, res) => {
         // So start is conceptually `${date} ${time}:00`
         const sqlStart = `${date} ${time}:00`;
 
+        // Parse date parts for manual calculation
+        const [year, month, day] = date.split('-').map(Number);
+
         // End date calculation (Manual to avoid timezone shifts)
         // Parse time bits
         let [h, min] = time.split(':').map(Number);
@@ -204,7 +207,7 @@ router.post('/book', async (req, res) => {
             // Format nice date: DD-MM-YY
             const [y, m, d] = date.split('-');
             const shortYear = y.substring(2);
-            const dateFormatted = `${d}-${m}-${shortYear}`;
+            const dateFormatted = `${d}/${m}/${shortYear}`;
 
             // Format time: 12h AM/PM
             const [hours, minutes] = time.split(':');
