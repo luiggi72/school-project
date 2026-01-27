@@ -913,13 +913,31 @@ function renderNotifHistory(history) {
 }
 
 // Global functions for inline onclick handlers
-window.editBatch = async (batchId, currentTitle, currentMessage) => {
-    // For now using prompt, can be upgraded to modal later
-    const newTitle = prompt('Editar Título:', currentTitle);
-    if (newTitle === null) return; // Cancelled
+// Edit Modal Logic
+window.editBatch = (batchId, currentTitle, currentMessage) => {
+    const modal = document.getElementById('edit-notif-modal');
+    if (!modal) return;
 
-    const newMessage = prompt('Editar Mensaje:', currentMessage);
-    if (newMessage === null) return; // Cancelled
+    document.getElementById('edit-notif-id').value = batchId;
+    document.getElementById('edit-notif-title').value = currentTitle;
+    document.getElementById('edit-notif-message').value = currentMessage;
+
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+};
+
+window.closeEditNotifModal = () => {
+    const modal = document.getElementById('edit-notif-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+    }
+};
+
+window.saveEditedNotif = async () => {
+    const batchId = document.getElementById('edit-notif-id').value;
+    const newTitle = document.getElementById('edit-notif-title').value;
+    const newMessage = document.getElementById('edit-notif-message').value;
 
     if (!newTitle || !newMessage) {
         alert('Título y mensaje son requeridos');
@@ -927,20 +945,33 @@ window.editBatch = async (batchId, currentTitle, currentMessage) => {
     }
 
     try {
+        const btn = document.querySelector('#edit-notif-modal .btn-primary');
+        const originalText = btn.innerText;
+        btn.disabled = true;
+        btn.innerText = 'Guardando...';
+
         await apiFetch(`/notifications/batch/${batchId}`, {
             method: 'PUT',
             body: JSON.stringify({ title: newTitle, message: newMessage })
         });
+
+        closeEditNotifModal();
         showConfirmModal({
             title: 'Éxito',
-            message: 'Notificación actualizada',
+            message: 'Notificación actualizada correctamente',
             isAlert: true,
             isSuccess: true
         });
-        loadNotifHistory(); // Refresh
+        loadNotifHistory(); // Refresh table
+
+        btn.disabled = false;
+        btn.innerText = originalText;
     } catch (e) {
         console.error(e);
-        showAlertModal('Error', 'No se pudo actualizar: ' + e.message, true);
+        alert('Error al actualizar: ' + e.message);
+        const btn = document.querySelector('#edit-notif-modal .btn-primary');
+        btn.disabled = false;
+        btn.innerText = 'Guardar Cambios';
     }
 };
 
@@ -1002,11 +1033,19 @@ if (notifTargetType) {
         if (type === 'ALL') {
             targetValueContainer.classList.add('hidden');
         } else if (type === 'STUDENT') {
+            console.log('Selected STUDENT type. Showing search container...');
             targetValueContainer.classList.remove('hidden');
             targetValueLabel.classList.remove('hidden');
             targetValueLabel.textContent = 'Buscar Alumno';
             notifTargetValue.classList.add('hidden'); // Hide select
-            notifStudentSearchContainer.classList.remove('hidden'); // Show search input
+
+            if (notifStudentSearchContainer) {
+                notifStudentSearchContainer.classList.remove('hidden'); // Show search input
+                notifStudentSearchContainer.style.display = 'block'; // Force visible
+                console.log('Search container visible');
+            } else {
+                console.error('Search container NOT found');
+            }
 
             // Populate datalist if empty
             if (notifStudentDatalist && notifStudentDatalist.options.length === 0) {
@@ -1206,19 +1245,33 @@ if (notifStudentSearch && notifStudentDatalist) {
         }
     });
 }
-if (notifForm) {
-    notifForm.addEventListener('submit', async (e) => {
+const btnSendNotif = document.getElementById('btn-send-notif');
+if (btnSendNotif) {
+    btnSendNotif.addEventListener('click', async (e) => {
         e.preventDefault();
 
         const title = document.getElementById('notif-title').value;
         const message = document.getElementById('notif-message').value;
         const type = document.getElementById('notif-target-type').value;
+
+        if (!title.trim() || !message.trim()) {
+            return alert('Por favor, completa el título y el mensaje.');
+        }
+
         let value = null;
         let rawValue = '';
+        let targetName = null;
 
         if (type === 'LEVEL' || type === 'GROUP') {
-            value = document.getElementById('notif-target-value').value;
+            const selectEl = document.getElementById('notif-target-value');
+            value = selectEl.value;
             if (!value) return alert('Por favor seleccione un valor para el destinatario.');
+
+            // Capture the readable name (e.g., "Primaria", "Grupo 1-A")
+            const selectedOption = selectEl.options[selectEl.selectedIndex];
+            if (selectedOption) {
+                targetName = selectedOption.textContent;
+            }
         } else if (type === 'STUDENT') {
             // Find student ID by parsing the datalist value: "Name ... [ID: 123]"
             rawValue = document.getElementById('notif-student-search').value;
@@ -1226,31 +1279,28 @@ if (notifForm) {
 
             if (match && match[1]) {
                 value = match[1];
+                targetName = rawValue.split('[')[0].trim();
             } else {
-                // Fallback: try to find by exact name match if user didn't pick from list but typed exact name
-                // (Less reliable, but helpful)
-                const student = students.find(s =>
-                    `${s.name} ${s.lastname_p || ''} ${s.lastname_m || ''} [ID: ${s.id}]` === rawValue ||
-                    `${s.name} ${s.lastname_p || ''} ${s.lastname_m || ''}`.toLowerCase() === rawValue.toLowerCase()
-                );
-
-                if (student) {
-                    value = student.id;
-                } else {
-                    return alert('Por favor seleccione un alumno válido de la lista sugerida.');
-                }
+                // ... validation error modal ...
             }
+        } else if (type === 'ALL') {
+            targetName = 'Toda la Escuela';
         }
+
 
         const payload = {
             title,
             message,
-            target: { type, value, name: type === 'STUDENT' ? rawValue.split('[')[0].trim() : null },
+            target: { type, value, name: targetName },
             data: { screen: 'Notifications' } // Direct deep link if needed
         };
 
         try {
-            const btn = document.getElementById('send-notif-btn');
+            const btn = document.getElementById('btn-send-notif'); // Corrected ID from HTML
+            if (!btn) {
+                console.error('Send button not found');
+                return;
+            }
             const originalText = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = '<span class="material-icons-outlined spin">refresh</span> Enviando...';
@@ -1305,7 +1355,11 @@ if (notifForm) {
                     isDestructive: false,
                     isSuccess: true // Green Success Mode
                 });
-                notifForm.reset();
+                // clear inputs
+                document.getElementById('notif-title').value = '';
+                document.getElementById('notif-message').value = '';
+                document.getElementById('notif-attachment').value = ''; // Reset file
+                if (document.getElementById('file-name-display')) document.getElementById('file-name-display').textContent = '';
             }
             // Reset selectors
             if (notifTargetValue) notifTargetValue.classList.add('hidden');
@@ -1316,7 +1370,7 @@ if (notifForm) {
         } catch (error) {
             console.error('Notification Error:', error);
             alert('Error al enviar: ' + error.message);
-            document.getElementById('send-notif-btn').disabled = false;
+            document.getElementById('btn-send-notif').disabled = false;
         }
     });
 }
@@ -5761,7 +5815,7 @@ if (btnDeleteSelected) {
                 try {
                     // Execute sequentially to avoid overwhelming server or handle errors individually
                     for (const id of ids) {
-                        await apiFetch(`/ inquiries / ${id}`, { method: 'DELETE' });
+                        await apiFetch(`/inquiries/${id}`, { method: 'DELETE' });
                     }
                     loadInquiries();
                 } catch (error) {

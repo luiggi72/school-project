@@ -3593,7 +3593,54 @@
         </div>
     </div>
 
-    <script src="app.js?v=prod111"></script>
+    <script src="app.js?v=prod124"></script>
+
+    <!-- Edit Notification Modal -->
+    <div id="edit-notif-modal" class="modal-overlay hidden"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); align-items: center; justify-content: center;">
+        <div class="modal-container"
+            style="max-width: 500px; width: 90%; background: white; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden; display: flex; flex-direction: column;">
+
+            <!-- Header -->
+            <div class="modal-header"
+                style="background: #f8fafc; padding: 1.25rem 1.5rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                <h3 id="edit-notif-title-header"
+                    style="margin: 0; color: #1e293b; font-size: 1.1rem; font-weight: 600;">Editar Notificación</h3>
+                <button class="modal-close" onclick="closeEditNotifModal()"
+                    style="background: none; border: none; font-size: 1.5rem; color: #94a3b8; cursor: pointer; line-height: 1;">&times;</button>
+            </div>
+
+            <!-- Body -->
+            <div class="modal-body" style="padding: 1.5rem;">
+                <input type="hidden" id="edit-notif-id">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label
+                        style="display: block; font-size: 0.875rem; font-weight: 500; color: #475569; margin-bottom: 0.5rem;">Título</label>
+                    <input type="text" id="edit-notif-title" class="input-control"
+                        style="width: 100%; padding: 0.625rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; font-size: 0.95rem; color: #0f172a; outline: none; transition: border-color 0.2s;">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label
+                        style="display: block; font-size: 0.875rem; font-weight: 500; color: #475569; margin-bottom: 0.5rem;">Mensaje</label>
+                    <textarea id="edit-notif-message" rows="8" class="input-control"
+                        style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; font-size: 0.95rem; color: #0f172a; outline: none; transition: border-color 0.2s; resize: vertical; line-height: 1.5;"></textarea>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="modal-footer"
+                style="padding: 1.25rem 1.5rem; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 0.75rem;">
+                <button class="btn-secondary" onclick="closeEditNotifModal()"
+                    style="padding: 0.6rem 1.25rem; background: white; border: 1px solid #cbd5e1; color: #475569; border-radius: 0.5rem; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                    Cancelar
+                </button>
+                <button class="btn-primary" onclick="saveEditedNotif()"
+                    style="padding: 0.6rem 1.25rem; background: #2563eb; border: none; color: white; border-radius: 0.5rem; font-weight: 500; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);">
+                    Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Generic Confirmation Modal -->
     <style>
