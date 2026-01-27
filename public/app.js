@@ -805,6 +805,7 @@ if (tabNotifCompose && tabNotifHistory) {
 }
 
 function switchNotifTab(tab) {
+    const pageTitle = document.getElementById('page-title');
     if (tab === 'compose') {
         tabNotifCompose.classList.add('active');
         tabNotifCompose.style.borderBottom = '2px solid #e31e25';
@@ -816,6 +817,8 @@ function switchNotifTab(tab) {
 
         notifComposeView.classList.remove('hidden');
         notifHistoryView.classList.add('hidden');
+
+        if (pageTitle) pageTitle.textContent = 'Notificaciones - Redactar';
     } else {
         tabNotifHistory.classList.add('active');
         tabNotifHistory.style.borderBottom = '2px solid #e31e25';
@@ -827,6 +830,8 @@ function switchNotifTab(tab) {
 
         notifHistoryView.classList.remove('hidden');
         notifComposeView.classList.add('hidden');
+
+        if (pageTitle) pageTitle.textContent = 'Notificaciones - Historial de Envíos';
     }
 }
 
@@ -3317,10 +3322,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Note: headers usually don't have active style, might need CSS tweet, but functionally:
                 header.classList.add('active'); // Ensure CSS supports this or add a specific class
 
+                updateBreadcrumbTitle(header);
+
                 document.querySelectorAll('.section').forEach(section => section.classList.add('hidden'));
                 const targetSection = document.getElementById(targetId);
                 if (targetSection) {
                     targetSection.classList.remove('hidden');
+
+                    // Special Case: Notifications Default Title
+                    if (targetId === 'notifications-section') {
+                        const pageTitle = document.getElementById('page-title');
+                        // Default is 'Redactar' as per HTML structure
+                        if (pageTitle) pageTitle.textContent = 'Notificaciones - Redactar';
+
+                        // Ensure tab state matches (reset to compose if needed, though HTML default is compose)
+                        if (typeof switchNotifTab === 'function') {
+                            switchNotifTab('compose');
+                        }
+                    }
+
                     // Also close mobile menu if applicable
                     const mobileMenu = document.getElementById('mobile-menu');
                     if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
@@ -3357,6 +3377,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Update Active State
             navItems.forEach(nav => nav.classList.remove('active'));
             item.classList.add('active');
+
+            updateBreadcrumbTitle(item);
 
             // Show Section
             sections.forEach(section => section.classList.add('hidden'));
@@ -3404,20 +3426,21 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (targetId === 'inquiries-list-section') {
                 loadInquiries();
-                document.querySelector('.top-bar').classList.add('hidden');
-                document.querySelector('.page-content').classList.add('no-padding');
+                // document.querySelector('.top-bar').classList.add('hidden'); // Removed to show title
+                // document.querySelector('.page-content').classList.add('no-padding'); // Removed likely as well
                 startInquiryPolling();
             } else {
-                document.querySelector('.top-bar').classList.remove('hidden');
-                document.querySelector('.page-content').classList.remove('no-padding');
+                // document.querySelector('.top-bar').classList.remove('hidden');
+                // document.querySelector('.page-content').classList.remove('no-padding');
                 document.body.classList.remove('sidebar-hidden');
                 stopInquiryPolling(); // Stop if leaving section
             }
 
             // Update Page Title
-            if (typeof updatePageTitle === 'function') {
-                updatePageTitle(targetId);
-            }
+            // Removed legacy updatePageTitle call to prevent conflicts with updateBreadcrumbTitle
+            // if (typeof updatePageTitle === 'function') {
+            //    updatePageTitle(targetId);
+            // }
         });
     });
 
@@ -10494,3 +10517,94 @@ async function loadManagedAppointments() {
 
 // End of script
 // Initial loads are handled by checkLoginStatus()
+
+// Helper for Dynamic Page Titles
+function updateBreadcrumbTitle(item) {
+    const pageTitleEl = document.getElementById('page-title');
+    if (!pageTitleEl || !item) return;
+
+    let currentItemText = item.textContent.trim();
+    console.log('[Breadcrumb] 1. Item Clicked:', currentItemText);
+
+    let fullTitle = currentItemText;
+    let groupText = '';
+
+    // Robust Map for Group Names (Matches data-group attribute)
+    const GROUP_DISPLAY_NAMES = {
+        'alumnos': 'Alumnos',
+        'caja': 'Caja',
+        'config': 'Configuración',
+        'school': 'Información Escolar',
+        'hr': 'Recursos Humanos',
+        'reports': 'Reportes',
+        'inquiries': 'Informes', // Or 'Solicitudes' if preferred
+        'notifications': 'Notificaciones'
+    };
+
+    try {
+        // 1. Identify Parent Group via data-group (Most Robust)
+        const navGroup = item.closest('.nav-group');
+        console.log('[Breadcrumb] 2. Nav Group found?', !!navGroup, navGroup);
+
+        if (navGroup) {
+            const groupKey = navGroup.getAttribute('data-group');
+            console.log('[Breadcrumb] 3. Group Key:', groupKey);
+
+            if (groupKey && GROUP_DISPLAY_NAMES[groupKey]) {
+                groupText = GROUP_DISPLAY_NAMES[groupKey];
+                console.log('[Breadcrumb] 4. Map Hit:', groupText);
+            } else {
+                // Fallback to DOM text search if key not in map
+                const groupHeader = navGroup.querySelector('.nav-group-header span');
+                if (groupHeader) {
+                    groupText = groupHeader.textContent.trim();
+                    console.log('[Breadcrumb] 4. DOM Fallback:', groupText);
+                } else {
+                    console.log('[Breadcrumb] 4. No Header found in DOM');
+                }
+            }
+        }
+
+        // 2. Identify Nested Submenu (e.g. Estructura)
+        const nestedSubmenu = item.closest('.nested-submenu');
+        if (nestedSubmenu) {
+            const nestedHeader = nestedSubmenu.querySelector('.nested-submenu-header span');
+            if (nestedHeader && item !== nestedSubmenu.querySelector('.nested-submenu-header')) {
+                const nestedText = nestedHeader.textContent.trim();
+                if (groupText) groupText += ` - ${nestedText}`;
+                else groupText = nestedText;
+            }
+        }
+
+        // 3. Construct Final Title
+        if (groupText) {
+            // Check if item is the header itself to avoid "Notificaciones - Notificaciones"
+            const isHeader = item.classList.contains('nav-group-header') || item.closest('.nav-group-header');
+
+            if (isHeader) {
+                fullTitle = groupText;
+            } else {
+                fullTitle = `${groupText} - ${currentItemText}`;
+            }
+        } else if (item.classList.contains('nav-group-header')) {
+            const span = item.querySelector('span');
+            if (span) fullTitle = span.textContent.trim();
+        }
+
+        console.log('[Breadcrumb] 5. Final Title:', fullTitle);
+        pageTitleEl.textContent = fullTitle;
+
+    } catch (err) {
+        console.error('Error updating title:', err);
+        pageTitleEl.textContent = currentItemText;
+    }
+}
+
+// Initial Title Update on Load
+document.addEventListener('DOMContentLoaded', () => {
+    const activeItem = document.querySelector('.submenu-item.active');
+    if (activeItem) {
+        // Small delay to ensure DOM is fully ready if script is deferred/async
+        setTimeout(() => updateBreadcrumbTitle(activeItem), 100);
+    }
+});
