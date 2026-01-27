@@ -131,7 +131,7 @@ const dispatchNotification = (target, title, message, data, attachmentUrl = null
                 return resolve({ count: 0, message: 'No users found for this target.' });
             }
 
-            // Determine category from target
+            // 135  Determine category from target
             let category = 'GENERAL';
             if (target.type === 'LEVEL') category = `LEVEL:${target.value}`;
             else if (target.type === 'GROUP') category = `GROUP:${target.value}`;
@@ -139,13 +139,18 @@ const dispatchNotification = (target, title, message, data, attachmentUrl = null
                 category = target.name ? `STUDENT:${target.name}` : 'PERSONAL';
             }
 
+            // Generate Batch ID (simple timestamp-random based for compatibility, or UUID)
+            const crypto = require('crypto');
+            const batchId = crypto.randomUUID();
+
             // Bulk Insert for Web Notifications (All Users)
             if (userIds.length > 0) {
-                const values = userIds.map(uid => [uid, title, message, category, 0, attachmentUrl]); // Added attachmentUrl
-                const insertQuery = 'INSERT INTO user_notifications (user_id, title, message, category, is_read, attachment_url) VALUES ?';
+                // Modified to include batchId
+                const values = userIds.map(uid => [uid, title, message, category, 0, attachmentUrl, batchId]);
+                const insertQuery = 'INSERT INTO user_notifications (user_id, title, message, category, is_read, attachment_url, batch_id) VALUES ?';
                 db.query(insertQuery, [values], (err) => {
                     if (err) console.error('Error persisting notifications:', err);
-                    else console.log(`Persisted ${userIds.length} notifications.`);
+                    else console.log(`Persisted ${userIds.length} notifications with Batch ID: ${batchId}`);
                 });
             }
 

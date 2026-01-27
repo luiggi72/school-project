@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema Escolar</title>
-    <link rel="stylesheet" href="style.css?v=prod79">
+    <link rel="stylesheet" href="style.css?v=prod94">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
     <style>
@@ -39,7 +39,7 @@
 <body>
     <!-- Login View -->
     <!-- Login View -->
-    <div id="login-view" class="login-container">
+    <div id="login-view" class="login-container hidden">
         <div class="login-card">
             <div class="login-header">
                 <div class="login-logo-container">
@@ -847,87 +847,7 @@
                     </div>
                 </div>
 
-                <!-- Notifications Section (New) -->
-                <div id="notifications-section" class="section hidden">
-                    <div class="section-header">
-                        <h3>Enviar Notificación Push</h3>
-                    </div>
-                    <div class="card" style="max-width: 800px; margin: 0 auto; padding: 2rem;">
-                        <form id="notification-form">
-                            <div class="form-group" style="margin-bottom: 1.5rem;">
-                                <label for="notif-title"
-                                    style="display: block; font-weight: 500; margin-bottom: 0.5rem; color: #374151;">Título</label>
-                                <input type="text" id="notif-title" required placeholder="Ej: Suspensión de Clases"
-                                    style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; background-color: #f9fafb;">
-                            </div>
 
-                            <div class="form-group" style="margin-bottom: 1.5rem;">
-                                <label for="notif-message"
-                                    style="display: block; font-weight: 500; margin-bottom: 0.5rem; color: #374151;">Mensaje</label>
-                                <textarea id="notif-message" required rows="4"
-                                    placeholder="Escriba el contenido del aviso..."
-                                    style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; background-color: #f9fafb; resize: vertical;"></textarea>
-                            </div>
-
-                            <div class="form-group" style="margin-bottom: 1.5rem;">
-                                <label
-                                    style="display: block; font-weight: 500; margin-bottom: 0.5rem; color: #374151;">Destinatarios</label>
-                                <div style="display: flex; gap: 1rem; align-items: start; flex-wrap: wrap;">
-                                    <select id="notif-target-type"
-                                        style="padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; min-width: 200px; background-color: white;">
-                                        <option value="ALL">Todos (General)</option>
-                                        <option value="LEVEL">Por Nivel Educativo</option>
-                                        <option value="GROUP">Por Grupo (Salón)</option>
-                                        <option value="STUDENT">Por Alumno (Individual)</option>
-                                    </select>
-
-                                    <!-- Dynamic Secondary Select -->
-                                    <select id="notif-target-value" class="hidden"
-                                        style="padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; min-width: 200px; background-color: white;">
-                                        <!-- Populated via JS -->
-                                        <option value="">Seleccionar...</option>
-                                    </select>
-
-                                    <!-- Student Autocomplete Input (Initially hidden) -->
-                                    <div id="notif-student-search-container" class="hidden"
-                                        style="flex: 1; min-width: 250px;">
-                                        <input type="text" id="notif-student-search" list="notif-student-datalist"
-                                            placeholder="Buscar alumno por nombre..."
-                                            style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; background-color: white;">
-                                        <datalist id="notif-student-datalist">
-                                            <!-- Dynamically populated -->
-                                        </datalist>
-                                    </div>
-                                </div>
-                                <p id="notif-target-hint"
-                                    style="font-size: 0.875rem; color: #6b7280; margin-top: 0.5rem;">
-                                    Se enviará a todos los dispositivos registrados.
-                                </p>
-                            </div>
-
-                            <!-- Attachment Input -->
-                            <div class="form-group" style="margin-bottom: 1.5rem;">
-                                <label for="notif-attachment"
-                                    style="display: block; font-weight: 500; margin-bottom: 0.5rem; color: #374151;">Archivo
-                                    Adjunto (Opcional)</label>
-                                <input type="file" id="notif-attachment"
-                                    style="width: 100%; padding: 0.5rem; border: 1px dashed #d1d5db; border-radius: 0.5rem; background-color: #f9fafb;">
-                                <p style="font-size: 0.8rem; color: #6b7280; margin-top: 0.25rem;">
-                                    Formatos permitidos: PDF, Imágenes. Máx 5MB.
-                                </p>
-                            </div>
-
-                            <div
-                                style="text-align: right; border-top: 1px solid #f3f4f6; padding-top: 1.5rem; margin-top: 1rem;">
-                                <button type="submit" id="send-notif-btn" class="btn-primary"
-                                    style="padding: 0.75rem 2rem; font-size: 1rem; display: inline-flex; align-items: center; gap: 0.5rem;">
-                                    <span class="material-icons-outlined" style="font-size: 1.25rem;">send</span>
-                                    Enviar Notificación
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
 
 
 
@@ -1171,6 +1091,158 @@
                     </div>
                 </div>
 
+                <!-- Notifications Section -->
+                <div id="notifications-section" class="section hidden">
+                    <div class="section-header">
+                        <h2>Notificaciones</h2>
+                    </div>
+
+                    <div style="margin-bottom: 2rem;">
+                        <!-- Tabs -->
+                        <div style="display: flex; gap: 1rem; border-bottom: 1px solid #e2e8f0; margin-bottom: 1.5rem;">
+                            <button id="tab-notif-compose" class="tab-btn active"
+                                style="padding: 0.75rem 1rem; background: none; border: none; border-bottom: 2px solid #e31e25; font-weight: 600; cursor: pointer;">Redactar</button>
+                            <button id="tab-notif-history" class="tab-btn"
+                                style="padding: 0.75rem 1rem; background: none; border: none; color: #64748b; font-weight: 500; cursor: pointer;">Historial
+                                de Envíos</button>
+                        </div>
+
+                        <!-- Compose View -->
+                        <div id="notif-compose-view">
+                            <div class="card" style="max-width: 800px; margin: 0 auto; padding: 2rem;">
+                                <!-- Original Form Content -->
+                                <div class="form-group">
+                                    <label>Título</label>
+                                    <input type="text" id="notif-title" placeholder="Ej: Aviso Urgente">
+                                </div>
+                                <div class="form-group">
+                                    <label>Mensaje</label>
+                                    <textarea id="notif-message" rows="4"
+                                        style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.5rem;"
+                                        placeholder="Escriba el mensaje..."></textarea>
+                                </div>
+
+
+                                <div class="form-section-divider">
+                                    <h4 class="form-section-title">Destinatarios</h4>
+                                </div>
+
+                                <!-- Grid Row for Target Selection -->
+                                <div
+                                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start;">
+                                    <div class="form-group">
+                                        <label>Enviar a:</label>
+                                        <select id="notif-target-type" class="input-control">
+                                            <option value="ALL">Toda la Escuela</option>
+                                            <option value="LEVEL">Por Nivel (Primaria, Secundaria, etc.)</option>
+                                            <option value="GROUP">Por Grupo (1-A, 2-B, etc.)</option>
+                                            <option value="STUDENT">Alumno Específico</option>
+                                        </select>
+                                    </div>
+
+                                    <div id="target-value-container" class="form-group hidden">
+                                        <label id="target-value-label">Valor</label>
+
+                                        <!-- NEW: Level Filter for Groups -->
+                                        <label id="notif-group-level-label" class="hidden"
+                                            style="display: block; margin-bottom: 0.25rem; font-weight: 500;">Nivel
+                                            Académico</label>
+                                        <select id="notif-group-level-filter" class="input-control hidden"
+                                            style="margin-bottom: 0.5rem;">
+                                            <option value="">Seleccionar Nivel...</option>
+                                        </select>
+
+                                        <!-- NEW: Grade Filter for Groups -->
+                                        <label id="notif-group-grade-label" class="hidden"
+                                            style="display: block; margin-bottom: 0.25rem; font-weight: 500;">Grado</label>
+                                        <select id="notif-group-grade-filter" class="input-control hidden"
+                                            style="margin-bottom: 0.5rem;">
+                                            <option value="">Seleccionar Grado...</option>
+                                        </select>
+
+                                        <!-- Final Group Select -->
+                                        <label id="notif-group-final-label" class="hidden"
+                                            style="display: block; margin-bottom: 0.25rem; font-weight: 500;">Grupo</label>
+                                        <select id="notif-target-value" class="input-control hidden">
+                                            <!-- JS populated -->
+                                        </select>
+
+                                        <!-- Student Autocomplete Input (Initially hidden) -->
+                                        <div id="notif-student-search-container" class="hidden">
+                                            <input type="text" id="notif-student-search" autocomplete="off"
+                                                autocorrect="off" autocapitalize="off" spellcheck="false"
+                                                placeholder="Buscar alumno por nombre..."
+                                                style="width: 100%; padding: 0.65rem; border: 1px solid #cbd5e1; border-radius: 0.5rem;">
+                                            <datalist id="notif-student-datalist">
+                                                <!-- Dynamically populated -->
+                                            </datalist>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p id="notif-target-hint"
+                                    style="font-size: 0.85rem; color: #64748b; margin-top: -0.5rem; margin-bottom: 1.5rem;">
+                                    Se enviará a todos los dispositivos registrados activos.
+                                </p>
+
+                                <div class="form-section-divider">
+                                    <h4 class="form-section-title">Adjuntos</h4>
+                                </div>
+
+                                <div class="form-group">
+                                    <div style="border: 2px dashed #cbd5e1; border-radius: 0.75rem; padding: 2rem; text-align: center; background-color: #f8fafc; transition: all 0.2s; cursor: pointer;"
+                                        onmouseover="this.style.borderColor='#94a3b8'; this.style.backgroundColor='#f1f5f9';"
+                                        onmouseout="this.style.borderColor='#cbd5e1'; this.style.backgroundColor='#f8fafc';">
+
+                                        <span class="material-icons-outlined"
+                                            style="font-size: 2.5rem; color: #94a3b8; margin-bottom: 0.5rem; display: block;">cloud_upload</span>
+                                        <label for="notif-attachment"
+                                            style="cursor: pointer; color: #3b82f6; font-weight: 600; font-size: 1rem; margin-bottom: 0.25rem;">
+                                            Seleccionar Archivo
+                                        </label>
+                                        <p style="font-size: 0.8rem; color: #64748b;">PDF, JPG, PNG (Máx 5MB)</p>
+                                        <input type="file" id="notif-attachment" accept=".pdf,.jpg,.jpeg,.png"
+                                            style="opacity: 0; position: absolute; z-index: -1; width: 0.1px;">
+                                        <!-- JS to show filename could be added here later -->
+                                    </div>
+                                    <div id="file-name-display"
+                                        style="margin-top: 0.5rem; font-size: 0.9rem; color: #334155; text-align: center; font-weight: 500;">
+                                    </div>
+                                </div>
+
+                                <div style="margin-top: 2rem; text-align: right;">
+                                    <button id="btn-send-notif" class="btn-primary" style="display: inline-flex;">
+                                        <span class="material-icons-outlined">send</span>
+                                        Enviar Notificación
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- History View -->
+                        <div id="notif-history-view" class="hidden">
+                            <div class="card">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Título</th>
+                                            <th>Destino</th>
+                                            <th style="text-align: center;">Alcance</th>
+                                            <th style="text-align: right;">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="notif-history-body">
+                                        <!-- JS will populate -->
+                                    </tbody>
+                                </table>
+                                <div id="notif-history-empty" class="empty-state hidden">
+                                    No hay notificaciones enviadas recientemente.
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
                 <!-- Academic Structure Section -->
                 <div id="academic-structure-section" class="section hidden">
                     <div class="section-header">
@@ -3521,7 +3593,7 @@
         </div>
     </div>
 
-    <script src="app.js?v=prod92"></script>
+    <script src="app.js?v=prod111"></script>
 
     <!-- Generic Confirmation Modal -->
     <style>

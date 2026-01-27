@@ -303,7 +303,7 @@ async function checkLoginStatus() {
 
         // 1. Fetch dynamic roles
         try {
-            const roles = await apiFetch('/config/roles');
+            const roles = await apiFetch('/config/roles', { silent: true });
             if (roles) {
                 currentRolesConfig = roles;
                 // Init attachments only after roles are confirmed
@@ -445,7 +445,8 @@ async function apiFetch(endpoint, options = {}) {
         // Actually, if we return null above, we don't catch.
         // If we throw, we catch. 
         // Let's alert only if it's NOT a reload
-        if (error.message !== 'Failed to fetch') showAlertModal('Error', error.message, true);
+        // if (error.message !== 'Failed to fetch' && !options.silent) showAlertModal('Error', error.message, true);
+        console.warn('Supressed API Alert:', error.message);
         return null;
     }
 }
@@ -694,6 +695,24 @@ if (loginForm) {
                     loadDashboardData();
                     checkPermission(currentUser.role);
                 }
+                // File Input UI Logic
+                const fileInput = document.getElementById('notif-attachment');
+                const fileNameDisplay = document.getElementById('file-name-display');
+                if (fileInput && fileNameDisplay) {
+                    fileInput.addEventListener('change', () => {
+                        if (fileInput.files.length > 0) {
+                            fileNameDisplay.textContent = 'Archivo seleccionado: ' + fileInput.files[0].name;
+                            fileNameDisplay.style.color = '#10b981'; // Green
+                        } else {
+                            fileNameDisplay.textContent = '';
+                        }
+                    });
+                }
+
+                if (notifForm) {
+                    // This block was empty in the instruction, assuming it's meant to be a new conditional block.
+                    // The `loginForm.reset();` from the instruction was likely a copy-paste error.
+                }
                 if (loginForm) loginForm.reset();
 
                 // Update Profile Greeting
@@ -765,80 +784,428 @@ if (loginForm) {
 
 
 
-// --- Notifications Logic ---
+// --- Notifications Logic (Enhanced) ---
 
+// UI Elements
+const notifComposeView = document.getElementById('notif-compose-view');
+const notifHistoryView = document.getElementById('notif-history-view');
+const tabNotifCompose = document.getElementById('tab-notif-compose');
+const tabNotifHistory = document.getElementById('tab-notif-history');
+const notifHistoryBody = document.getElementById('notif-history-body');
+
+// Tab Switching
+if (tabNotifCompose && tabNotifHistory) {
+    tabNotifCompose.addEventListener('click', () => {
+        switchNotifTab('compose');
+    });
+    tabNotifHistory.addEventListener('click', () => {
+        switchNotifTab('history');
+        loadNotifHistory();
+    });
+}
+
+function switchNotifTab(tab) {
+    if (tab === 'compose') {
+        tabNotifCompose.classList.add('active');
+        tabNotifCompose.style.borderBottom = '2px solid #e31e25';
+        tabNotifCompose.style.color = '#1e293b';
+
+        tabNotifHistory.classList.remove('active');
+        tabNotifHistory.style.borderBottom = 'none';
+        tabNotifHistory.style.color = '#64748b';
+
+        notifComposeView.classList.remove('hidden');
+        notifHistoryView.classList.add('hidden');
+    } else {
+        tabNotifHistory.classList.add('active');
+        tabNotifHistory.style.borderBottom = '2px solid #e31e25';
+        tabNotifHistory.style.color = '#1e293b';
+
+        tabNotifCompose.classList.remove('active');
+        tabNotifCompose.style.borderBottom = 'none';
+        tabNotifCompose.style.color = '#64748b';
+
+        notifHistoryView.classList.remove('hidden');
+        notifComposeView.classList.add('hidden');
+    }
+}
+
+async function loadNotifHistory() {
+    notifHistoryBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 2rem;">Cargando...</td></tr>';
+
+    try {
+        const history = await apiFetch('/notifications/sent'); // Note: Ensure API endpoint matches
+        renderNotifHistory(history || []);
+    } catch (e) {
+        console.error('Error loading history:', e);
+        notifHistoryBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: red;">Error al cargar historial</td></tr>';
+    }
+}
+
+function renderNotifHistory(history) {
+    notifHistoryBody.innerHTML = '';
+    const emptyState = document.getElementById('notif-history-empty');
+
+    if (!history || history.length === 0) {
+        if (emptyState) emptyState.classList.remove('hidden');
+        return;
+    }
+
+    if (emptyState) emptyState.classList.add('hidden');
+
+    history.forEach(item => {
+        const date = new Date(item.created_at).toLocaleString('es-MX', {
+            day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+        });
+
+        // Parse category for display
+        let targetDisplay = 'General';
+        let badgeClass = 'bg-gray-100 text-gray-800'; // Default styling
+
+        if (item.category) {
+            if (item.category.startsWith('ALL')) {
+                targetDisplay = 'Todos';
+                badgeClass = 'bg-gray-100 text-gray-800';
+            } else if (item.category.startsWith('LEVEL:')) {
+                targetDisplay = 'Nivel: ' + item.category.replace('LEVEL:', '');
+                badgeClass = 'bg-blue-100 text-blue-800';
+            } else if (item.category.startsWith('GROUP:')) {
+                targetDisplay = 'Grupo: ' + item.category.replace('GROUP:', '');
+                badgeClass = 'bg-green-100 text-green-800';
+            } else if (item.category.startsWith('STUDENT:')) {
+                targetDisplay = 'Alumno: ' + item.category.replace('STUDENT:', '');
+                badgeClass = 'bg-purple-100 text-purple-800';
+            }
+        }
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="white-space: nowrap; color: #64748b; font-size: 0.85rem;">${date}</td>
+            <td>
+                <div style="font-weight: 600; color: #334155;">${item.title}</div>
+                <div style="font-size: 0.85rem; color: #64748b; overflow: hidden; text-overflow: ellipsis; max-width: 300px; white-space: nowrap;">${item.message}</div>
+            </td>
+            <td>
+                <span style="padding: 2px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 500; background-color: #f1f5f9; color: #475569;">
+                    ${targetDisplay}
+                </span>
+            </td>
+            <td style="text-align: center;">
+                 <div style="font-size: 0.85rem;">
+                    <span style="font-weight: 600; color: #e31e25;">${item.read_count}</span>
+                    <span style="color: #94a3b8;">/ ${item.recipient_count}</span>
+                 </div>
+                 <div style="font-size: 0.7rem; color: #94a3b8;">leídos</div>
+            </td>
+            <td style="text-align: right;">
+                <button onclick="editBatch('${item.batch_id}', '${item.title.replace(/'/g, "\\'")}', '${item.message.replace(/'/g, "\\'")}')" 
+                    title="Editar" style="background:none; border:none; cursor:pointer; color: #3b82f6; margin-right: 0.5rem;">
+                    <span class="material-icons-outlined" style="font-size: 1.2rem;">edit</span>
+                </button>
+                <button onclick="deleteBatch('${item.batch_id}')" 
+                    title="Eliminar (Revocar)" style="background:none; border:none; cursor:pointer; color: #ef4444;">
+                    <span class="material-icons-outlined" style="font-size: 1.2rem;">delete</span>
+                </button>
+            </td>
+        `;
+        notifHistoryBody.appendChild(tr);
+    });
+}
+
+// Global functions for inline onclick handlers
+window.editBatch = async (batchId, currentTitle, currentMessage) => {
+    // For now using prompt, can be upgraded to modal later
+    const newTitle = prompt('Editar Título:', currentTitle);
+    if (newTitle === null) return; // Cancelled
+
+    const newMessage = prompt('Editar Mensaje:', currentMessage);
+    if (newMessage === null) return; // Cancelled
+
+    if (!newTitle || !newMessage) {
+        alert('Título y mensaje son requeridos');
+        return;
+    }
+
+    try {
+        await apiFetch(`/notifications/batch/${batchId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ title: newTitle, message: newMessage })
+        });
+        showConfirmModal({
+            title: 'Éxito',
+            message: 'Notificación actualizada',
+            isAlert: true,
+            isSuccess: true
+        });
+        loadNotifHistory(); // Refresh
+    } catch (e) {
+        console.error(e);
+        showAlertModal('Error', 'No se pudo actualizar: ' + e.message, true);
+    }
+};
+
+window.deleteBatch = (batchId) => {
+    showConfirmModal({
+        title: 'Revocar Notificación',
+        message: '¿Estás seguro? Se eliminará esta notificación de TODOS los destinatarios. No podrán verla más.',
+        confirmText: 'Sí, Eliminar',
+        isDestructive: true,
+        onConfirm: async () => {
+            try {
+                await apiFetch(`/notifications/batch/${batchId}`, {
+                    method: 'DELETE'
+                });
+                loadNotifHistory(); // Refresh
+            } catch (e) {
+                console.error(e);
+                showAlertModal('Error', 'No se pudo eliminar: ' + e.message, true);
+            }
+        }
+    });
+};
+
+
+// Notification Target Logic
 const notifTargetType = document.getElementById('notif-target-type');
 const notifTargetValue = document.getElementById('notif-target-value');
-const notifStudentSearch = document.getElementById('notif-student-search-container');
+const targetValueContainer = document.getElementById('target-value-container');
+const targetValueLabel = document.getElementById('target-value-label');
+const notifStudentSearchContainer = document.getElementById('notif-student-search-container');
+const notifStudentSearch = document.getElementById('notif-student-search');
+const notifStudentDatalist = document.getElementById('notif-student-datalist');
 const notifForm = document.getElementById('notification-form');
+const groupLevelFilter = document.getElementById('notif-group-level-filter');
 
 if (notifTargetType) {
     notifTargetType.addEventListener('change', async () => {
         const type = notifTargetType.value;
+
+        // Reset
         notifTargetValue.innerHTML = '<option value="">Seleccionar...</option>';
-        notifTargetValue.classList.add('hidden');
-        if (notifStudentSearch) notifStudentSearch.classList.add('hidden');
+        notifTargetValue.value = '';
+        if (notifStudentSearch) notifStudentSearch.value = '';
+
+
+        // Reset UI Elements
+        const groupLevelFilter = document.getElementById('notif-group-level-filter');
+        const groupLevelLabel = document.getElementById('notif-group-level-label');
+        const groupGradeFilter = document.getElementById('notif-group-grade-filter');
+        const groupGradeLabel = document.getElementById('notif-group-grade-label');
+        const groupFinalLabel = document.getElementById('notif-group-final-label');
+
+        if (groupLevelFilter) groupLevelFilter.classList.add('hidden');
+        if (groupLevelLabel) groupLevelLabel.classList.add('hidden');
+        if (groupGradeFilter) groupGradeFilter.classList.add('hidden');
+        if (groupGradeLabel) groupGradeLabel.classList.add('hidden');
+        if (groupFinalLabel) groupFinalLabel.classList.add('hidden');
 
         if (type === 'ALL') {
-            // No extra value needed
-        } else if (type === 'LEVEL') {
-            notifTargetValue.classList.remove('hidden');
-            ['MATERNAL', 'PREESCOLAR', 'PRIMARIA', 'SECUNDARIA'].forEach(level => {
-                const opt = document.createElement('option');
-                opt.value = level;
-                opt.textContent = level;
-                notifTargetValue.appendChild(opt);
-            });
-        } else if (type === 'GROUP') {
-            notifTargetValue.classList.remove('hidden');
-            // Fetch groups or hardcode common ones + structure
-            // ideally fetch distinct group_names from students, but for now iterate structure
-            // A simple approach: 
-            const levels = ['1º A', '1º B', '2º A', '2º B', '3º A', '3º B', 'Maternal 1', 'Maternal 2']; // Sample, better to fetch
-            // Let's try to be smarter and use the SUBGRADES/CLASSROOMS consts if possible or just generic text input if allowed?
-            // For now, let's allow free text input if too complex, OR fetch from API if we had a groups endpoint.
-            // Since we don't have a specific Groups API, let's verify if we can get it from students list.
-            if (students.length > 0) {
-                const groups = [...new Set(students.map(s => s.group_name).filter(g => g))].sort();
-                groups.forEach(g => {
-                    const opt = document.createElement('option');
-                    opt.value = g;
-                    opt.textContent = g;
-                    notifTargetValue.appendChild(opt);
-                });
-            } else {
-                alert('Cargue la lista de alumnos primero para ver los grupos disponibles.');
-            }
+            targetValueContainer.classList.add('hidden');
         } else if (type === 'STUDENT') {
-            if (notifStudentSearch) notifStudentSearch.classList.remove('hidden');
+            targetValueContainer.classList.remove('hidden');
+            targetValueLabel.classList.remove('hidden');
+            targetValueLabel.textContent = 'Buscar Alumno';
+            notifTargetValue.classList.add('hidden'); // Hide select
+            notifStudentSearchContainer.classList.remove('hidden'); // Show search input
 
-            // Ensure students are loaded
-            if (typeof students === 'undefined' || students.length === 0) {
-                if (typeof loadStudents === 'function') {
-                    await loadStudents();
-                } else {
-                    console.warn('loadStudents function not found');
+            // Populate datalist if empty
+            if (notifStudentDatalist && notifStudentDatalist.options.length === 0) {
+                // Fetch all students for search
+                try {
+                    const students = await apiFetch('/students');
+                    // Sort alphabetically
+                    students.sort((a, b) => a.name.localeCompare(b.name));
+                    students.forEach(s => {
+                        const opt = document.createElement('option');
+                        // Format: "Name Lastname (Group) [ID: 123]"
+                        const groupInfo = s.group_name ? ` (${s.group_name})` : '';
+                        // FIX: Use correct property names from DB (lastnameP, lastnameM)
+                        opt.value = `${s.name} ${s.lastnameP || ''} ${s.lastnameM || ''}${groupInfo} [ID: ${s.id}]`;
+                        notifStudentDatalist.appendChild(opt);
+                    });
+                } catch (e) {
+                    console.error('Error fetching students for search:', e);
                 }
             }
 
-            const dataList = document.getElementById('notif-student-datalist');
-            if (dataList) {
-                dataList.innerHTML = '';
-                // Sort students alphabetically for better UX
-                const sortedStudents = [...students].sort((a, b) => a.name.localeCompare(b.name));
+        } else {
+            // Level or Group
+            targetValueContainer.classList.remove('hidden');
+            notifStudentSearchContainer.classList.add('hidden');
+            notifTargetValue.classList.remove('hidden');
 
-                sortedStudents.forEach(s => {
-                    const opt = document.createElement('option');
-                    // Format: "Name Lastname (Group) [ID: 123]"
-                    const groupInfo = s.group_name ? ` (${s.group_name})` : '';
-                    opt.value = `${s.name} ${s.lastname_p || ''} ${s.lastname_m || ''}${groupInfo} [ID: ${s.id}]`;
-                    dataList.appendChild(opt);
-                });
+            if (type === 'LEVEL') {
+                targetValueLabel.classList.remove('hidden');
+                targetValueLabel.textContent = 'Nivel Educativo';
+                try {
+                    const levels = await apiFetch('/academic/levels');
+                    levels.forEach(l => {
+                        const opt = document.createElement('option');
+                        opt.value = l.id;
+                        opt.textContent = l.name;
+                        notifTargetValue.appendChild(opt);
+                    });
+                } catch (e) {
+                    console.error('Error fetching levels:', e);
+                }
+
+            } else if (type === 'GROUP') {
+                targetValueLabel.classList.add('hidden'); // Hide generic label
+
+                const groupLevelFilter = document.getElementById('notif-group-level-filter');
+                const groupLevelLabel = document.getElementById('notif-group-level-label');
+                const groupGradeFilter = document.getElementById('notif-group-grade-filter');
+                const groupGradeLabel = document.getElementById('notif-group-grade-label');
+                const groupFinalLabel = document.getElementById('notif-group-final-label');
+
+                if (groupLevelFilter && groupGradeFilter) {
+                    // Show Level UI
+                    groupLevelFilter.classList.remove('hidden');
+                    if (groupLevelLabel) groupLevelLabel.classList.remove('hidden');
+
+                    // Populate Levels
+                    groupLevelFilter.innerHTML = '<option value="">Seleccionar Nivel...</option>';
+                    try {
+                        const levels = await apiFetch('/academic/levels');
+                        levels.forEach(l => {
+                            const opt = document.createElement('option');
+                            opt.value = l.id;
+                            opt.textContent = l.name;
+                            groupLevelFilter.appendChild(opt);
+                        });
+                    } catch (e) {
+                        console.error(e);
+                        groupLevelFilter.innerHTML = '<option value="">Error al cargar niveles</option>';
+                    }
+
+                    // Reset sub-filters
+                    groupGradeFilter.classList.add('hidden');
+                    if (groupGradeLabel) groupGradeLabel.classList.add('hidden');
+                    notifTargetValue.classList.add('hidden');
+                    if (groupFinalLabel) groupFinalLabel.classList.add('hidden');
+
+
+                    // LEVEL CHANGE -> LOAD GRADES
+                    groupLevelFilter.onchange = async () => {
+                        const levelId = groupLevelFilter.value;
+
+                        // Reset downstream
+                        groupGradeFilter.innerHTML = '<option value="">Cargando...</option>';
+                        notifTargetValue.innerHTML = '';
+                        notifTargetValue.classList.add('hidden');
+                        if (groupFinalLabel) groupFinalLabel.classList.add('hidden');
+
+                        if (!levelId) {
+                            groupGradeFilter.classList.add('hidden');
+                            if (groupGradeLabel) groupGradeLabel.classList.add('hidden');
+                            return;
+                        }
+
+                        // Show Grade UI
+                        groupGradeFilter.classList.remove('hidden');
+                        if (groupGradeLabel) groupGradeLabel.classList.remove('hidden');
+
+                        try {
+                            const grades = await apiFetch(`/academic/grades?level_id=${levelId}`);
+
+                            if (!grades || grades.length === 0) {
+                                groupGradeFilter.innerHTML = '<option value="">Sin grados en este nivel</option>';
+                                return;
+                            }
+
+                            groupGradeFilter.innerHTML = '<option value="">Seleccionar Grado...</option>';
+                            grades.forEach(g => {
+                                const opt = document.createElement('option');
+                                opt.value = g.id;
+                                opt.textContent = g.name;
+                                groupGradeFilter.appendChild(opt);
+                            });
+
+                        } catch (e) {
+                            console.error(e);
+                            groupGradeFilter.innerHTML = '<option value="">Error al cargar grados</option>';
+                        }
+                    };
+
+                    // GRADE CHANGE -> LOAD GROUPS
+                    groupGradeFilter.onchange = async () => {
+                        const gradeId = groupGradeFilter.value;
+
+                        notifTargetValue.innerHTML = '<option value="">Cargando...</option>';
+
+                        if (!gradeId) {
+                            notifTargetValue.classList.add('hidden');
+                            if (groupFinalLabel) groupFinalLabel.classList.add('hidden');
+                            return;
+                        }
+
+                        // Show Group UI
+                        notifTargetValue.classList.remove('hidden');
+                        if (groupFinalLabel) groupFinalLabel.classList.remove('hidden');
+
+                        try {
+                            const groups = await apiFetch(`/academic/groups?grade_id=${gradeId}`);
+
+                            if (!groups || groups.length === 0) {
+                                notifTargetValue.innerHTML = '<option value="">Sin grupos en este grado</option>';
+                                return;
+                            }
+
+                            // Deduplicate names
+                            const uniqueNames = [...new Set(groups.map(g => g.name))].sort();
+
+                            notifTargetValue.innerHTML = '<option value="">Seleccionar Grupo</option>';
+                            uniqueNames.forEach(name => {
+                                const opt = document.createElement('option');
+                                opt.value = name;
+                                opt.textContent = name;
+                                notifTargetValue.appendChild(opt);
+                            });
+
+                        } catch (e) {
+                            console.error(e);
+                            notifTargetValue.innerHTML = '<option value="">Error al cargar grupos</option>';
+                        }
+                    };
+
+                }
             }
         }
     });
 }
 
+// Inline Autocomplete for Student Search
+if (notifStudentSearch && notifStudentDatalist) {
+    notifStudentSearch.addEventListener('input', (e) => {
+        // Skip if deleting or empty
+        if (e.inputType === 'deleteContentBackward' || e.inputType === 'deleteContentForward' || !notifStudentSearch.value) return;
+
+        const val = notifStudentSearch.value.toLowerCase();
+
+        const options = notifStudentDatalist.options;
+        for (let i = 0; i < options.length; i++) {
+            const optVal = options[i].value;
+            const lowerOpt = optVal.toLowerCase();
+
+            // Search by Name OR Surname (Contains)
+            if (lowerOpt.includes(val)) {
+
+                // If it's a prefix match, do the nice selection
+                if (lowerOpt.startsWith(val)) {
+                    notifStudentSearch.value = optVal;
+                    notifStudentSearch.setSelectionRange(val.length, optVal.length);
+                } else {
+                    // If it's a surname match (middle of string), simply auto-fill the whole name
+                    // UX Decision: This might feel "jumpy", but it answers "Agregar apellidos a la busqueda"
+                    notifStudentSearch.value = optVal;
+                    // Select the whole thing so they can overwrite if it's wrong
+                    notifStudentSearch.select();
+                }
+                break;
+            }
+        }
+    });
+}
 if (notifForm) {
     notifForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -5480,7 +5847,7 @@ function createAcademicItem(id, name, type, onDelete, onEdit) {
     // Edit Button
     const editBtn = document.createElement('button');
     editBtn.innerHTML = `
-        < svg xmlns = "http://www.w3.org/2000/svg" width = "14" height = "14" viewBox = "0 0 24 24" fill = "none" stroke = "currentColor" stroke - width="2" stroke - linecap="round" stroke - linejoin="round" ><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg >
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
         `;
     editBtn.style.color = '#3b82f6';
     editBtn.style.background = 'none';
@@ -5493,7 +5860,7 @@ function createAcademicItem(id, name, type, onDelete, onEdit) {
     // Delete Button
     const deleteBtn = document.createElement('button');
     deleteBtn.innerHTML = `
-        < svg xmlns = "http://www.w3.org/2000/svg" width = "14" height = "14" viewBox = "0 0 24 24" fill = "none" stroke = "currentColor" stroke - width="2" stroke - linecap="round" stroke - linejoin="round" ><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg >
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
         `;
     deleteBtn.style.color = '#ef4444';
     deleteBtn.style.background = 'none';
@@ -5522,7 +5889,7 @@ function renderLevelsList(levels) {
                     confirmText: 'Eliminar',
                     isDestructive: true,
                     onConfirm: async () => {
-                        await apiFetch(`/ academic / levels / ${id}`, { method: 'DELETE' });
+                        await apiFetch(`/academic/levels/${id}`, { method: 'DELETE' });
                         loadAcademicStructure();
                     }
                 });
@@ -5530,7 +5897,7 @@ function renderLevelsList(levels) {
             async (id, currentName) => {
                 const newName = prompt('Editar nombre del nivel:', currentName);
                 if (newName && newName !== currentName) {
-                    await apiFetch(`/ academic / levels / ${id}`, { method: 'PUT', body: JSON.stringify({ name: newName }) });
+                    await apiFetch(`/academic/levels/${id}`, { method: 'PUT', body: JSON.stringify({ name: newName }) });
                     loadAcademicStructure();
                 }
             }
@@ -5589,7 +5956,7 @@ async function loadGradesForLevel(levelId) {
 
     if (!levelId) return;
 
-    const grades = await apiFetch(`/ academic / grades ? level_id = ${levelId}`) || [];
+    const grades = await apiFetch(`/academic/grades?level_id=${levelId}`) || [];
     grades.forEach(g => {
         const item = createAcademicItem(
             g.id, g.name, 'grade',
@@ -5600,7 +5967,7 @@ async function loadGradesForLevel(levelId) {
                     confirmText: 'Eliminar',
                     isDestructive: true,
                     onConfirm: async () => {
-                        await apiFetch(`/ academic / grades / ${id}`, { method: 'DELETE' });
+                        await apiFetch(`/academic/grades/${id}`, { method: 'DELETE' });
                         loadGradesForLevel(levelId);
                     }
                 });
@@ -5608,7 +5975,7 @@ async function loadGradesForLevel(levelId) {
             async (id, currentName) => {
                 const newName = prompt('Editar nombre del grado:', currentName);
                 if (newName && newName !== currentName) {
-                    await apiFetch(`/ academic / grades / ${id}`, { method: 'PUT', body: JSON.stringify({ name: newName }) });
+                    await apiFetch(`/academic/grades/${id}`, { method: 'PUT', body: JSON.stringify({ name: newName }) });
                     loadGradesForLevel(levelId);
                 }
             }
@@ -5671,12 +6038,11 @@ async function loadGroupsForGrade(gradeId) {
 
     if (!gradeId) return;
 
-    const groups = await apiFetch(`/ academic / groups ? grade_id = ${gradeId}`);
+    const groups = await apiFetch(`/academic/groups?grade_id=${gradeId}`);
     if (!groups) return;
 
     groups.forEach(g => {
         const item = createAcademicItem(
-            g.id, g.name, 'group',
             g.id, g.name, 'group',
             async (id) => {
                 showConfirmModal({
@@ -5685,7 +6051,7 @@ async function loadGroupsForGrade(gradeId) {
                     confirmText: 'Eliminar',
                     isDestructive: true,
                     onConfirm: async () => {
-                        await apiFetch(`/ academic / groups / ${id}`, { method: 'DELETE' });
+                        await apiFetch(`/academic/groups/${id}`, { method: 'DELETE' });
                         loadGroupsForGrade(gradeId);
                     }
                 });
@@ -5693,7 +6059,7 @@ async function loadGroupsForGrade(gradeId) {
             async (id, currentName) => {
                 const newName = prompt('Editar nombre del grupo:', currentName);
                 if (newName && newName !== currentName) {
-                    await apiFetch(`/ academic / groups / ${id}`, { method: 'PUT', body: JSON.stringify({ name: newName }) });
+                    await apiFetch(`/academic/groups/${id}`, { method: 'PUT', body: JSON.stringify({ name: newName }) });
                     loadGroupsForGrade(gradeId);
                 }
             }

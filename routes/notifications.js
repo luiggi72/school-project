@@ -126,4 +126,67 @@ router.put('/:id/read', (req, res) => {
     });
 });
 
+// --- Batch Management Routes (New) ---
+
+// GET /sent - List sent notification batches (grouped)
+router.get('/sent', (req, res) => {
+    // Group by batch_id, but we need to handle legacy notifications (batch_id IS NULL)
+    // For legacy, we might not show them or show as 'Legacy'.
+    // Here we focus on batch_id IS NOT NULL for the managed history.
+    const query = `
+        SELECT 
+            batch_id, 
+            MAX(title) as title, 
+            MAX(message) as message, 
+            MAX(category) as category, 
+            MAX(created_at) as created_at, 
+            COUNT(*) as recipient_count, 
+            SUM(CASE WHEN is_read = 1 THEN 1 ELSE 0 END) as read_count 
+        FROM user_notifications 
+        WHERE batch_id IS NOT NULL 
+        GROUP BY batch_id 
+        ORDER BY created_at DESC
+        LIMIT 50
+    `;
+
+    db.query(query, [], (err, results) => {
+        if (err) {
+            console.error('Error fetching sent batches:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        res.json(results);
+    });
+});
+
+// PUT /batch/:batchId - Edit a sent batch (title/message)
+router.put('/batch/:batchId', (req, res) => {
+    const { batchId } = req.params;
+    const { title, message } = req.body;
+
+    if (!title || !message) return res.status(400).json({ error: 'Missing title or message' });
+
+    const query = 'UPDATE user_notifications SET title = ?, message = ? WHERE batch_id = ?';
+    db.query(query, [title, message, batchId], (err, result) => {
+        if (err) {
+            console.error('Error updating batch:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        res.json({ success: true, affectedRows: result.affectedRows });
+    });
+});
+
+// DELETE /batch/:batchId - Delete a sent batch (revoke)
+router.delete('/batch/:batchId', (req, res) => {
+    const { batchId } = req.params;
+
+    const query = 'DELETE FROM user_notifications WHERE batch_id = ?';
+    db.query(query, [batchId], (err, result) => {
+        if (err) {
+            console.error('Error deleting batch:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        res.json({ success: true, deletedRows: result.affectedRows });
+    });
+});
+
 module.exports = router;

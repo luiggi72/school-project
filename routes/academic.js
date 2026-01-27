@@ -85,16 +85,32 @@ router.delete('/grades/:id', (req, res) => {
 
 // --- Groups ---
 
-// Get groups for a grade
+// Get groups for a grade OR level
 router.get('/groups', (req, res) => {
-    const { grade_id } = req.query;
-    let query = 'SELECT * FROM academic_groups';
+    console.log('DEBUG: GET /groups hit', req.query);
+    const { grade_id, level_id } = req.query;
+    let query = '';
     let params = [];
-    if (grade_id) {
-        query += ' WHERE grade_id = ?';
-        params.push(grade_id);
+
+    if (level_id) {
+        // Join with grades to filter by level
+        query = `
+            SELECT g.* 
+            FROM academic_groups g
+            JOIN academic_grades gr ON g.grade_id = gr.id
+            WHERE gr.level_id = ?
+            ORDER BY g.id
+        `;
+        params.push(level_id);
+    } else {
+        // Standard query (by grade or all)
+        query = 'SELECT * FROM academic_groups';
+        if (grade_id) {
+            query += ' WHERE grade_id = ?';
+            params.push(grade_id);
+        }
+        query += ' ORDER BY id';
     }
-    query += ' ORDER BY id';
 
     db.query(query, params, (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
