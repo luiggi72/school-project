@@ -30,7 +30,11 @@
             "inquiries.list",
             "inquiries.agenda",
             "notifications.view_menu",
-            "notifications.send"
+            "notifications.send",
+            "notifications.target_all",
+            "notifications.target_level",
+            "notifications.target_group",
+            "notifications.target_student"
         ]
     },
     "director": {

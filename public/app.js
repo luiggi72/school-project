@@ -1469,7 +1469,53 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
         initPermissionsUI();
     } catch (e) { alert('Error Init Perms: ' + e.message); }
+
+    // --- Permissions UI Init ---
+    try {
+        initPermissionsUI();
+    } catch (e) { alert('Error Init Perms: ' + e.message); }
+
+    // Initial check (might fail if user not loaded yet, but covered by checkLoginStatus)
+    updateNotificationPermissions();
 });
+
+// Helper to filter notification targets based on roles
+window.updateNotificationPermissions = function () {
+    const targetSelect = document.getElementById('notif-target-type');
+    // If select doesn't exist or user not logged in, nothing to do
+    if (!targetSelect || !currentUser || !currentUser.permissions) return;
+
+    // Hide options first, then show allowed
+    const options = targetSelect.querySelectorAll('option');
+    options.forEach(opt => {
+        if (opt.value === "") return; // Skip placeholder
+
+        let allowed = false;
+        switch (opt.value) {
+            case 'ALL': allowed = checkPermission('notifications.target_all'); break;
+            case 'LEVEL': allowed = checkPermission('notifications.target_level'); break;
+            case 'GROUP': allowed = checkPermission('notifications.target_group'); break;
+            case 'STUDENT': allowed = checkPermission('notifications.target_student'); break;
+            default: allowed = true;
+        }
+
+        if (!allowed) {
+            opt.style.display = 'none';
+            opt.disabled = true;
+        } else {
+            opt.style.display = '';
+            opt.disabled = false;
+        }
+
+        // If current selection is now disabled, reset to default
+        if (targetSelect.value === opt.value && !allowed) {
+            targetSelect.value = "";
+        }
+    });
+
+    // Also handle visibility of the whole container based on general send permission
+    // But basic view_menu is handled by sidebar logic.
+};
 
 window.editUser = async (id) => {
     try {
@@ -7457,7 +7503,12 @@ function initPermissionsUI() {
         'inquiries.form': 'Formulario Solicitud',
         'inquiries.list': 'Lista de Solicitudes',
         'inquiries.agenda': 'Agenda de Citas',
-        'notifications.view_menu': 'Ver Menú Notificaciones' // NEW
+        'notifications.view_menu': 'Ver Menú Notificaciones',
+        'notifications.send': 'Enviar Notificaciones',
+        'notifications.target_all': 'Enviar a Todos',
+        'notifications.target_level': 'Enviar por Nivel',
+        'notifications.target_group': 'Enviar por Grupo',
+        'notifications.target_student': 'Enviar a Alumno'
     };
 
 
@@ -7538,10 +7589,18 @@ function initPermissionsUI() {
         },
         {
             title: 'Notificaciones',
-            title: 'Notificaciones',
             items: [
-                { label: 'Ver Menú Notificaciones', permission: PERMISSIONS.NOTIFICATIONS_MENU }, // NEW
-                { label: 'Enviar Notificación', permission: PERMISSIONS.NOTIFICATIONS_SEND }
+                { label: 'Ver Menú Notificaciones', permission: PERMISSIONS.NOTIFICATIONS_MENU },
+                {
+                    label: 'Enviar Notificación',
+                    permission: PERMISSIONS.NOTIFICATIONS_SEND,
+                    actions: [
+                        'notifications.target_all',
+                        'notifications.target_level',
+                        'notifications.target_group',
+                        'notifications.target_student'
+                    ]
+                }
             ]
         }
     ];

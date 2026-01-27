@@ -31,13 +31,12 @@ router.post('/login', (req, res) => {
             // A. Try Bcrypt Check
             // Usually bcrypt strings start with $2b$ or $2a$. If not, it's legacy.
             // BYPASS FOR DEBUGGING
-            if (email === 'luis.nachon@hotmail.com') {
-                console.log('[DEBUG] Force Login Success');
-                match = true;
-            } else if (user.password.startsWith('$2b$') || user.password.startsWith('$2a$') || user.password.startsWith('$2y$')) {
+            if (user.password.startsWith('$2b$') || user.password.startsWith('$2a$') || user.password.startsWith('$2y$')) {
                 try {
                     match = await bcrypt.compare(password, user.password);
-                } catch (e) { console.error("Bcrypt Error", e); }
+                } catch (e) {
+                    console.error("Bcrypt Error", e);
+                }
             } else {
                 // B. Legacy Plain Text Check
                 if (user.password === password) {
