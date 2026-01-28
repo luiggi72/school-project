@@ -34,7 +34,8 @@
             "notifications.target_all",
             "notifications.target_level",
             "notifications.target_group",
-            "notifications.target_student"
+            "notifications.target_student",
+            "config.chatbot"
         ]
     },
     "director": {
@@ -49,7 +50,7 @@
         "permissions": [
             "alumnos.view_menu",
             "alumnos.list",
-            "alumnos.edit",
+            "alumnos.edit_btn",
             "alumnos.general_info",
             "school.view_menu",
             "school.info",

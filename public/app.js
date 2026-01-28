@@ -150,11 +150,11 @@ let allConcepts = []; // State for concepts management
 const PERMISSIONS = {
     VIEW_DASHBOARD: 'view_dashboard',
     VIEW_STUDENTS: 'view_students',
-    MANAGE_STUDENTS: 'manage_students', // Create/Edit
+    MANAGE_STUDENTS: 'alumnos.edit_btn', // Create/Edit (mapped to edit_btn)
     STUDENTS_EDIT: 'students_edit',
     STUDENTS_DELETE: 'students_delete',
     VIEW_USERS: 'view_users',
-    MANAGE_USERS: 'manage_users', // Create/Edit
+    MANAGE_USERS: 'config.roles', // Create/Edit (mapped to config.roles)
     USERS_EDIT: 'users_edit',
     USERS_DELETE: 'users_delete',
     VIEW_FINANCE: 'view_finance',
@@ -198,6 +198,114 @@ const PERMISSIONS = {
 
 let currentRolesConfig = {}; // Store fetched config
 let globalAgendaConfig = { days: [], slots: [] }; // Agenda Config
+
+// Define the menu structure mirroring the sidebar
+const MENU_STRUCTURE = [
+    {
+        title: 'Alumnos',
+        groupKey: 'alumnos',
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`,
+        items: [
+            { label: 'Ver Menú Alumnos', permission: PERMISSIONS.ALUMNOS_MENU, hidden: true },
+            {
+                label: 'Lista General',
+                permission: PERMISSIONS.ALUMNOS_LIST,
+                targetId: 'students-section',
+                actions: ['alumnos.edit_btn', 'alumnos.delete_btn']
+            },
+            { label: 'Información General', permission: PERMISSIONS.ALUMNOS_INFO, targetId: 'general-info-section' }
+        ]
+    },
+    {
+        title: 'Caja',
+        groupKey: 'caja',
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2" /><circle cx="12" cy="12" r="2" /><path d="M6 12h.01M18 12h.01" /></svg>`,
+        items: [
+            { label: 'Ver Menú Caja', permission: PERMISSIONS.CAJA_MENU, hidden: true },
+            { label: 'Pagos y Cobros', permission: PERMISSIONS.CAJA_PAGOS, targetId: 'caja-section' },
+            { label: 'Conceptos', permission: PERMISSIONS.CAJA_CONCEPTOS, targetId: 'concepts-section' }
+        ]
+    },
+    {
+        title: 'Configuración',
+        groupKey: 'config',
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>`,
+        items: [
+            { label: 'Ver Menú Configuración', permission: PERMISSIONS.CONFIG_MENU, hidden: true },
+            { label: 'Roles y Perfiles', permission: PERMISSIONS.CONFIG_ROLES, targetId: 'roles-users-section', actions: ['users.edit', 'users.delete'] },
+            { label: 'Formato Correos', permission: PERMISSIONS.CONFIG_EMAIL, targetId: 'email-templates-section' },
+            { label: 'Gestor de Adjuntos', permission: PERMISSIONS.CONFIG_EMAIL, targetId: 'smart-attachments-section' }, // Assuming same perm for now
+            { label: 'Asistente Virtual', permission: PERMISSIONS.CONFIG_CHATBOT, targetId: 'chatbot-section' },
+            { label: 'Configurar Permisos', permission: PERMISSIONS.CONFIG_PERMISSIONS, targetId: 'permissions-section' }
+        ]
+    },
+    {
+        title: 'Información Escolar',
+        groupKey: 'school',
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>`,
+        items: [
+            { label: 'Ver Menú Escuela', permission: PERMISSIONS.SCHOOL_MENU, hidden: true },
+            { label: 'Datos Institución', permission: PERMISSIONS.SCHOOL_INFO, targetId: 'school-info-section' },
+            {
+                label: 'Estructura',
+                isSubgroup: true,
+                items: [
+                    { label: 'Académica', permission: PERMISSIONS.SCHOOL_ACADEMIC, targetId: 'academic-structure-section' },
+                    { label: 'Administrativa', permission: PERMISSIONS.SCHOOL_ADMIN, targetId: 'administrative-structure-section' }
+                ]
+            }
+        ]
+    },
+    {
+        title: 'Recursos Humanos',
+        groupKey: 'hr',
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>`,
+        items: [
+            { label: 'Ver Menú RRHH', permission: PERMISSIONS.HR_MENU, hidden: true },
+            { label: 'Personal', permission: PERMISSIONS.HR_PERSONAL, targetId: 'hr-personal-section' }
+        ]
+    },
+    {
+        title: 'Reportes',
+        groupKey: 'reports',
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>`,
+        items: [
+            { label: 'Ver Menú Reportes', permission: PERMISSIONS.REPORTS_MENU, hidden: true },
+            { label: 'Reporte de Ingresos', permission: PERMISSIONS.REPORTS_INCOME, targetId: 'reports-section' }
+        ]
+    },
+    {
+        title: 'Informes',
+        groupKey: 'inquiries',
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>`,
+        items: [
+            { label: 'Ver Menú Solicitudes', permission: PERMISSIONS.INQUIRIES_MENU, hidden: true },
+            { label: 'Solicitud de Informes', permission: PERMISSIONS.INQUIRIES_FORM, targetId: 'informes-section' },
+            { label: 'Lista de Informes', permission: PERMISSIONS.INQUIRIES_LIST, targetId: 'inquiries-list-section' },
+            { label: 'Agenda', permission: PERMISSIONS.VIEW_AGENDA, targetId: 'agenda-section' }
+        ]
+    },
+    {
+        title: 'Notificaciones',
+        groupKey: 'notifications',
+        icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>`,
+        targetId: 'notifications-section', // Top level link
+        items: [
+            { label: 'Ver Menú Notificaciones', permission: PERMISSIONS.NOTIFICATIONS_MENU, hidden: true },
+            {
+                label: 'Enviar Notificación',
+                permission: PERMISSIONS.NOTIFICATIONS_SEND,
+                hidden: true, // It's a top level link effectively, so hidden items are for permissions matrix mostly
+                actions: [
+                    'notifications.target_all',
+                    'notifications.target_level',
+                    'notifications.target_group',
+                    'notifications.target_student'
+                ]
+            }
+        ]
+    }
+];
 
 // Auto-Logout State
 const INACTIVITY_LIMIT = 5 * 60 * 1000; // 5 minutes in milliseconds
@@ -326,6 +434,8 @@ async function checkLoginStatus() {
                     currentUser = freshUser;
                     localStorage.setItem('user', JSON.stringify(freshUser));
                     console.log('User profile refreshed:', currentUser.profile);
+                    // Update UI with fresh permissions
+                    updateUIForLogin();
                 }
             }
         } catch (e) {
@@ -722,8 +832,16 @@ if (loginForm) {
                 const userInitialEl = document.getElementById('user-initial');
 
                 if (displayNameEl) displayNameEl.textContent = profileName;
-                if (displayRoleEl) displayRoleEl.textContent = currentUser.role;
-                if (userInitialEl) userInitialEl.textContent = profileName.charAt(0).toUpperCase();
+                if (displayRoleEl) displayRoleEl.textContent = `Rol: ${currentUser.role}`;
+                // Dynamic Menu Render
+                renderSidebar(currentUser.permissions);
+
+                // Force Dashboard Visibility
+                if (typeof dashboardView !== 'undefined' && dashboardView) dashboardView.classList.remove('hidden');
+                if (typeof loginView !== 'undefined' && loginView) loginView.classList.add('hidden');
+
+                // Check permissions for buttons
+                updateButtonPermissions();
 
                 if (currentUser) {
                     // Init UI for Logged In User
@@ -3302,63 +3420,8 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('App Initializing...');
 
 
-    // 1. Sidebar Navigation (Group Toggling)
-    const navGroupHeaders = document.querySelectorAll('.nav-group-header');
-    navGroupHeaders.forEach(header => {
-        header.addEventListener('click', (e) => {
-            const targetId = header.getAttribute('data-target') || header.getAttribute('data-section');
-            const content = header.parentElement.querySelector('.nav-group-content');
-            const chevron = header.querySelector('.chevron');
-
-            // 1. Direct Navigation (if header has a target)
-            if (targetId) {
-                // Prevent accordion toggle if it's meant to be a link
-                // But wait, user might want both? Usually top-level link doesn't have content.
-                // Our Notifications group DOES NOT have content, so content will be null.
-
-                // Perform Navigation (Same logic as navItems)
-                document.querySelectorAll('.nav-item, .submenu-item, .nav-group-header').forEach(nav => nav.classList.remove('active'));
-                // Add active class to this header properly
-                // Note: headers usually don't have active style, might need CSS tweet, but functionally:
-                header.classList.add('active'); // Ensure CSS supports this or add a specific class
-
-                updateBreadcrumbTitle(header);
-
-                document.querySelectorAll('.section').forEach(section => section.classList.add('hidden'));
-                const targetSection = document.getElementById(targetId);
-                if (targetSection) {
-                    targetSection.classList.remove('hidden');
-
-                    // Special Case: Notifications Default Title
-                    if (targetId === 'notifications-section') {
-                        const pageTitle = document.getElementById('page-title');
-                        // Default is 'Redactar' as per HTML structure
-                        if (pageTitle) pageTitle.textContent = 'Notificaciones - Redactar';
-
-                        // Ensure tab state matches (reset to compose if needed, though HTML default is compose)
-                        if (typeof switchNotifTab === 'function') {
-                            switchNotifTab('compose');
-                        }
-                    }
-
-                    // Also close mobile menu if applicable
-                    const mobileMenu = document.getElementById('mobile-menu');
-                    if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
-                        mobileMenu.classList.add('hidden');
-                    }
-                    return; // Stop here, don't toggle anything
-                }
-            }
-
-            // 2. Accordion Toggle (only if not a direct link or if we want mixed behavior)
-            if (content) {
-                content.classList.toggle('open');
-            }
-            if (chevron) {
-                chevron.classList.toggle('rotate');
-            }
-        });
-    });
+    // 1. Sidebar Navigation (Group Toggling) -> Now handled dynamically in renderSidebar()
+    // Old explicit listeners removed to avoid conflicts.
 
     // 2. Navigation Items (Page Switching)
     const navItems = document.querySelectorAll('.nav-item, .submenu-item');
@@ -4092,6 +4155,22 @@ async function loadTimeSlots(date) {
         console.error(e);
         loading.classList.add('hidden');
         container.innerHTML = `<div style="color:red;">Error al cargar horarios.</div>`;
+    }
+}
+
+// Main Agenda Loader
+async function loadAgenda() {
+    console.log('Loading Agenda Module...');
+
+    // Ensure config is fresh
+    if (typeof loadAgendaConfig === 'function') {
+        await loadAgendaConfig();
+    }
+
+    // Initialize/Render Calendar
+    if (typeof initCalendar === 'function') {
+        // user helper to avoid duplicate inits if needed, but initCalendar handles new instance
+        setTimeout(initCalendar, 100); // Slight delay to ensure DOM visibility
     }
 }
 
@@ -7538,95 +7617,7 @@ function initPermissionsUI() {
     // --- Permissions Matrix Logic (Updated to Match Menu) ---
 
     // Define the menu structure mirroring the sidebar
-    const MENU_STRUCTURE = [
-        {
-            title: 'Alumnos',
-            items: [
-                { label: 'Ver Menú Alumnos', permission: PERMISSIONS.ALUMNOS_MENU }, // NEW
-                {
-                    label: 'Lista General',
-                    permission: PERMISSIONS.ALUMNOS_LIST,
-                    actions: ['alumnos.edit_btn', 'alumnos.delete_btn'] // NEW: Button permissions
-                },
-                { label: 'Información General', permission: PERMISSIONS.ALUMNOS_INFO }
-            ]
-        },
-        {
-            title: 'Caja',
-            items: [
-                { label: 'Ver Menú Caja', permission: PERMISSIONS.CAJA_MENU }, // NEW
-                { label: 'Pagos y Cobros', permission: PERMISSIONS.CAJA_PAGOS },
-                { label: 'Conceptos', permission: PERMISSIONS.CAJA_CONCEPTOS }
-            ]
-        },
-        {
-            title: 'Configuración',
-            items: [
-                { label: 'Ver Menú Configuración', permission: PERMISSIONS.CONFIG_MENU }, // NEW
-                {
-                    label: 'Roles y Perfiles',
-                    permission: PERMISSIONS.CONFIG_ROLES,
-                    actions: ['users.edit', 'users.delete'] // NEW
-                },
-                { label: 'Formato Correos', permission: PERMISSIONS.CONFIG_EMAIL },
-                { label: 'Configurar Permisos', permission: PERMISSIONS.CONFIG_PERMISSIONS }
-            ]
-        },
-        {
-            title: 'Información Escolar',
-            items: [
-                { label: 'Ver Menú Escuela', permission: PERMISSIONS.SCHOOL_MENU }, // NEW
-                { label: 'Datos Institución', permission: PERMISSIONS.SCHOOL_INFO },
-                {
-                    label: 'Estructura',
-                    isSubgroup: true,
-                    items: [
-                        { label: 'Académica', permission: PERMISSIONS.SCHOOL_ACADEMIC },
-                        { label: 'Administrativa', permission: PERMISSIONS.SCHOOL_ADMIN }
-                    ]
-                }
-            ]
-        },
-        {
-            title: 'Recursos Humanos',
-            items: [
-                { label: 'Ver Menú RRHH', permission: PERMISSIONS.HR_MENU }, // NEW
-                { label: 'Personal', permission: PERMISSIONS.HR_PERSONAL }
-            ]
-        },
-        {
-            title: 'Reportes',
-            items: [
-                { label: 'Ver Menú Reportes', permission: PERMISSIONS.REPORTS_MENU }, // NEW
-                { label: 'Reporte de Ingresos', permission: PERMISSIONS.REPORTS_INCOME }
-            ]
-        },
-        {
-            title: 'Solicitudes',
-            items: [
-                { label: 'Ver Menú Solicitudes', permission: PERMISSIONS.INQUIRIES_MENU }, // NEW
-                { label: 'Solicitud de Informes', permission: PERMISSIONS.INQUIRIES_FORM },
-                { label: 'Lista de Informes', permission: PERMISSIONS.INQUIRIES_LIST },
-                { label: 'Agenda', permission: PERMISSIONS.VIEW_AGENDA }
-            ]
-        },
-        {
-            title: 'Notificaciones',
-            items: [
-                { label: 'Ver Menú Notificaciones', permission: PERMISSIONS.NOTIFICATIONS_MENU },
-                {
-                    label: 'Enviar Notificación',
-                    permission: PERMISSIONS.NOTIFICATIONS_SEND,
-                    actions: [
-                        'notifications.target_all',
-                        'notifications.target_level',
-                        'notifications.target_group',
-                        'notifications.target_student'
-                    ]
-                }
-            ]
-        }
-    ];
+
 
     async function renderPermissionMatrix(roleKey) {
         console.log('DEBUG: renderPermissionMatrix called for role:', roleKey);
@@ -10592,12 +10583,224 @@ function updateBreadcrumbTitle(item) {
         }
 
         console.log('[Breadcrumb] 5. Final Title:', fullTitle);
-        pageTitleEl.textContent = fullTitle;
-
-    } catch (err) {
-        console.error('Error updating title:', err);
-        pageTitleEl.textContent = currentItemText;
+        setTimeout(() => {
+            pageTitleEl.textContent = fullTitle;
+        }, 0);
+    } catch (e) {
+        console.error('[Breadcrumb] Error:', e);
     }
+}
+
+// Update Static UI Buttons based on permissions
+function updateButtonPermissions() {
+    if (!currentUser || !currentUser.permissions) return;
+    const perms = currentUser.permissions;
+
+    // Add Student Button
+    if (addStudentBtn) {
+        if (perms.includes(PERMISSIONS.MANAGE_STUDENTS)) {
+            addStudentBtn.classList.remove('hidden');
+        } else {
+            addStudentBtn.classList.add('hidden');
+        }
+    }
+
+    // Add User Button
+    if (addUserBtn) {
+        if (perms.includes(PERMISSIONS.MANAGE_USERS)) {
+            addUserBtn.classList.remove('hidden');
+        } else {
+            addUserBtn.classList.add('hidden');
+        }
+    }
+}
+
+// Dynamic Sidebar Renderer
+function renderSidebar(permissions) {
+    const sidebarNav = document.querySelector('.sidebar-nav');
+    if (!sidebarNav) return;
+
+    // Clear existing content (except maybe profile at bottom, but strict replacement is safer)
+    sidebarNav.innerHTML = '';
+
+
+    MENU_STRUCTURE.forEach(group => {
+        // Check if user has permission for the group (or at least one item)
+        // Simple check: if there's a specific 'view menu' permission for the group items[0] usually
+        // Better: Check if any of the items are allowed.
+        const hasGroupPermission = group.items.some(item => {
+            // If item.permission is defined, check it. If not, assume allowed if not hidden.
+            // Also respect 'hidden' flag for matrix-only items
+            if (item.hidden) return false;
+            return !item.permission || (permissions && permissions.includes(item.permission));
+        });
+
+        // Special case for Notifications which is a top-level link
+        const isDirectLink = !!group.targetId;
+        if (isDirectLink) {
+            const canView = group.items.some(i => i.permission && permissions && permissions.includes(i.permission));
+            if (!canView) return;
+        } else if (!hasGroupPermission) {
+            return;
+        }
+
+        const navGroup = document.createElement('div');
+        navGroup.className = 'nav-group';
+        if (group.groupKey) navGroup.setAttribute('data-group', group.groupKey);
+
+        const header = document.createElement('div');
+        header.className = 'nav-group-header';
+        if (isDirectLink) header.setAttribute('data-target', group.targetId);
+
+        // Icon + Title
+        const titleContainer = document.createElement('div');
+        titleContainer.style.display = 'flex';
+        titleContainer.style.alignItems = 'center';
+        titleContainer.style.gap = '0.75rem';
+        titleContainer.innerHTML = `${group.icon}<span>${group.title}</span>`;
+        header.appendChild(titleContainer);
+
+        // Chevron (only if not distinct link)
+        if (!isDirectLink) {
+            header.innerHTML += `<svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9" /></svg>`;
+        } else {
+            header.style.cursor = 'pointer';
+        }
+
+        // Event Listener for Header
+        header.addEventListener('click', () => {
+            if (isDirectLink) {
+                // Direct Navigation Logic
+                document.querySelectorAll('.nav-item, .submenu-item, .nav-group-header').forEach(n => n.classList.remove('active'));
+                header.classList.add('active');
+                updateBreadcrumbTitle(header);
+
+                document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
+                const target = document.getElementById(group.targetId);
+                if (target) {
+                    target.classList.remove('hidden');
+                    // Special Case Notifications
+                    if (group.groupKey === 'notifications') {
+                        const pt = document.getElementById('page-title');
+                        if (pt) pt.textContent = 'Notificaciones - Redactar';
+                        if (typeof switchNotifTab === 'function') switchNotifTab('compose');
+                    }
+                }
+            } else {
+                // Accordion Toggle
+                const content = navGroup.querySelector('.nav-group-content');
+                if (content) content.classList.toggle('open');
+                const chevron = header.querySelector('.chevron');
+                if (chevron) chevron.classList.toggle('rotate');
+            }
+        });
+
+        navGroup.appendChild(header);
+
+        // Items Container
+        if (!isDirectLink) {
+            const content = document.createElement('div');
+            content.className = 'nav-group-content';
+
+            group.items.forEach(item => {
+                if (item.hidden) return; // Skip internal/hidden items
+                if (item.permission && (!permissions || !permissions.includes(item.permission))) return;
+
+                if (item.isSubgroup) {
+                    // Nested Submenu
+                    const nested = document.createElement('div');
+                    nested.className = 'nested-submenu';
+
+                    const nestedHeader = document.createElement('div');
+                    nestedHeader.className = 'nested-submenu-header submenu-item';
+                    nestedHeader.style.justifyContent = 'space-between';
+                    nestedHeader.innerHTML = `<span>${item.label}</span><svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9" /></svg>`;
+
+                    const nestedContent = document.createElement('div');
+                    nestedContent.className = 'nested-submenu-content hidden';
+                    nestedContent.style.paddingLeft = '1rem';
+
+                    // Toggle Nested
+                    nestedHeader.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Don't bubble to group
+                        nestedContent.classList.toggle('hidden');
+                        nestedHeader.querySelector('.chevron').classList.toggle('rotate');
+                    });
+
+                    item.items.forEach(subItem => {
+                        if (subItem.permission && (!permissions || !permissions.includes(subItem.permission))) return;
+                        const link = createNavLink(subItem);
+                        nestedContent.appendChild(link);
+                    });
+
+                    nested.appendChild(nestedHeader);
+                    nested.appendChild(nestedContent);
+                    content.appendChild(nested);
+
+                } else {
+                    // Standard Item
+                    const link = createNavLink(item);
+                    content.appendChild(link);
+                }
+            });
+            navGroup.appendChild(content);
+        }
+
+        sidebarNav.appendChild(navGroup);
+    });
+}
+
+function createNavLink(item) {
+    const a = document.createElement('a');
+    a.className = 'submenu-item';
+    a.textContent = item.label;
+    if (item.targetId) a.setAttribute('data-target', item.targetId);
+
+    a.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = item.targetId;
+        if (!targetId) return;
+
+        // Navigation Logic
+        document.querySelectorAll('.nav-item, .submenu-item, .nav-group-header').forEach(n => n.classList.remove('active'));
+        a.classList.add('active');
+        updateBreadcrumbTitle(a);
+
+        document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
+        const targetSection = document.getElementById(targetId);
+        if (targetSection) targetSection.classList.remove('hidden');
+
+        // Specific Section Logic (Copied from original event listener)
+        if (targetId === 'inquiries-list-section') {
+            if (typeof loadInquiries === 'function') loadInquiries();
+            if (typeof startInquiryPolling === 'function') startInquiryPolling();
+        } else {
+            if (typeof stopInquiryPolling === 'function') stopInquiryPolling();
+        }
+        if (targetId === 'students-section' && typeof loadStudents === 'function') loadStudents();
+        if (targetId === 'permissions-section' && typeof loadPermissionsMatrix === 'function') loadPermissionsMatrix();
+        if (targetId === 'roles-users-section' && typeof loadUsers === 'function') loadUsers();
+        if (targetId === 'concepts-section' && typeof loadConcepts === 'function') loadConcepts();
+        if (targetId === 'email-templates-section' && typeof loadEmailTemplates === 'function') loadEmailTemplates();
+        if (targetId === 'smart-attachments-section' && typeof initSmartAttachments === 'function') initSmartAttachments();
+        if (targetId === 'school-info-section' && typeof loadSchoolInfo === 'function') loadSchoolInfo();
+        if (targetId === 'caja-section' && typeof loadPayments === 'function') loadPayments(); // Assuming loadPayments
+        if (targetId === 'chatbot-section' && typeof initChatbotConfig === 'function') initChatbotConfig();
+        if (targetId === 'academic-structure-section' && typeof loadAcademicStructure === 'function') loadAcademicStructure();
+        if (targetId === 'administrative-structure-section' && typeof loadAdministrativeStructure === 'function') loadAdministrativeStructure();
+        if (targetId === 'agenda-section' && typeof loadAgenda === 'function') loadAgenda();
+        if (targetId === 'hr-personal-section' && typeof loadPersonnel === 'function') loadPersonnel();
+
+        if (targetId === 'reports-section') {
+            const start = document.getElementById('report-date-start');
+            if (start && !start.value) {
+                const now = new Date();
+                start.value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+            }
+        }
+    });
+
+    return a;
 }
 
 // Initial Title Update on Load

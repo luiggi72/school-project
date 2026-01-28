@@ -7,6 +7,7 @@ const SALT_ROUNDS = 10;
 
 const jwt = require('jsonwebtoken'); // NEW
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_key_12345';
+const ROLES_CONFIG = require('../config/roles.json');
 
 // Login
 router.post('/login', (req, res) => {
@@ -73,6 +74,24 @@ router.post('/login', (req, res) => {
                     }
                     // Remove password from response for security!
                     delete user.password;
+
+                    // Inject Permissions based on Role
+                    // Normalize DB Role to Config Key
+                    // Normalize DB Role to Config Key
+                    // Normalize DB Role to Config Key
+                    let roleKey = (user.role || '').trim();
+                    if (roleKey === 'Administrador') roleKey = 'admin';
+                    if (roleKey === 'Control Escolar') roleKey = 'control_escolar';
+                    if (roleKey === 'Recepción') roleKey = 'recepcion';
+                    // Ensure lowercase for simple matches (Director -> director)
+                    if (!ROLES_CONFIG[roleKey] && ROLES_CONFIG[roleKey.toLowerCase()]) {
+                        roleKey = roleKey.toLowerCase();
+                    }
+
+                    const roleDef = ROLES_CONFIG[roleKey];
+                    user.permissions = roleDef ? roleDef.permissions : [];
+                    console.log(`[LOGIN] User: ${user.email}, Role: ${user.role} -> ${roleKey}, Using Perms: ${user.permissions.length}`);
+
                     res.json({ message: 'Login successful', user: user, token: token }); // Send Token
                 });
             } else {
@@ -134,6 +153,20 @@ router.post('/refresh', (req, res) => {
                 console.log('DEBUG: Constructed Full Name:', fullName);
                 user.profile = fullName;
             }
+
+            // Inject Permissions based on Role (Copy of Login Logic)
+            // Normalize DB Role to Config Key
+            let roleKey = user.role;
+            if (roleKey === 'Administrador') roleKey = 'admin';
+            if (roleKey === 'Control Escolar') roleKey = 'control_escolar';
+            if (roleKey === 'Recepción') roleKey = 'recepcion';
+            if (!ROLES_CONFIG[roleKey] && ROLES_CONFIG[roleKey.toLowerCase()]) {
+                roleKey = roleKey.toLowerCase();
+            }
+
+            const roleDef = ROLES_CONFIG[roleKey];
+            user.permissions = roleDef ? roleDef.permissions : [];
+
             res.json({ message: 'Datos actualizados', user: user });
         });
     });
