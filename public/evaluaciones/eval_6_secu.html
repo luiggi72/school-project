@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluación 6° a Secundaria</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        html, body { background-color: #f3f4f6; padding: 20px; overflow-y: auto !important; height: auto !important; }
+        .container { max-width: 900px; margin: 0 auto 50px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #111827; margin-bottom: 30px; font-weight: 700; }
+        h2 { color: #4f46e5; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; margin-top: 40px; margin-bottom: 20px; font-size: 1.5rem; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: 500; margin-bottom: 5px; color: #374151; }
+        input[type="text"], input[type="date"], textarea { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-family: 'Outfit', sans-serif; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid #e5e7eb; padding: 12px; text-align: left; vertical-align: middle; }
+        th { background-color: #f9fafb; font-weight: 600; color: #374151; }
+        th.center, td.center { text-align: center; }
+        .legend { color: #6b7280; font-style: italic; margin-bottom: 15px; font-size: 0.95rem; margin-top: -15px; }
+        .btn-submit { display: block; width: 100%; background-color: #4f46e5; color: white; font-weight: 600; text-align: center; padding: 15px; border-radius: 8px; border: none; cursor: pointer; font-size: 1.1rem; margin-top: 30px; }
+        .btn-submit:hover { background-color: #4338ca; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Evaluación 6° a Secundaria</h1>
+    <form id="evaluationForm">
+        <div class="grid grid-cols-2 gap-4" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="form-group"><label>Nombre del Alumno:</label><input type="text" name="student_name" required></div>
+            <div class="form-group"><label>Fecha de Aplicación:</label><input type="date" name="application_date" required></div>
+            <div class="form-group"><label>Grado que cursa:</label><input type="text" name="current_grade"></div>
+            <div class="form-group"><label>Escuela de Procedencia:</label><input type="text" name="previous_school"></div>
+        </div>
+        <h2>Lengua Materna (Español)</h2><table><thead><tr><th style="width: 60%">Indicador</th><th class="center">L</th><th class="center">LD</th><th class="center">NL</th></tr></thead><tbody id="table_spanish"></tbody></table><h2>Pensamiento Matemático</h2><table><thead><tr><th style="width: 60%">Indicador</th><th class="center">L</th><th class="center">LD</th><th class="center">NL</th></tr></thead><tbody id="table_math"></tbody></table><h2>Exploración Mundo Natural y Social</h2><table><thead><tr><th style="width: 60%">Indicador</th><th class="center">L</th><th class="center">LD</th><th class="center">NL</th></tr></thead><tbody id="table_science"></tbody></table><div class="form-group"><label>Observaciones:</label><textarea name="science_observations" rows="3"></textarea></div><h2>Inglés - Habilidades de Recepción</h2><table><thead><tr><th style="width: 60%">Indicador</th><th class="center">A</th><th class="center">IP</th><th class="center">NH</th></tr></thead><tbody id="table_english_reception"></tbody></table><h2>Inglés - Habilidades de Producción</h2><table><thead><tr><th style="width: 60%">Indicador</th><th class="center">A</th><th class="center">IP</th><th class="center">NH</th></tr></thead><tbody id="table_english_production"></tbody></table><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;"><div class="form-group"><label>Cambridge Evaluation Score (out of 25):</label><input type="text" name="cambridge_score"></div></div><div class="form-group"><label>Observaciones:</label><textarea name="english_production_observations" rows="3"></textarea></div><h2>Aspectos Psico</h2><table><thead><tr><th style="width: 60%">Indicador</th><th class="center">L</th><th class="center">EP</th><th class="center">NA</th></tr></thead><tbody id="table_psycho"></tbody></table><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;"></div><div class="form-group"><label>Frases Incompletas Sacks (Indicadores/Comentarios):</label><textarea name="sacks_comments" rows="3"></textarea></div><div class="form-group"><label>Familia de Corman (Planos):</label><textarea name="corman_comments" rows="3"></textarea></div><div class="form-group"><label>Estudios de Caso (Comentarios):</label><textarea name="case_studies" rows="3"></textarea></div><div class="form-group"><label>Observaciones Generales:</label><textarea name="general_observations" rows="3"></textarea></div>
+        <button type="submit" class="btn-submit">Guardar Evaluación</button>
+    </form>
+</div>
+<script>
+    const indicators = {
+        spanish: ["Lee y contesta preguntas relacionadas a la lectura","Identifica características de distintos juegos de palabras","Identifica distintos medios informativos","Revisa puntuación con ayuda de otros (diálogos/narración)","Identifica adverbios y adjetivos","Reconoce características de familias léxicas","Reconoce características de la leyenda","Lee instrucciones y las lleva a cabo","Centra su atención en un tema o actividad"],
+        math: ["Resuelve problemas de suma y resta con decimales/fracciones","Resuelve problemas de multiplicación con fracciones/decimales","Identifica los distintos ángulos","Reconoce prismas rectos rectangulares (desarrollo plano)","Realiza conversiones de fracciones a decimales","Resuelve retos calculando porcentajes","Identifica vértices, caras, aristas en prismas","Identifica líneas paralelas y perpendiculares"],
+        science: ["Identifica características de proteínas, vitaminas, carbohidratos, lípidos","Describe características de un ecosistema y transformaciones","Conoce el ciclo del agua","Distingue distribución/características continentes","Conoce conceptos de geografía (latitud, placas, etc.)"],
+        english_reception: ["Grammar and Vocabulary: Understands main points of clear standard input","Grammar and Vocabulary: Connects phrases to describe experiences"],
+        english_production: ["Writing: Employs main ideas addressing topic clearly","Writing: Grammar errors are minor","Writing: Uses vocabulary in effective way","Writing: Employs spelling/punctuation accurately","Speaking: Uses appropriate vocabulary on familiar topics","Speaking: Produces extended language despite hesitation","Speaking: Used intonation generally appropriate","Speaking: Maintains and develops interaction"],
+        psycho: ["Se adapta al medio familiar y relaciones","Se identifica de manera positiva con la imagen real de sí mismo","El desarrollo emocional corresponde a la etapa","Manifiesta sentimientos/actitudes acordes a desarrollo","Se adapta a los cambios y afronta problemas"],
+    };
+
+    function generateRows(tableId, items, prefix, values) {
+        const tbody = document.getElementById(tableId);
+        items.forEach((item, index) => {
+            const tr = document.createElement('tr');
+            const name = prefix + '_' + index;
+            let cells = '<td>' + item + '</td>';
+            values.forEach(val => {
+                cells += '<td class="center"><input type="radio" name="' + name + '" value="' + val + '" required></td>';
+            });
+            tr.innerHTML = cells;
+            tbody.appendChild(tr);
+        });
+    }
+
+        generateRows('table_spanish', indicators.spanish, 'spanish', ["L","LD","NL"]);
+    generateRows('table_math', indicators.math, 'math', ["L","LD","NL"]);
+    generateRows('table_science', indicators.science, 'science', ["L","LD","NL"]);
+    generateRows('table_english_reception', indicators.english_reception, 'english_reception', ["A","IP","NH"]);
+    generateRows('table_english_production', indicators.english_production, 'english_production', ["A","IP","NH"]);
+    generateRows('table_psycho', indicators.psycho, 'psycho', ["L","EP","NA"]);
+
+
+    document.getElementById('evaluationForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const collectIndicators = (count, prefix) => {
+            const arr = [];
+            for(let i=0; i<count; i++) arr.push(formData.get(prefix + '_' + i) || null);
+            return arr;
+        };
+
+        const payload = {
+            student_name: formData.get('student_name'),
+            application_date: formData.get('application_date'),
+            previous_school: formData.get('previous_school'),
+            current_grade: formData.get('current_grade'),
+            spanish_indicators: collectIndicators(indicators.spanish.length, 'spanish'),
+            math_indicators: collectIndicators(indicators.math.length, 'math'),
+            science_indicators: collectIndicators(indicators.science.length, 'science'),
+            science_observations: formData.get('science_observations'),
+            english_reception_indicators: collectIndicators(indicators.english_reception.length, 'english_reception'),
+            english_production_indicators: collectIndicators(indicators.english_production.length, 'english_production'),
+            english_production_observations: formData.get('english_production_observations'),
+            cambridge_score: formData.get('cambridge_score'),
+            psycho_indicators: collectIndicators(indicators.psycho.length, 'psycho'),
+            sacks_comments: formData.get('sacks_comments'),
+            corman_comments: formData.get('corman_comments'),
+            case_studies: formData.get('case_studies'),
+            general_observations: formData.get('general_observations'),
+
+        };
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('/api/eval_6_secu', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (res.ok) { alert('Guardado correctamente!'); window.location.reload(); }
+            else { alert('Error: ' + data.error); }
+        } catch (err) { console.error(err); alert('Error de conexión'); }
+    });
+    
+    document.querySelector('input[name="application_date"]').valueAsDate = new Date();
+</script>
+</body>
+</html>

@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluación 2° a 3° Primaria</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        html,
+        body {
+            background-color: #f3f4f6;
+            padding: 20px;
+            overflow-y: auto !important;
+            height: auto !important;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #111827;
+            margin-bottom: 30px;
+            font-weight: 700;
+        }
+
+        h2 {
+            color: #4f46e5;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        h3 {
+            color: #374151;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: #374151;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #e5e7eb;
+            padding: 12px;
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        th {
+            background-color: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        th.center,
+        td.center {
+            text-align: center;
+        }
+
+        .radio-group label {
+            margin-right: 15px;
+            font-weight: normal;
+            cursor: pointer;
+        }
+
+        .btn-submit {
+            display: block;
+            width: 100%;
+            background-color: #4f46e5;
+            color: white;
+            font-weight: 600;
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            margin-top: 30px;
+            transition: background 0.2s;
+        }
+
+        .btn-submit:hover {
+            background-color: #4338ca;
+        }
+
+        .legend {
+            font-size: 0.9rem;
+            color: #6b7280;
+            margin-bottom: 10px;
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>Registro de Resultados de Evaluación de 2° a 3°</h1>
+
+        <form id="evaluationForm">
+            <!-- General Info -->
+            <div class="grid grid-cols-2 gap-4" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="form-group">
+                    <label>Nombre del Alumno:</label>
+                    <input type="text" name="student_name" required>
+                </div>
+                <div class="form-group">
+                    <label>Fecha de Aplicación:</label>
+                    <input type="date" name="application_date" required>
+                </div>
+                <div class="form-group">
+                    <label>Grado que cursa:</label>
+                    <input type="text" name="current_grade">
+                </div>
+                <div class="form-group">
+                    <label>Escuela de Procedencia:</label>
+                    <input type="text" name="previous_school">
+                </div>
+            </div>
+
+            <!-- ESPAÑOL -->
+            <h2>Indicadores de Español</h2>
+            <p class="legend">L = Logrado | LD = Logrado con Dificultad | NL = No Logrado</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 60%">Indicador</th>
+                        <th class="center">L</th>
+                        <th class="center">LD</th>
+                        <th class="center">NL</th>
+                    </tr>
+                </thead>
+                <tbody id="spanishTable">
+                    <!-- Javascript will populate rows -->
+                </tbody>
+            </table>
+
+            <!-- MATEMATICAS -->
+            <h2>Pensamiento Matemático</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 60%">Indicador</th>
+                        <th class="center">L</th>
+                        <th class="center">LD</th>
+                        <th class="center">NL</th>
+                    </tr>
+                </thead>
+                <tbody id="mathTable"></tbody>
+            </table>
+
+            <!-- CIENCIAS -->
+            <h2>Conocimiento del Medio</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 60%">Indicador</th>
+                        <th class="center">L</th>
+                        <th class="center">LD</th>
+                        <th class="center">NL</th>
+                    </tr>
+                </thead>
+                <tbody id="scienceTable"></tbody>
+            </table>
+
+            <div class="form-group">
+                <label>Observaciones Académicas:</label>
+                <textarea name="academic_observations" rows="4"></textarea>
+            </div>
+
+            <!-- INGLES -->
+            <h2>Indicadores de Inglés</h2>
+            <p class="legend">A = Accomplished | IP = In Process | NH = Needs Help</p>
+
+            <h3>Habilidades de Recepción (Listening & Reading)</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 60%">Indicador</th>
+                        <th class="center">A</th>
+                        <th class="center">IP</th>
+                        <th class="center">NH</th>
+                    </tr>
+                </thead>
+                <tbody id="englishReceptionTable"></tbody>
+            </table>
+
+            <h3>Habilidades de Producción (Writing & Speaking)</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 60%">Indicador</th>
+                        <th class="center">A</th>
+                        <th class="center">IP</th>
+                        <th class="center">NH</th>
+                    </tr>
+                </thead>
+                <tbody id="englishProductionTable"></tbody>
+            </table>
+
+            <div class="grid grid-cols-2 gap-4" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="form-group">
+                    <label>% Habilidades de Recepción:</label>
+                    <input type="text" name="english_percentage_reception">
+                </div>
+                <div class="form-group">
+                    <label>% Habilidades de Producción:</label>
+                    <input type="text" name="english_percentage_production">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Observaciones Inglés:</label>
+                <textarea name="english_observations" rows="4"></textarea>
+            </div>
+
+            <!-- PSICO -->
+            <h2>Indicadores Psicológicos</h2>
+            <p class="legend">L = Logrado | E = En Proceso | N = Necesita Ayuda</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 60%">Indicador</th>
+                        <th class="center">L</th>
+                        <th class="center">E</th>
+                        <th class="center">N</th>
+                    </tr>
+                </thead>
+                <tbody id="psychoTable"></tbody>
+            </table>
+
+            <div class="form-group">
+                <label>Nivel de Desarrollo Figura Humana:</label>
+                <input type="text" name="human_figure_level">
+            </div>
+            <div class="form-group">
+                <label>Indicadores Emocionales:</label>
+                <input type="text" name="emotional_indicators">
+            </div>
+            <div class="form-group">
+                <label>Nivel Perceptivo Motor (BENDER):</label>
+                <input type="text" name="bender_level">
+            </div>
+
+            <div class="form-group">
+                <label>Observaciones Generales:</label>
+                <textarea name="psycho_observations" rows="4"></textarea>
+            </div>
+
+            <button type="submit" class="btn-submit">Guardar Evaluación</button>
+        </form>
+    </div>
+
+    <script>
+        // INDICATORS DATA CONFIG
+        const indicators = {
+            spanish: [
+                "Tiene un trazo claro y legible",
+                "Expresa qué comprendió de la lectura de cada texto",
+                "Identifica sustantivos propios y comunes",
+                "Reconoce la escritura correcta de palabras según ortografía",
+                "Conoce diversos textos narrativos sencillos (cuentos, fábulas...)",
+                "Reconoce datos en su acta de nacimiento",
+                "Ordena palabras de manera alfabética",
+                "Lee instrucciones y las lleva a cabo",
+                "Centra su atención en un tema o actividad",
+                "Permanece sentado el tiempo que se requiere"
+            ],
+            math: [
+                "Lee, escribe y ordena números naturales hasta 1000",
+                "Resuelve problemas de suma y resta con números naturales hasta 1000",
+                "Usa el algoritmo convencional para sumar y restar",
+                "Calcula mentalmente sumas y restas de dos cifras",
+                "Escribe con los números con su correcta ortografía",
+                "Resuelve problemas de multiplicación con números naturales menores que 10"
+            ],
+            science: [
+                "Distingue sólidos, líquidos y gases en el entorno",
+                "Reconoce los órganos de los sentidos y su función",
+                "Compara características de diferentes lugares (croquis)",
+                "Clasifica objetos, animales y plantas por sus características"
+            ],
+            englishReception: [
+                "Escucha y entiende instrucciones de más de una oración",
+                "Escucha y entiende conversaciones simples",
+                "Responde la actividad de acuerdo a lo que escucha",
+                "Entiende textos cortos a pesar de no conocer todas las palabras",
+                "Entiende las instrucciones que lee",
+                "Responde preguntas sobre textos cortos"
+            ],
+            englishProduction: [
+                "Utiliza el idioma de forma escrita con pocos o ningún error",
+                "Escribe oraciones completas con 'linking words'",
+                "Responde a preguntas sobre información básica",
+                "Responde a preguntas sobre actividades que realizó"
+            ],
+            psycho: [
+                "Reconoce lo que sienten él y sus compañeros (desacuerdo)",
+                "Expresa sus emociones e identifica el sentir de compañeros",
+                "Establece un diálogo con apoyo de un adulto",
+                "Expresa con claridad sus necesidades y espera turno",
+                "Muestra disposición para dar y recibir ayuda",
+                "Conoce las reglas grupales y las sigue",
+                "Realiza tareas conforme a tiempos o acuerdos",
+                "Mantiene periodos de atención sostenida (20-25 min)",
+                "Tiene una autorregulación corporal en el aula",
+                "Tiene una toma de lápiz correcta",
+                "Muestra un desarrollo psicomotriz conforme a su edad",
+                "Tiene un buen control de impulsos"
+            ]
+        };
+
+        // GENERATE TABLE ROWS
+        function generateRows(tableId, items, prefix, values = ['L', 'LD', 'NL']) {
+            const tbody = document.getElementById(tableId);
+            items.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                const name = `${prefix}_${index}`;
+                let cells = `<td>${item}</td>`;
+
+                values.forEach(val => {
+                    cells += `
+                    <td class="center">
+                        <input type="radio" name="${name}" value="${val}" required>
+                    </td>
+                `;
+                });
+                tr.innerHTML = cells;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // INIT TABLES
+        generateRows('spanishTable', indicators.spanish, 'spanish');
+        generateRows('mathTable', indicators.math, 'math');
+        generateRows('scienceTable', indicators.science, 'science');
+        generateRows('englishReceptionTable', indicators.englishReception, 'english_r', ['A', 'IP', 'NH']);
+        generateRows('englishProductionTable', indicators.englishProduction, 'english_p', ['A', 'IP', 'NH']);
+        generateRows('psychoTable', indicators.psycho, 'psycho', ['L', 'E', 'N']);
+
+        // HANDLE SUBMIT
+        document.getElementById('evaluationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+
+            // Helper to collect radio groups into JSON array
+            const collectIndicators = (count, prefix) => {
+                const arr = [];
+                for (let i = 0; i < count; i++) {
+                    arr.push(formData.get(`${prefix}_${i}`) || null);
+                }
+                return arr;
+            };
+
+            const payload = {
+                student_name: formData.get('student_name'),
+                application_date: formData.get('application_date'),
+                current_grade: formData.get('current_grade'),
+                previous_school: formData.get('previous_school'),
+
+                spanish_indicators: collectIndicators(indicators.spanish.length, 'spanish'),
+                math_indicators: collectIndicators(indicators.math.length, 'math'),
+                science_indicators: collectIndicators(indicators.science.length, 'science'),
+                academic_observations: formData.get('academic_observations'),
+
+                // Merge English into one array for simplicity or keep split if needed by DB. 
+                // My DB schema has 'english_indicators' as one JSON field. I'll merge them.
+                english_indicators: [
+                    ...collectIndicators(indicators.englishReception.length, 'english_r'),
+                    ...collectIndicators(indicators.englishProduction.length, 'english_p')
+                ],
+                english_percentage_reception: formData.get('english_percentage_reception'),
+                english_percentage_production: formData.get('english_percentage_production'),
+                english_observations: formData.get('english_observations'),
+
+                psycho_indicators: collectIndicators(indicators.psycho.length, 'psycho'),
+                human_figure_level: formData.get('human_figure_level'),
+                emotional_indicators: formData.get('emotional_indicators'),
+                bender_level: formData.get('bender_level'),
+                psycho_observations: formData.get('psycho_observations'),
+            };
+
+            try {
+                const token = localStorage.getItem('token'); // Assuming auth token store
+                const res = await fetch('/api/evaluations', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    alert('Evaluación guardada correctamente!');
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Error de conexión');
+            }
+        });
+
+        // Set default date to today
+        document.querySelector('input[name="application_date"]').valueAsDate = new Date();
+
+    </script>
+
+</body>
+
+</html>

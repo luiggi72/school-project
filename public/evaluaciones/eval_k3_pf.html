@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluación K3 a Pre-First / 1°</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        html, body { background-color: #f3f4f6; padding: 20px; overflow-y: auto !important; height: auto !important; }
+        .container { max-width: 900px; margin: 0 auto 50px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #111827; margin-bottom: 30px; font-weight: 700; }
+        h2 { color: #4f46e5; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; margin-top: 40px; margin-bottom: 20px; font-size: 1.5rem; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: 500; margin-bottom: 5px; color: #374151; }
+        input[type="text"], input[type="date"], textarea { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-family: 'Outfit', sans-serif; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid #e5e7eb; padding: 12px; text-align: left; vertical-align: middle; }
+        th { background-color: #f9fafb; font-weight: 600; color: #374151; }
+        th.center, td.center { text-align: center; }
+        .legend { color: #6b7280; font-style: italic; margin-bottom: 15px; font-size: 0.95rem; margin-top: -15px; }
+        .btn-submit { display: block; width: 100%; background-color: #4f46e5; color: white; font-weight: 600; text-align: center; padding: 15px; border-radius: 8px; border: none; cursor: pointer; font-size: 1.1rem; margin-top: 30px; }
+        .btn-submit:hover { background-color: #4338ca; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Evaluación K3 a Pre-First / 1°</h1>
+    <form id="evaluationForm">
+        <div class="grid grid-cols-2 gap-4" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="form-group"><label>Nombre del Alumno:</label><input type="text" name="student_name" required></div>
+            <div class="form-group"><label>Fecha de Aplicación:</label><input type="date" name="application_date" required></div>
+            
+            <div class="form-group"><label>Escuela de Procedencia:</label><input type="text" name="previous_school"></div>
+        </div>
+        <h2>Indicadores Español</h2><table><thead><tr><th style="width: 60%">Indicador</th><th class="center">L</th><th class="center">LD</th><th class="center">NL</th></tr></thead><tbody id="table_spanish"></tbody></table><h2>Indicadores Inglés</h2><table><thead><tr><th style="width: 60%">Indicador</th><th class="center">L</th><th class="center">LD</th><th class="center">NL</th></tr></thead><tbody id="table_english"></tbody></table><div class="form-group"><label>Observaciones:</label><textarea name="english_observations" rows="3"></textarea></div><h2>Indicadores Psico</h2><table><thead><tr><th style="width: 60%">Indicador</th><th class="center">L</th><th class="center">EP</th><th class="center">NA</th></tr></thead><tbody id="table_psycho"></tbody></table><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;"><div class="form-group"><label>Nivel de Desarrollo/Percepción visual:</label><input type="text" name="nivel_desarrollo"></div><div class="form-group"><label>Nivel de Madurez:</label><input type="text" name="nivel_madurez"></div><div class="form-group"><label>Pronóstico:</label><input type="text" name="pronostico"></div><div class="form-group"><label>Emocionales:</label><input type="text" name="emocionales"></div></div><div class="form-group"><label>Observaciones:</label><textarea name="psycho_observations" rows="3"></textarea></div>
+        <button type="submit" class="btn-submit">Guardar Evaluación</button>
+    </form>
+</div>
+<script>
+    const indicators = {
+        spanish: ["Escucha con atención una lectura y responde a preguntas de comprensión","Lee frases cortas","Reconoce patrones de lectura","Toma dictado de palabras simples con sonidos del primer grupo y del segundo grupo","Copia palabras","Completa series numéricas hasta el 20","Identifica longitud en comparación directa","Reconoce figuras geométricas básicas","Discrimina figuras geométricas","Realiza cálculo mental de hasta 10 elementos","Realiza sumas y restas simples con ejemplos cotidianos","Discriminación visual","Seguimiento de instrucciones","Escribe su nombre"],
+        english: ["Sigue instrucciones simples en inglés","Identifica y nombra al menos 10 colores","Reconoce letras mayúsculas por su nombre","Lee palabras cortas en inglés","Deletrea palabras cortas en inglés","Identifica y nombra estados de ánimo","Cuenta objetos del 1 al 20","Dictado (Letras / Números)","Domina vocabulario simple (objetos)","Identifica por nombre y forma las figuras geométricas","Comprende oraciones simples","Dibuja vocabulario que reconoce auditivamente","Relaciona conceptos del clima con objetos cotidianos","Responde preguntas simples con respecto a si mismo y su entorno"],
+        psycho: ["Identifica y reconoce las emociones básicas en él y los demás","Mantiene un buen seguimiento de instrucciones de forma auditiva","Lleva a cabo instrucciones de forma escrita","Sus periodos de atención son los esperados a la etapa de desarrollo (10-25 min)","Tiene control y regulación de su propio cuerpo durante el tiempo de trabajo","Mantiene la rutina y ritmo de trabajo conforme a la media del grupo","Logra producir un lenguaje fluido, entonado y con la correcta pronunciación","Tiene facilidad para iniciar y/o seguir una conversación","Logra recortar figuras sencillas con precisión y facilidad","Toma adecuadamente el lápiz para realizar actividades de trazo","Intenta resolver conflictos o logra pedir apoyo a algún adulto","Se relaciona positivamente con los demás (maestras y compañeros)","Coordina sus movimientos de brazos y piernas al ejecutar una coreografía"],
+    };
+
+    function generateRows(tableId, items, prefix, values) {
+        const tbody = document.getElementById(tableId);
+        items.forEach((item, index) => {
+            const tr = document.createElement('tr');
+            const name = prefix + '_' + index;
+            let cells = '<td>' + item + '</td>';
+            values.forEach(val => {
+                cells += '<td class="center"><input type="radio" name="' + name + '" value="' + val + '" required></td>';
+            });
+            tr.innerHTML = cells;
+            tbody.appendChild(tr);
+        });
+    }
+
+        generateRows('table_spanish', indicators.spanish, 'spanish', ["L","LD","NL"]);
+    generateRows('table_english', indicators.english, 'english', ["L","LD","NL"]);
+    generateRows('table_psycho', indicators.psycho, 'psycho', ["L","EP","NA"]);
+
+
+    document.getElementById('evaluationForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const collectIndicators = (count, prefix) => {
+            const arr = [];
+            for(let i=0; i<count; i++) arr.push(formData.get(prefix + '_' + i) || null);
+            return arr;
+        };
+
+        const payload = {
+            student_name: formData.get('student_name'),
+            application_date: formData.get('application_date'),
+            previous_school: formData.get('previous_school'),
+            spanish_indicators: collectIndicators(indicators.spanish.length, 'spanish'),
+            english_indicators: collectIndicators(indicators.english.length, 'english'),
+            english_observations: formData.get('english_observations'),
+            psycho_indicators: collectIndicators(indicators.psycho.length, 'psycho'),
+            psycho_observations: formData.get('psycho_observations'),
+            nivel_desarrollo: formData.get('nivel_desarrollo'),
+            nivel_madurez: formData.get('nivel_madurez'),
+            pronostico: formData.get('pronostico'),
+            emocionales: formData.get('emocionales'),
+
+        };
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('/api/eval_k3_pf', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (res.ok) { alert('Guardado correctamente!'); window.location.reload(); }
+            else { alert('Error: ' + data.error); }
+        } catch (err) { console.error(err); alert('Error de conexión'); }
+    });
+    
+    document.querySelector('input[name="application_date"]').valueAsDate = new Date();
+</script>
+</body>
+</html>

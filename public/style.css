@@ -24,6 +24,8 @@ body {
     background-color: var(--bg-light);
     color: var(--text-dark);
     height: 100vh;
+    height: 100dvh;
+    /* Better mobile support */
     display: flex;
     overflow: hidden;
 }
@@ -161,6 +163,8 @@ body {
     flex: 1;
     padding: 1rem;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    /* Smooth scroll on iOS */
 }
 
 /* Components */
@@ -331,7 +335,8 @@ select.input-control option,
     width: 100%;
     max-width: 600px;
     box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-    position: relative; /* For absolute positioning of close button */
+    position: relative;
+    /* For absolute positioning of close button */
 }
 
 .modal-header {
@@ -370,7 +375,8 @@ select.input-control option,
     transition: color 0.2s;
 }
 
-.close-modal:hover, .close-modal-user:hover {
+.close-modal:hover,
+.close-modal-user:hover {
     color: var(--primary);
 }
 
@@ -789,12 +795,12 @@ body.sidebar-hidden .main-content {
 #inquiries-list-section {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    /* height: 100%;  Removed to allow page scroll */
 }
 
 #inquiries-container {
     flex: 1;
-    overflow-y: auto;
+    /* overflow-y: auto; Removed to allow page scroll */
 }
 
 #inquiries-list-section .data-table {

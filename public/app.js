@@ -3273,7 +3273,8 @@ function checkPermission(permission) {
 
 function applyPermissions() {
     if (!currentUser) return;
-
+    // 0. Render Dynamic Sidebar First
+    renderSidebar(currentUser.permissions);
     // 1. Sidebar GROUPS (Parent Menus)
     const groupRules = [
         { selector: '[data-group="alumnos"]', permission: PERMISSIONS.ALUMNOS_MENU },
@@ -5659,6 +5660,8 @@ function renderInquiries(list) {
             try {
                 const lvl = document.getElementById('report-filter-level').value;
                 const sts = document.getElementById('report-filter-status').value;
+                const startDate = document.getElementById('inquiry-filter-start-date').value;
+                const endDate = document.getElementById('inquiry-filter-end-date').value;
 
                 // Construct Headers manually since we need blob(), not json()
                 const headers = {};
@@ -5666,27 +5669,14 @@ function renderInquiries(list) {
                 if (token) headers['Authorization'] = `Bearer ${token}`;
                 if (currentUser && currentUser.role) headers['x-user-role'] = normalizeRole(currentUser.role);
 
-                const response = await fetch(`${API_URL}/inquiries/export-pdf?level=${encodeURIComponent(lvl)}&status=${encodeURIComponent(sts)}`, {
-                    method: 'GET',
-                    headers: headers
-                });
-
-                if (!response.ok) {
-                    const errText = await response.text();
-                    throw new Error(errText || 'Error al generar PDF');
-                }
-
-                // Create Blob URL and Open
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                window.open(url, '_blank');
-
-                // Optional: Revoke URL after some time (handling new tab)
-                setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+                // Direct Open (Browser handles download/filename)
+                // Use absolute URL to avoid any ambiguity on mobile
+                const downloadUrl = `${window.location.origin}${API_URL}/inquiries/export-pdf?level=${encodeURIComponent(lvl)}&status=${encodeURIComponent(sts)}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&token=${encodeURIComponent(token)}`;
+                window.open(downloadUrl, '_blank');
 
             } catch (error) {
                 console.error('PDF Export Error:', error);
-                alert('Error al descargar reporte: ' + error.message);
+                alert('Error al incializar descarga: ' + error.message);
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = originalContent;
@@ -10811,3 +10801,75 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => updateBreadcrumbTitle(activeItem), 100);
     }
 });
+
+// --- Inquiries List Initialization (Fix for Static HTML filters) ---
+function initInquiriesList() {
+    console.log('Initializing Inquiries List Listeners...');
+    const filterLevel = document.getElementById('report-filter-level');
+    const filterStatus = document.getElementById('report-filter-status');
+    const btnExportPdf = document.getElementById('btn-export-pdf');
+
+    if (filterLevel) {
+        // Remove old listeners ideally, but adding new ones is safe enough here if redundant
+        filterLevel.addEventListener('change', () => loadInquiries());
+    }
+    if (filterStatus) {
+        filterStatus.addEventListener('change', () => loadInquiries());
+    }
+
+    if (btnExportPdf) {
+        // Clone to remove old listeners (if any) and attach fresh one
+        const newBtn = btnExportPdf.cloneNode(true);
+        btnExportPdf.parentNode.replaceChild(newBtn, btnExportPdf);
+
+        newBtn.addEventListener('click', async () => {
+            const btn = newBtn;
+            const originalContent = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-icons-outlined spin">sync</span> Generando...';
+
+            try {
+                const lvl = document.getElementById('report-filter-level')?.value || 'All';
+                const sts = document.getElementById('report-filter-status')?.value || 'all';
+                const startDate = document.getElementById('inquiry-filter-start-date')?.value || '';
+                const endDate = document.getElementById('inquiry-filter-end-date')?.value || '';
+
+                console.log(`Generating PDF with: Level=${lvl}, Status=${sts}, Start=${startDate}, End=${endDate}`);
+
+                // Construct Headers manually since we need blob(), not json()
+                const headers = {};
+                const token = localStorage.getItem('authToken');
+                if (token) headers['Authorization'] = `Bearer ${token}`;
+                if (currentUser && currentUser.role) headers['x-user-role'] = normalizeRole(currentUser.role);
+
+                const response = await fetch(`${API_URL}/inquiries/export-pdf?level=${encodeURIComponent(lvl)}&status=${encodeURIComponent(sts)}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`, {
+                    method: 'GET',
+                    headers: headers
+                });
+
+                if (!response.ok) {
+                    const errText = await response.text();
+                    throw new Error(errText || 'Error al generar PDF');
+                }
+
+                // Create Blob URL and Open
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                window.open(url, '_blank');
+
+                // Optional: Revoke URL after some time
+                setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+
+            } catch (error) {
+                console.error('PDF Export Error:', error);
+                alert('Error al descargar reporte: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            }
+        });
+    }
+}
+
+// Ensure it runs on load
+document.addEventListener('DOMContentLoaded', initInquiriesList);

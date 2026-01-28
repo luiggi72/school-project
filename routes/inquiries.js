@@ -57,6 +57,19 @@ router.get('/export-pdf', checkAuth, (req, res) => {
         subtitleExtras.push("Solo Citas Confirmadas");
     }
 
+    // Filter by Date Range (NEW)
+    const { startDate, endDate } = req.query;
+    if (startDate) {
+        whereClauses.push("created_at >= ?");
+        params.push(`${startDate} 00:00:00`);
+        subtitleExtras.push(`Desde: ${startDate}`);
+    }
+    if (endDate) {
+        whereClauses.push("created_at <= ?");
+        params.push(`${endDate} 23:59:59`);
+        subtitleExtras.push(`Hasta: ${endDate}`);
+    }
+
     const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
     const query = `
@@ -74,14 +87,17 @@ router.get('/export-pdf', checkAuth, (req, res) => {
         ORDER BY created_at DESC
     `;
 
-    db.query(query, params, (err, results) => {
+    db.query(query, params, async (err, results) => {
         if (err) return res.status(500).send(err.message);
 
         const doc = new PDFDocument({ margin: 30, size: 'A4', layout: 'landscape' });
 
         // Set response headers
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', 'inline; filename=reporte_informes.pdf');
+        // Force download with 'attachment' to solve mobile viewer/network issues
+        res.setHeader('Content-Disposition', 'attachment; filename="reporte_informes.pdf"');
+
+        console.log(`[PDF DEBUG] Query success. Rows found: ${results.length}`);
 
         doc.pipe(res);
 
@@ -92,7 +108,7 @@ router.get('/export-pdf', checkAuth, (req, res) => {
         // Table
         const table = {
             title: "Listado Completo",
-            subtitle: "Generado el: " + (() => {
+            subtitle: (() => {
                 const now = new Date();
                 const d = String(now.getDate()).padStart(2, '0');
                 const m = String(now.getMonth() + 1).padStart(2, '0');
@@ -100,34 +116,107 @@ router.get('/export-pdf', checkAuth, (req, res) => {
                 const time = now.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
                 let t = `Generado el: ${d}/${m}/${y} ${time}`;
                 if (subtitleExtras.length > 0) {
-                    t += `\nFiltros: ${subtitleExtras.join(' | ')}`;
+                    t += ` | Filtros: ${subtitleExtras.join(' | ')}`;
                 }
                 return t;
             })(),
             headers: [
-                { label: "Fecha Solicitud", property: "date", width: 65 },
+                { label: "Padre/Madre", property: "parent", width: 130 },
                 { label: "Alumno", property: "child_name", width: 130 },
                 { label: "Grado", property: "grade", width: 80 },
-                { label: "Padre/Tutor", property: "parent", width: 120 },
-                { label: "Teléfono", property: "phone", width: 80 },
-                { label: "Email", property: "email", width: 140 },
-                { label: "Fuente", property: "source", width: 80 },
-                { label: "Fecha Cita", property: "appointment", width: 85 }
+                {
+                    label: "Escuela Procedencia",
+                    property: "previous_school",
+                    width: 120
+                },
+                { label: "Cita Informes", property: "appointment", width: 100 },
+                {
+                    label: "Asistió",
+                    property: "attended",
+                    width: 50,
+                    align: "center",
+                    headerAlign: "center",
+                    renderer: (value, indexColumn, indexRow, row, rect) => {
+                        try {
+                            // --- Asistió START ---
+                            // Fixed X manual calculation (Margin 30 + 130 + 130 + 80 + 120 + 100 = 590)
+                            const fixedX = 590;
+                            const fixedWidth = 50;
+
+                            const isPositive = value === 'Si';
+                            const bgColor = isPositive ? '#dcfce7' : '#fee2e2'; // Green-100 / Red-100
+                            const textColor = isPositive ? '#166534' : '#991b1b'; // Green-800 / Red-800
+
+                            const badgeWidth = 30;
+                            const badgeHeight = 12;
+                            // Use rect.y for vertical stability, but manual X
+                            const x = fixedX + (fixedWidth - badgeWidth) / 2;
+                            const y = rect.y + (rect.height - badgeHeight) / 2;
+
+                            doc.fillColor(bgColor)
+                                .roundedRect(x, y, badgeWidth, badgeHeight, 4)
+                                .fill();
+
+                            doc.fillColor(textColor)
+                                .fontSize(8)
+                                .text(value, x, y + 2, {
+                                    width: badgeWidth,
+                                    align: 'center'
+                                });
+
+                            // Reset color to black specifically for subsequent text drawing by library
+                            doc.fillColor('black');
+                            return '';
+                            // --- Asistió END ---
+                        } catch (e) { return value; }
+                    }
+                },
+                {
+                    label: "Evaluación",
+                    property: "evaluation",
+                    width: 60,
+                    align: "center",
+                    headerAlign: "center",
+                    renderer: (value, indexColumn, indexRow, row, rect) => {
+                        try {
+                            // --- Evaluación START ---
+                            // Fixed X manual calculation (Previous 590 + 50 = 640)
+                            const fixedX = 640;
+                            const fixedWidth = 60;
+
+                            const isPositive = value === 'Si';
+                            const bgColor = isPositive ? '#dcfce7' : '#fee2e2';
+                            const textColor = isPositive ? '#166534' : '#991b1b';
+
+                            const badgeWidth = 30;
+                            const badgeHeight = 12;
+                            const x = fixedX + (fixedWidth - badgeWidth) / 2;
+                            const y = rect.y + (rect.height - badgeHeight) / 2;
+
+                            doc.fillColor(bgColor)
+                                .roundedRect(x, y, badgeWidth, badgeHeight, 4)
+                                .fill();
+
+                            doc.fillColor(textColor)
+                                .fontSize(8)
+                                .text(value, x, y + 2, {
+                                    width: badgeWidth,
+                                    align: 'center'
+                                });
+
+                            doc.fillColor('black');
+                            return '';
+                            // --- Evaluación END ---
+                        } catch (e) { return value; }
+                    }
+                },
+                { label: "Plazo Inscripción", property: "deadline", width: 90, align: "center", headerAlign: "center" }
             ],
             datas: results.map(row => ({
-                date: (() => {
-                    const dObj = new Date(row.created_at);
-                    const d = String(dObj.getDate()).padStart(2, '0');
-                    const m = String(dObj.getMonth() + 1).padStart(2, '0');
-                    const y = String(dObj.getFullYear()).slice(-2);
-                    return `${d}/${m}/${y}`;
-                })(),
+                parent: row.parent_name,
                 child_name: row.child_name,
                 grade: row.requested_grade,
-                parent: row.parent_name,
-                phone: row.phone,
-                email: row.email,
-                source: row.marketing_source,
+                previous_school: row.previous_school || '-',
                 appointment: row.appointment_date ? (() => {
                     const dObj = new Date(row.appointment_date);
                     const d = String(dObj.getDate()).padStart(2, '0');
@@ -135,16 +224,26 @@ router.get('/export-pdf', checkAuth, (req, res) => {
                     const y = String(dObj.getFullYear()).slice(-2);
                     const time = dObj.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
                     return `${d}/${m}/${y} ${time}`;
-                })() : 'Sin Cita'
+                })() : 'Sin Cita',
+                attended: row.flag_finished ? 'Si' : 'No',
+                evaluation: row.flag_evaluation ? 'Si' : 'No',
+                deadline: '-'
             })),
         };
 
-        doc.table(table, {
-            prepareHeader: () => doc.font("Helvetica-Bold").fontSize(9),
-            prepareRow: (row, i) => doc.font("Helvetica").fontSize(8)
-        });
-
-        doc.end();
+        try {
+            await doc.table(table, {
+                prepareHeader: () => doc.font("Helvetica-Bold").fontSize(8).fillColor('black'),
+                prepareRow: (row, i) => doc.font("Helvetica").fontSize(9).fillColor('black')
+            });
+            doc.end();
+            console.log('[PDF DEBUG] Stream ended successfully.');
+        } catch (pdfErr) {
+            console.error('PDF Generation Error:', pdfErr);
+            // If headers sent, we can't send status 500 cleanly, but we can try
+            if (!res.headersSent) res.status(500).send('Error generating PDF: ' + pdfErr.message);
+            doc.end(); // Try to close stream
+        }
     });
 });
 

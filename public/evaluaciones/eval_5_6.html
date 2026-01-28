@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluación 5° a 6°</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        html, body { background-color: #f3f4f6; padding: 20px; overflow-y: auto !important; height: auto !important; }
+        .container { max-width: 900px; margin: 0 auto 50px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #111827; margin-bottom: 30px; font-weight: 700; }
+        h2 { color: #4f46e5; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; margin-top: 40px; margin-bottom: 20px; font-size: 1.5rem; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: 500; margin-bottom: 5px; color: #374151; }
+        input[type="text"], input[type="date"], textarea { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-family: 'Outfit', sans-serif; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid #e5e7eb; padding: 12px; text-align: left; vertical-align: middle; }
+        th { background-color: #f9fafb; font-weight: 600; color: #374151; }
+        th.center, td.center { text-align: center; }
+        .legend { color: #6b7280; font-style: italic; margin-bottom: 15px; font-size: 0.95rem; margin-top: -15px; }
+        .btn-submit { display: block; width: 100%; background-color: #4f46e5; color: white; font-weight: 600; text-align: center; padding: 15px; border-radius: 8px; border: none; cursor: pointer; font-size: 1.1rem; margin-top: 30px; }
+        .btn-submit:hover { background-color: #4338ca; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Evaluación 5° a 6°</h1>
+    <form id="evaluationForm">
+        <div class="grid grid-cols-2 gap-4" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="form-group"><label>Nombre del Alumno:</label><input type="text" name="student_name" required></div>
+            <div class="form-group"><label>Fecha de Aplicación:</label><input type="date" name="application_date" required></div>
+            <div class="form-group"><label>Grado que cursa:</label><input type="text" name="current_grade"></div>
+            <div class="form-group"><label>Escuela de Procedencia:</label><input type="text" name="previous_school"></div>
+        </div>
+        <h2>Lengua Materna (Español)</h2><table><thead><tr><th style="width: 60%">Indicador</th><th class="center">L</th><th class="center">LD</th><th class="center">NL</th></tr></thead><tbody id="table_spanish"></tbody></table><h2>Pensamiento Matemático</h2><table><thead><tr><th style="width: 60%">Indicador</th><th class="center">L</th><th class="center">LD</th><th class="center">NL</th></tr></thead><tbody id="table_math"></tbody></table><h2>Exploración Mundo Natural y Social</h2><table><thead><tr><th style="width: 60%">Indicador</th><th class="center">L</th><th class="center">LD</th><th class="center">NL</th></tr></thead><tbody id="table_science"></tbody></table><div class="form-group"><label>Observaciones:</label><textarea name="science_observations" rows="3"></textarea></div><h2>Inglés - Habilidades de Recepción</h2><table><thead><tr><th style="width: 60%">Indicador</th><th class="center">A</th><th class="center">IP</th><th class="center">NH</th></tr></thead><tbody id="table_english_reception"></tbody></table><h2>Inglés - Habilidades de Producción</h2><table><thead><tr><th style="width: 60%">Indicador</th><th class="center">A</th><th class="center">IP</th><th class="center">NH</th></tr></thead><tbody id="table_english_production"></tbody></table><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;"><div class="form-group"><label>% Habilidades de Recepción:</label><input type="text" name="english_percent_reception"></div><div class="form-group"><label>% Habilidades de Producción:</label><input type="text" name="english_percent_production"></div></div><div class="form-group"><label>Observaciones:</label><textarea name="english_production_observations" rows="3"></textarea></div><h2>Indicadores Psico</h2><table><thead><tr><th style="width: 60%">Indicador</th><th class="center">L</th><th class="center">E</th><th class="center">N</th></tr></thead><tbody id="table_psycho"></tbody></table><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;"><div class="form-group"><label>Nivel de Desarrollo Figura Humana:</label><input type="text" name="nivel_desarrollo"></div><div class="form-group"><label>Indicadores Emocionales:</label><input type="text" name="indicadores_emocionales"></div><div class="form-group"><label>Nivel perceptivo motor (BENDER):</label><input type="text" name="nivel_bender"></div></div><div class="form-group"><label>Observaciones:</label><textarea name="psycho_observations" rows="3"></textarea></div>
+        <button type="submit" class="btn-submit">Guardar Evaluación</button>
+    </form>
+</div>
+<script>
+    const indicators = {
+        spanish: ["Lee y contesta preguntas relacionadas a la lectura (perfil ingreso)","Identifica características palabras según acentuación","Identifica y aplica función de un croquis","Reconoce características de familias léxicas","Identifica juegos de palabras en lenguaje","Lee instrucciones y las lleva a cabo","Centra su atención en un tema o actividad"],
+        math: ["Lee, escribe y ordena números naturales hasta 5 cifras","Usa fracciones con denominadores hasta 12","Resuelve problemas de suma y resta de fracciones (mismo denom)","Identifica y calcula área de cuadrados y rectángulos","Identifica y representa tipos de ángulos","Realiza notación desarrollada hasta 6 dígitos","Resuelve retos con lectura del reloj análogo","Compara y ordena duración de sucesos"],
+        science: ["Conoce y ejemplifica cambios de estado de agregación","Reconoce causas/efectos contaminación agua, aire, suelo","Describe características de seres vivos y clasificación","Reconoce extensión territorial de México y colindancias","Distingue espacios rurales y urbanos en México","Explica distribución de recursos naturales de México"],
+        english_reception: ["Escucha y entiende instrucciones de más de una oración","Escucha y entiende conversaciones simples","Responde la actividad de acuerdo a lo que escucha","Entiende textos cortos a pesar de no conocer todas las palabras","Entiende las instrucciones que lee","Responde preguntas sobre textos cortos"],
+        english_production: ["Utiliza el idioma de forma escrita con pocos o ningún error","Escribe oraciones completas con 'linking words'","Responde a preguntas sobre información básica","Responde a preguntas sobre actividades que realizó"],
+        psycho: ["Escucha a los demás y tiene el gusto por ayudar a otros","Contribuye a solucionar problemas grupales","Identifica herramientas de colaboración","Reconoce importancia de tareas en tiempo y forma","Comprende acciones y consecuencias","Identifica tipos de faltas y lineamientos","Reconoce y legitima emociones de otros","Reconoce su carácter, fortalezas, actitudes","Valora expresar emociones de forma auténtica","Mantiene consciencia corporal adecuada","Identifica fuentes de tensión y estrés","Contribuye a solucionar problemas grupales","Toma postura flexible y pacífica","Escucha con atención puntos de vista"],
+    };
+
+    function generateRows(tableId, items, prefix, values) {
+        const tbody = document.getElementById(tableId);
+        items.forEach((item, index) => {
+            const tr = document.createElement('tr');
+            const name = prefix + '_' + index;
+            let cells = '<td>' + item + '</td>';
+            values.forEach(val => {
+                cells += '<td class="center"><input type="radio" name="' + name + '" value="' + val + '" required></td>';
+            });
+            tr.innerHTML = cells;
+            tbody.appendChild(tr);
+        });
+    }
+
+        generateRows('table_spanish', indicators.spanish, 'spanish', ["L","LD","NL"]);
+    generateRows('table_math', indicators.math, 'math', ["L","LD","NL"]);
+    generateRows('table_science', indicators.science, 'science', ["L","LD","NL"]);
+    generateRows('table_english_reception', indicators.english_reception, 'english_reception', ["A","IP","NH"]);
+    generateRows('table_english_production', indicators.english_production, 'english_production', ["A","IP","NH"]);
+    generateRows('table_psycho', indicators.psycho, 'psycho', ["L","E","N"]);
+
+
+    document.getElementById('evaluationForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const collectIndicators = (count, prefix) => {
+            const arr = [];
+            for(let i=0; i<count; i++) arr.push(formData.get(prefix + '_' + i) || null);
+            return arr;
+        };
+
+        const payload = {
+            student_name: formData.get('student_name'),
+            application_date: formData.get('application_date'),
+            previous_school: formData.get('previous_school'),
+            current_grade: formData.get('current_grade'),
+            spanish_indicators: collectIndicators(indicators.spanish.length, 'spanish'),
+            math_indicators: collectIndicators(indicators.math.length, 'math'),
+            science_indicators: collectIndicators(indicators.science.length, 'science'),
+            science_observations: formData.get('science_observations'),
+            english_reception_indicators: collectIndicators(indicators.english_reception.length, 'english_reception'),
+            english_production_indicators: collectIndicators(indicators.english_production.length, 'english_production'),
+            english_production_observations: formData.get('english_production_observations'),
+            english_percent_reception: formData.get('english_percent_reception'),
+            english_percent_production: formData.get('english_percent_production'),
+            psycho_indicators: collectIndicators(indicators.psycho.length, 'psycho'),
+            psycho_observations: formData.get('psycho_observations'),
+            nivel_desarrollo: formData.get('nivel_desarrollo'),
+            indicadores_emocionales: formData.get('indicadores_emocionales'),
+            nivel_bender: formData.get('nivel_bender'),
+
+        };
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('/api/eval_5_6', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (res.ok) { alert('Guardado correctamente!'); window.location.reload(); }
+            else { alert('Error: ' + data.error); }
+        } catch (err) { console.error(err); alert('Error de conexión'); }
+    });
+    
+    document.querySelector('input[name="application_date"]').valueAsDate = new Date();
+</script>
+</body>
+</html>

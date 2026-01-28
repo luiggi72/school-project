@@ -48,6 +48,14 @@ app.use('/api/inquiries', inquiriesRoutes); // Public POST, Protected others
 app.use('/api/academic', checkAuth, academicRoutes);
 app.use('/api/administrative', checkAuth, administrativeRoutes);
 app.use('/api/config', checkAuth, configRoutes);
+app.use('/api/evaluations', require('./routes/evaluations')); // Added evaluations route
+app.use('/api/eval_k2_k3', require('./routes/eval_k2_k3'));
+app.use('/api/eval_k3_pf', require('./routes/eval_k3_pf'));
+app.use('/api/eval_pf_1', require('./routes/eval_pf_1'));
+app.use('/api/eval_3_4', require('./routes/eval_3_4'));
+app.use('/api/eval_4_5', require('./routes/eval_4_5'));
+app.use('/api/eval_5_6', require('./routes/eval_5_6'));
+app.use('/api/eval_6_secu', require('./routes/eval_6_secu'));
 app.use('/api/calendar', checkAuth, calendarRoutes);
 app.use('/api/agenda', checkAuth, require('./routes/agenda'));
 app.use('/api/medical', checkAuth, require('./routes/medical'));
@@ -60,7 +68,7 @@ app.use('/api/public/agenda', require('./routes/public_agenda')); // Public Acce
 
 // Start Server
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://localhost:${PORT} and http://192.168.10.181:${PORT}`);
+    console.log(`Server running on http://localhost:${PORT} and ${process.env.PUBLIC_URL || 'http://10.31.20.162:3000'}`);
 });
 
 // Force Restart Triggered: 2026-01-08T16:05:00

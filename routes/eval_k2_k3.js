@@ -1,0 +1,19 @@
+const express = require('express');
+const router = express.Router();
+const db = require('../config/db');
+const checkAuth = require('../middleware/auth');
+
+router.post('/', checkAuth, (req, res) => {
+    const data = req.body;
+    const query = "INSERT INTO eval_k2_k3 (student_name, application_date, previous_school, spanish_indicators, english_indicators, english_observations, psycho_indicators, psycho_observations, nivel_desarrollo, indicadores_madurez, indicadores_emocionales) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    const values = [data.student_name, data.application_date, data.previous_school, JSON.stringify(data.spanish_indicators), JSON.stringify(data.english_indicators), data.english_observations, JSON.stringify(data.psycho_indicators), data.psycho_observations, data.nivel_desarrollo, data.indicadores_madurez, data.indicadores_emocionales];
+
+    db.query(query, values, (err, result) => {
+        if (err) {
+            console.error('Error saving:', err);
+            return res.status(500).json({ error: 'Error al guardar' });
+        }
+        res.status(201).json({ message: 'Guardado', id: result.insertId });
+    });
+});
+module.exports = router;

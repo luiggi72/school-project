@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menú de Evaluaciones</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        html,
+        body {
+            background-color: #f3f4f6;
+            padding: 40px;
+            overflow-y: auto !important;
+            height: auto !important;
+        }
+
+        .menu-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        h1 {
+            color: #111827;
+            margin-bottom: 40px;
+            font-weight: 700;
+        }
+
+        .menu-grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .menu-card {
+            display: block;
+            padding: 24px;
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            text-decoration: none;
+            color: #374151;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .menu-card:hover {
+            border-color: #4f46e5;
+            background: #eef2ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .menu-card h3 {
+            color: #111827;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+
+        .menu-card p {
+            color: #6b7280;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            color: #6b7280;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .back-link:hover {
+            color: #111827;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="menu-container">
+        <h1>Evaluaciones Académicas</h1>
+
+        <div class="menu-grid">
+            <!-- Item 1 (Manual) -->
+            <a href="evaluation_2_3.html" class="menu-card">
+                <h3>Evaluación 2° a 3° Primaria</h3>
+                <p>Registro de resultados de evaluación diagnóstica.</p>
+            </a>
+
+            <!-- Generated Items -->
+            <a href="eval_k2_k3.html" class="menu-card">
+                <h3>Evaluación K2 a K3</h3>
+                <p>Preescolar</p>
+            </a>
+            <a href="eval_k3_pf.html" class="menu-card">
+                <h3>Evaluación K3 a PF / 1°</h3>
+                <p>Preescolar</p>
+            </a>
+            <a href="eval_pf_1.html" class="menu-card">
+                <h3>Evaluación PF a 1°</h3>
+                <p>Preescolar</p>
+            </a>
+            <a href="eval_3_4.html" class="menu-card">
+                <h3>Evaluación 3° a 4°</h3>
+                <p>Primaria</p>
+            </a>
+            <a href="eval_4_5.html" class="menu-card">
+                <h3>Evaluación 4° a 5°</h3>
+                <p>Primaria</p>
+            </a>
+            <a href="eval_5_6.html" class="menu-card">
+                <h3>Evaluación 5° a 6°</h3>
+                <p>Primaria</p>
+            </a>
+            <a href="eval_6_secu.html" class="menu-card">
+                <h3>Evaluación 6° a Secundaria</h3>
+                <p>Transición</p>
+            </a>
+        </div>
+    </div>
+
+    <a href="../index.html" class="back-link">← Volver al Panel Principal</a>
+    </div>
+
+</body>
+
+</html>
