@@ -367,6 +367,13 @@ router.get('/export-pdf', checkAuth, (req, res) => {
                 //    .roundedRect(containerX, containerY, containerWidth, containerHeight, 8)
                 //    .fillAndStroke();
 
+                // Separator Line
+                doc.moveTo(30, containerY) // Start from left margin
+                    .lineTo(doc.page.width - 30, containerY) // To right margin
+                    .strokeColor('#4b5563')
+                    .lineWidth(1)
+                    .stroke();
+
                 // Centered Title
                 doc.fillColor('#1e293b').font("Helvetica-Bold").fontSize(12)
                     .text('Resumen Estadístico', containerX, containerY + 10, {
