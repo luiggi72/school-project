@@ -18,9 +18,51 @@ router.get('/schools', checkAuth, (req, res) => {
     });
 });
 
+// Helper: Build WHERE clause
+const buildWhereClause = (query) => {
+    const { level, status, startDate, endDate } = query;
+    let whereClauses = [];
+    let params = [];
+    let subtitleExtras = [];
+
+    // Filter by Level (Grade)
+    if (level && level !== 'All') {
+        whereClauses.push("requested_grade LIKE ?");
+        params.push(`%${level}%`);
+        subtitleExtras.push(`Nivel: ${level}`);
+    }
+
+    // Filter by Status
+    if (status === 'confirmed') {
+        whereClauses.push("flag_scheduled = 1");
+        subtitleExtras.push("Solo Citas Confirmadas");
+    } else if (status === 'attended') {
+        whereClauses.push("flag_attended = 1");
+        subtitleExtras.push("Solo Asistencias");
+    }
+
+    // Filter by Date Range
+    if (startDate) {
+        whereClauses.push("created_at >= ?");
+        params.push(`${startDate} 00:00:00`);
+        subtitleExtras.push(`Desde: ${startDate}`);
+    }
+    if (endDate) {
+        whereClauses.push("created_at <= ?");
+        params.push(`${endDate} 23:59:59`);
+        subtitleExtras.push(`Hasta: ${endDate}`);
+    }
+
+    const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+    return { whereSql, params, subtitleExtras };
+};
+
 // GET /api/inquiries
 router.get('/', checkAuth, (req, res) => {
-    db.query('SELECT * FROM inquiries ORDER BY created_at DESC', (err, results) => {
+    const { whereSql, params } = buildWhereClause(req.query);
+    const query = `SELECT * FROM inquiries ${whereSql} ORDER BY created_at DESC`;
+
+    db.query(query, params, (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results);
     });
@@ -37,40 +79,7 @@ router.get('/export-pdf', checkAuth, (req, res) => {
     // NOTE: Matching strings in JSON or Description is slow but acceptable for reports.
     // A cleaner way is: "(SELECT start_time FROM appointments WHERE description LIKE CONCAT('%', inquiries.email, '%') ORDER BY start_time DESC LIMIT 1) as appointment_date"
 
-    const { level, status } = req.query;
-
-    let whereClauses = [];
-    let params = [];
-    let subtitleExtras = [];
-
-    // Filter by Level (Grade)
-    if (level && level !== 'All') {
-        whereClauses.push("requested_grade LIKE ?");
-        params.push(`%${level}%`);
-        subtitleExtras.push(`Nivel: ${level}`);
-    }
-
-    // Filter by Status (Confirmed)
-    // We check flag_scheduled = 1 which implies an appointment was booked
-    if (status === 'confirmed') {
-        whereClauses.push("flag_scheduled = 1");
-        subtitleExtras.push("Solo Citas Confirmadas");
-    }
-
-    // Filter by Date Range (NEW)
-    const { startDate, endDate } = req.query;
-    if (startDate) {
-        whereClauses.push("created_at >= ?");
-        params.push(`${startDate} 00:00:00`);
-        subtitleExtras.push(`Desde: ${startDate}`);
-    }
-    if (endDate) {
-        whereClauses.push("created_at <= ?");
-        params.push(`${endDate} 23:59:59`);
-        subtitleExtras.push(`Hasta: ${endDate}`);
-    }
-
-    const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+    const { whereSql, params, subtitleExtras } = buildWhereClause(req.query);
 
     const query = `
         SELECT 
@@ -121,15 +130,15 @@ router.get('/export-pdf', checkAuth, (req, res) => {
                 return t;
             })(),
             headers: [
-                { label: "Padre/Madre", property: "parent", width: 130 },
-                { label: "Alumno", property: "child_name", width: 130 },
-                { label: "Grado", property: "grade", width: 80 },
+                { label: "Padre/Madre", property: "parent", width: 110 },
+                { label: "Alumno", property: "child_name", width: 110 },
+                { label: "Grado", property: "grade", width: 70 },
                 {
                     label: "Escuela Procedencia",
                     property: "previous_school",
-                    width: 120
+                    width: 100
                 },
-                { label: "Cita Informes", property: "appointment", width: 100 },
+                { label: "Cita Informes", property: "appointment", width: 90 },
                 {
                     label: "Asistió",
                     property: "attended",
@@ -139,17 +148,16 @@ router.get('/export-pdf', checkAuth, (req, res) => {
                     renderer: (value, indexColumn, indexRow, row, rect) => {
                         try {
                             // --- Asistió START ---
-                            // Fixed X manual calculation (Margin 30 + 130 + 130 + 80 + 120 + 100 = 590)
-                            const fixedX = 590;
+                            // New X: 510
+                            const fixedX = 510;
                             const fixedWidth = 50;
 
                             const isPositive = value === 'Si';
-                            const bgColor = isPositive ? '#dcfce7' : '#fee2e2'; // Green-100 / Red-100
-                            const textColor = isPositive ? '#166534' : '#991b1b'; // Green-800 / Red-800
+                            const bgColor = isPositive ? '#dcfce7' : '#fee2e2';
+                            const textColor = isPositive ? '#166534' : '#991b1b';
 
                             const badgeWidth = 30;
                             const badgeHeight = 12;
-                            // Use rect.y for vertical stability, but manual X
                             const x = fixedX + (fixedWidth - badgeWidth) / 2;
                             const y = rect.y + (rect.height - badgeHeight) / 2;
 
@@ -164,10 +172,8 @@ router.get('/export-pdf', checkAuth, (req, res) => {
                                     align: 'center'
                                 });
 
-                            // Reset color to black specifically for subsequent text drawing by library
                             doc.fillColor('black');
                             return '';
-                            // --- Asistió END ---
                         } catch (e) { return value; }
                     }
                 },
@@ -180,8 +186,8 @@ router.get('/export-pdf', checkAuth, (req, res) => {
                     renderer: (value, indexColumn, indexRow, row, rect) => {
                         try {
                             // --- Evaluación START ---
-                            // Fixed X manual calculation (Previous 590 + 50 = 640)
-                            const fixedX = 640;
+                            // New X: 560
+                            const fixedX = 560;
                             const fixedWidth = 60;
 
                             const isPositive = value === 'Si';
@@ -206,11 +212,86 @@ router.get('/export-pdf', checkAuth, (req, res) => {
 
                             doc.fillColor('black');
                             return '';
-                            // --- Evaluación END ---
                         } catch (e) { return value; }
                     }
                 },
-                { label: "Plazo Inscripción", property: "deadline", width: 90, align: "center", headerAlign: "center" }
+                {
+                    label: "Aceptado",
+                    property: "accepted",
+                    width: 60,
+                    align: "center",
+                    headerAlign: "center",
+                    renderer: (value, indexColumn, indexRow, row, rect) => {
+                        try {
+                            // --- Aceptado START ---
+                            // New X: 620
+                            const fixedX = 620;
+                            const fixedWidth = 60;
+
+                            const isPositive = value === 'Si';
+                            const bgColor = isPositive ? '#dcfce7' : '#fee2e2';
+                            const textColor = isPositive ? '#166534' : '#991b1b';
+
+                            const badgeWidth = 30;
+                            const badgeHeight = 12;
+                            const x = fixedX + (fixedWidth - badgeWidth) / 2;
+                            const y = rect.y + (rect.height - badgeHeight) / 2;
+
+                            doc.fillColor(bgColor)
+                                .roundedRect(x, y, badgeWidth, badgeHeight, 4)
+                                .fill();
+
+                            doc.fillColor(textColor)
+                                .fontSize(8)
+                                .text(value, x, y + 2, {
+                                    width: badgeWidth,
+                                    align: 'center'
+                                });
+
+                            doc.fillColor('black');
+                            return '';
+                        } catch (e) { return value; }
+                    }
+                },
+                { label: "Plazo", property: "deadline", width: 60, align: "center", headerAlign: "center" },
+                {
+                    label: "Pago",
+                    property: "payment",
+                    width: 60,
+                    align: "center",
+                    headerAlign: "center",
+                    renderer: (value, indexColumn, indexRow, row, rect) => {
+                        try {
+                            // --- Pago START ---
+                            // New X: 740
+                            const fixedX = 740;
+                            const fixedWidth = 60;
+
+                            const isPositive = value === 'Si';
+                            const bgColor = isPositive ? '#dcfce7' : '#fee2e2';
+                            const textColor = isPositive ? '#166534' : '#991b1b';
+
+                            const badgeWidth = 30;
+                            const badgeHeight = 12;
+                            const x = fixedX + (fixedWidth - badgeWidth) / 2;
+                            const y = rect.y + (rect.height - badgeHeight) / 2;
+
+                            doc.fillColor(bgColor)
+                                .roundedRect(x, y, badgeWidth, badgeHeight, 4)
+                                .fill();
+
+                            doc.fillColor(textColor)
+                                .fontSize(8)
+                                .text(value, x, y + 2, {
+                                    width: badgeWidth,
+                                    align: 'center'
+                                });
+
+                            doc.fillColor('black');
+                            return '';
+                        } catch (e) { return value; }
+                    }
+                }
             ],
             datas: results.map(row => ({
                 parent: row.parent_name,
@@ -225,9 +306,11 @@ router.get('/export-pdf', checkAuth, (req, res) => {
                     const time = dObj.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
                     return `${d}/${m}/${y} ${time}`;
                 })() : 'Sin Cita',
-                attended: row.flag_finished ? 'Si' : 'No',
+                attended: row.flag_attended ? 'Si' : 'No',
                 evaluation: row.flag_evaluation ? 'Si' : 'No',
-                deadline: '-'
+                accepted: row.flag_accepted ? 'Si' : 'No',
+                deadline: '-',
+                payment: row.flag_finished ? 'Si' : 'No'
             })),
         };
 
@@ -236,6 +319,99 @@ router.get('/export-pdf', checkAuth, (req, res) => {
                 prepareHeader: () => doc.font("Helvetica-Bold").fontSize(8).fillColor('black'),
                 prepareRow: (row, i) => doc.font("Helvetica").fontSize(9).fillColor('black')
             });
+
+            // --- Statistics Section ---
+            doc.moveDown(2);
+
+            // Stats Calculations
+            const total = results.length;
+            if (total > 0) {
+                // Determine scheduled flag runtime if not in DB
+                results.forEach(r => {
+                    r.flag_scheduled = !!r.appointment_date;
+                });
+
+                // Calculate counts for denominators
+                const countScheduled = results.filter(r => r.flag_scheduled).length;
+                const countAttended = results.filter(r => r.flag_attended).length;
+                const countEvaluated = results.filter(r => r.flag_evaluation).length;
+                const countAccepted = results.filter(r => r.flag_accepted).length;
+
+                const getStats = (filterFn, denominator = total) => {
+                    const count = results.filter(filterFn).length;
+                    const base = denominator > 0 ? denominator : 1;
+                    const percent = denominator > 0 ? ((count / denominator) * 100).toFixed(1) : '0.0';
+                    return `${count} (${percent}%)`;
+                }
+
+                const stats = {
+                    scheduled: getStats(r => r.flag_scheduled, total),        // Base: Total
+                    attended: getStats(r => r.flag_attended, countScheduled), // Base: Scheduled
+                    evaluation: getStats(r => r.flag_evaluation, countAttended), // Base: Attended
+                    accepted: getStats(r => r.flag_accepted, countEvaluated),   // Base: Evaluated
+                    finished: getStats(r => r.flag_finished, countAccepted)     // Base: Accepted
+                };
+
+                doc.moveDown(1);
+                // Check page break (Need ~80 height)
+                if (doc.y + 80 > doc.page.height - 50) doc.addPage();
+
+                const containerY = doc.y;
+                // Page width ~841. Cards width 700. Add 20px padding each side -> 740.
+                const containerWidth = 740;
+                const containerX = (doc.page.width - containerWidth) / 2; // Center container (~50.5)
+                const containerHeight = 70; // Title (20) + Cards (35) + Padding (15)
+
+                // Background Container REMOVED as per request
+                // doc.fillColor('#f8fafc').strokeColor('#e2e8f0').lineWidth(1)
+                //    .roundedRect(containerX, containerY, containerWidth, containerHeight, 8)
+                //    .fillAndStroke();
+
+                // Centered Title
+                doc.fillColor('#1e293b').font("Helvetica-Bold").fontSize(12)
+                    .text('Resumen Estadístico', containerX, containerY + 10, {
+                        width: containerWidth,
+                        align: 'center',
+                        underline: false
+                    });
+
+                const statItems = [
+                    { label: "TOTAL SOLICITUDES", value: `${total}`, sub: "Total" },
+                    { label: "CITAS AGENDADAS", value: stats.scheduled },
+                    { label: "ASISTENCIA", value: stats.attended },
+                    { label: "EVALUACIÓN", value: stats.evaluation },
+                    { label: "ACEPTADOS", value: stats.accepted },
+                    { label: "PAGADAS", value: stats.finished }
+                ];
+
+                // Cards Start Y relative to container
+                const startY = containerY + 28;
+                const boxWidth = 100;
+                const gap = 20;
+
+                // Cards Start X: ContainerX + Padding (20)
+                let currentX = containerX + 20;
+
+                statItems.forEach(item => {
+                    // Card Background (White now to contrast with container)
+                    doc.fillColor('white').strokeColor('#cbd5e1').lineWidth(1)
+                        .roundedRect(currentX, startY, boxWidth, 35, 4)
+                        .fillAndStroke();
+
+                    // Label Top
+                    doc.fillColor('#64748b').font("Helvetica-Bold").fontSize(6)
+                        .text(item.label, currentX, startY + 6, { width: boxWidth, align: 'center' });
+
+                    // Value Middle
+                    doc.fillColor('#0f172a').font("Helvetica-Bold").fontSize(10)
+                        .text(item.value, currentX, startY + 18, { width: boxWidth, align: 'center' });
+
+                    currentX += (boxWidth + gap);
+                });
+
+                doc.fillColor('black'); // Reset
+            }
+
             doc.end();
             console.log('[PDF DEBUG] Stream ended successfully.');
         } catch (pdfErr) {
@@ -467,7 +643,7 @@ router.put('/:id/checklist', checkAuth, (req, res) => {
     const { id } = req.params;
     const { flag, value } = req.body;
 
-    const validFlags = ['flag_info_sent', 'flag_scheduled', 'flag_evaluation', 'flag_finished'];
+    const validFlags = ['flag_info_sent', 'flag_scheduled', 'flag_attended', 'flag_evaluation', 'flag_accepted', 'flag_finished'];
     if (!validFlags.includes(flag)) {
         return res.status(400).json({ error: 'Invalid flag' });
     }

@@ -1,0 +1,25 @@
+const db = require('./config/db');
+
+const addFlagAttended = async () => {
+    try {
+        const query = "ALTER TABLE inquiries ADD COLUMN flag_attended BOOLEAN DEFAULT 0 AFTER flag_scheduled";
+
+        db.query(query, (err, result) => {
+            if (err) {
+                if (err.code === 'ER_DUP_FIELDNAME') {
+                    console.log('Column flag_attended already exists.');
+                } else {
+                    console.error('Error adding column:', err);
+                }
+            } else {
+                console.log('Successfully added flag_attended column to inquiries table.');
+            }
+            process.exit();
+        });
+    } catch (error) {
+        console.error('Migration failed:', error);
+        process.exit(1);
+    }
+};
+
+addFlagAttended();

@@ -68,7 +68,7 @@ app.use('/api/public/agenda', require('./routes/public_agenda')); // Public Acce
 
 // Start Server
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://localhost:${PORT} and ${process.env.PUBLIC_URL || 'http://10.31.20.162:3000'}`);
+    console.log(`Server running on http://localhost:${PORT} and ${process.env.PUBLIC_URL || 'http://192.168.100.3:3000'}`);
 });
 
 // Force Restart Triggered: 2026-01-08T16:05:00

@@ -275,13 +275,13 @@ const MENU_STRUCTURE = [
         ]
     },
     {
-        title: 'Informes',
+        title: 'Admisiones',
         groupKey: 'inquiries',
         icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>`,
         items: [
             { label: 'Ver Menú Solicitudes', permission: PERMISSIONS.INQUIRIES_MENU, hidden: true },
-            { label: 'Solicitud de Informes', permission: PERMISSIONS.INQUIRIES_FORM, targetId: 'informes-section' },
-            { label: 'Lista de Informes', permission: PERMISSIONS.INQUIRIES_LIST, targetId: 'inquiries-list-section' },
+            { label: 'Solicitud Admisión', permission: PERMISSIONS.INQUIRIES_FORM, targetId: 'informes-section' },
+            { label: 'Solicitudes', permission: PERMISSIONS.INQUIRIES_LIST, targetId: 'inquiries-list-section' },
             { label: 'Agenda', permission: PERMISSIONS.VIEW_AGENDA, targetId: 'agenda-section' }
         ]
     },
@@ -3195,11 +3195,11 @@ const PERMISSION_HIERARCHY = [
         ]
     },
     {
-        label: 'Informes',
+        label: 'Admisiones',
         items: [
             { key: PERMISSIONS.INQUIRIES_MENU, label: 'Ver Menú' },
-            { key: PERMISSIONS.INQUIRIES_FORM, label: 'Solicitud de Informes' },
-            { key: PERMISSIONS.INQUIRIES_LIST, label: 'Lista de Informes' },
+            { key: PERMISSIONS.INQUIRIES_FORM, label: 'Solicitud Admisión' },
+            { key: PERMISSIONS.INQUIRIES_LIST, label: 'Solicitudes' },
             { key: PERMISSIONS.VIEW_AGENDA, label: 'Agenda' }
         ]
     }
@@ -5606,7 +5606,14 @@ if (inquiryForm) {
 
 async function loadInquiries() {
     try {
-        const inquiries = await apiFetch('/inquiries');
+        const lvl = document.getElementById('report-filter-level') ? document.getElementById('report-filter-level').value : '';
+        const sts = document.getElementById('report-filter-status') ? document.getElementById('report-filter-status').value : '';
+
+        const params = new URLSearchParams();
+        if (lvl) params.append('level', lvl);
+        if (sts) params.append('status', sts);
+
+        const inquiries = await apiFetch(`/inquiries?${params.toString()}`);
         renderInquiries(inquiries);
     } catch (error) {
         console.warn('Suppressing loadInquiries error alert on load:', error);
@@ -5637,6 +5644,7 @@ function renderInquiries(list) {
                 <select id="report-filter-status" style="padding: 0.4rem 0.6rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; background: #f8fafc;">
                     <option value="">Estatus: Todos</option>
                     <option value="confirmed">Confirmados</option>
+                    <option value="attended">Asistieron</option>
                 </select>
                 
                  <button id="btn-export-pdf" style="display: flex; align-items: center; gap: 0.4rem; background: #fff; color: #ef4444; border: 1px solid #ef4444; padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.8rem; transition: all 0.2s;">
@@ -5748,12 +5756,14 @@ function renderInquiries(list) {
             
             <div style="flex: 2; border-left: 1px solid var(--border); padding-left: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
                 <label style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-light); font-weight: 600; display: block;">Seguimiento</label>
-                <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+                <div style="display: flex; align-items: center; white-space: nowrap;">
                     ${[
                 { label: 'Información Enviada', key: 'flag_info_sent' },
                 { label: 'Cita', key: 'flag_scheduled' },
+                { label: 'Asistió', key: 'flag_attended' },
                 { label: 'Evaluación', key: 'flag_evaluation' },
-                { label: 'Finalizado', key: 'flag_finished' }
+                { label: 'Aceptado', key: 'flag_accepted' },
+                { label: 'Pago', key: 'flag_finished' }
             ].map(step => {
                 const isDone = item[step.key] === 1 || item[step.key] === true;
                 const isSystemOnly = step.key === 'flag_info_sent';
@@ -5763,7 +5773,7 @@ function renderInquiries(list) {
                 const isLast = step.key === 'flag_finished';
 
                 return `
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <div style="display: flex; align-items: center;">
                                 <div
                                     ${isSystemOnly ? '' : `onclick="toggleInquiryFlag(${item.id}, '${step.key}', ${!isDone})"`}
                                     title="${step.label}${isDone ? ' (Completado)' : ' (Pendiente)'}"
@@ -5780,7 +5790,7 @@ function renderInquiries(list) {
                                     onmouseover="this.style.transform='scale(1.2)'"
                                     onmouseout="this.style.transform='scale(1)'"
                                 ></div>
-                                ${!isLast ? '<span class="material-icons-outlined" style="font-size: 16px; color: #cbd5e1; user-select: none;">arrow_forward</span>' : ''}
+                                ${!isLast ? '<div style="width: 8px; border-bottom: 2px dotted #cbd5e1; margin: 0 2px;"></div>' : ''}
                             </div>
                         `;
             }).join('')}

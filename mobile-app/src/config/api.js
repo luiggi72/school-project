@@ -15,6 +15,6 @@
 // const API_URL = 'http://localhost:3000/api';
 
 // 4. Physical Device (Local Network - Replace <YOUR_LOCAL_IP>)
-const API_URL = 'http://10.31.20.162:3000/api';
+const API_URL = 'http://192.168.100.3:3000/api';
 
 export default API_URL;
